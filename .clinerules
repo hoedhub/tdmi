@@ -1,0 +1,172 @@
+# --- Svelte 4.2.18 Coding Rules for AI Agents ---
+# Version: 2.0
+# Last Updated: [Current Date]
+#
+# Purpose: To guide AI agents in developing consistent, high-quality Svelte 4.2.18 applications.
+# These rules are strict and opinionated to ensure codebase uniformity, maintainability,
+# and adherence to project-specific workflows.
+#
+# AI Role: SPARC Orchestrator (Strategic Planner, Architect, Reviewer, Coder)
+# The AI is expected to understand, apply, and enforce these rules.
+# When in doubt, AI MUST ask for clarification citing the ambiguous rule.
+# Deviations MUST be explicitly approved and documented.
+#
+# Format:
+# RULE_ID: [Category] Constraint. (Rationale: Justification for the rule.) (Enforcement: How this rule is typically checked or enforced.)
+# --------------------------------------------------------------------------
+
+# --- I. General Principles (GEN) ---
+
+GEN-001: [Clarity] Code MUST be written for human readability first. (Rationale: Maintainability and collaboration depend on clear code.) (Enforcement: Code review, AI self-correction.)
+GEN-002: [Consistency] All contributions MUST adhere to these rules and established codebase patterns. (Rationale: Uniformity reduces cognitive load and prevents errors.) (Enforcement: This document, automated linters, AI self-policing.)
+GEN-003: [DRY & Reuse] Don't Repeat Yourself. AI MUST actively seek and reuse existing components, utilities, and patterns before creating new ones. (Rationale: Reduces redundancy, improves maintainability, leverages existing tested code.) (Enforcement: Code review, AI pattern detection and search.)
+GEN-004: [KISS] Keep It Simple, Stupid. Prefer simpler, well-understood solutions over complex ones unless complexity is demonstrably justified by significant benefits. (Rationale: Simpler code is easier to understand, debug, and maintain.) (Enforcement: Code review, AI solution evaluation.)
+GEN-005: [YAGNI] You Ain't Gonna Need It. Do not implement functionality that is not explicitly required by the current task or documented requirements (e.g., PRD, todo files). (Rationale: Prevents premature optimization and unnecessary complexity.) (Enforcement: Requirements review, AI feature scoping.)
+GEN-006: [Comments] Comments MUST explain *why* something is done, not *what* is being done, unless the "what" is unusually complex. Code should be self-documenting for the "what". Use `@todo` comments for clearly defined, incomplete implementations related to the current task. (Rationale: Enhances understanding of intent and non-obvious decisions; tracks pending work.) (Enforcement: Code review.)
+GEN-007: [Codebase Health] The codebase MUST be kept clean, organized, and adhere to all linting and formatting rules. (Rationale: Long-term maintainability and developer experience.) (Enforcement: Linters, formatters, `pnpm check`.)
+GEN-008: [Svelte 4 Adherence] All Svelte code MUST follow Svelte 4.2.18 best practices and utilize its features appropriately. (Rationale: Leverages framework capabilities for performance and developer experience.) (Enforcement: Code review, AI knowledge base of Svelte 4.)
+
+# --- II. Svelte 4 - File & Project Structure (SVELTE-FS) ---
+
+SVELTE-FS-001: [Naming - Components] Svelte component filenames MUST use PascalCase (e.g., `MyButton.svelte`). Utility components intended for internal use within a module MAY be prefixed with an underscore (e.g., `_PrivateHelper.svelte`). (Rationale: Standard Svelte convention, easy identification, denotes visibility.) (Enforcement: File system check, AI self-correction.)
+SVELTE-FS-002: [Naming - Routes] SvelteKit route files MUST follow SvelteKit conventions (`+page.svelte`, `+layout.svelte`, `+server.js`, etc.) and reside in `src/routes/`. (Rationale: SvelteKit requirement.) (Enforcement: SvelteKit compiler, AI verification.)
+SVELTE-FS-003: [Directory - Components] Reusable UI components MUST reside in `src/lib/components/`.
+    IF Atomic Design methodology is adopted, components MUST be organized as:
+    - Atoms: `src/lib/components/atoms/*.svelte`
+    - Molecules: `src/lib/components/molecules/*.svelte`
+    - Organisms: `src/lib/components/organisms/*.svelte`
+    OTHERWISE, sub-directories for functional grouping are encouraged (e.g., `src/lib/components/forms/`, `src/lib/components/layout/`).
+    (Rationale: Clear separation of concerns, discoverability, structured design system.) (Enforcement: AI file placement, code review.)
+SVELTE-FS-004: [Directory - Utilities] Generic JavaScript/TypeScript utility functions MUST reside in `src/lib/utils/`. One-off scripts not intended for reuse within the application SHOULD NOT be added to the codebase. (Rationale: Centralized helper functions, avoids cluttering codebase with temporary scripts.) (Enforcement: AI file placement, code review.)
+SVELTE-FS-005: [Directory - Stores] Svelte stores MUST reside in `src/lib/stores/` (e.g., `src/lib/stores/userStore.ts`). (Rationale: Centralized state management.) (Enforcement: AI file placement.)
+SVELTE-FS-006: [Directory - Types] TypeScript type definitions, if not co-located, SHOULD reside in `src/lib/types/`. (Rationale: Centralized type definitions.) (Enforcement: AI file placement.)
+SVELTE-FS-007: [Exports] Components, stores, and utilities in `src/lib/` MUST be exported via an `index.js` or `index.ts` file in their respective directories for cleaner imports (e.g., `import { MyButton } from '$lib/components';`). (Rationale: Simplified import paths, better organization.) (Enforcement: Code review, AI import generation.)
+SVELTE-FS-008: [Directory - Layouts] SvelteKit named layouts MUST reside in `src/layouts/[layoutName]/+layout.svelte`. (Rationale: SvelteKit convention for shared layout structures outside the route hierarchy.) (Enforcement: File system check, AI verification.)
+SVELTE-FS-009: [File Size Limit] Files (especially Svelte components and JS/TS modules) SHOULD NOT exceed 300 lines of code. Files approaching this limit MUST be considered for refactoring into smaller, more focused modules/components. (Rationale: Improves readability, maintainability, and testability.) (Enforcement: AI self-monitoring, code review.)
+# SVELTE-FS-009 (UI Primitives) removed as it was DaisyUI specific. Re-evaluate if wrapping another library.
+
+# --- III. Svelte 4 - Component Architecture (SVELTE-COMP) ---
+
+SVELTE-COMP-001: [SRP] Components MUST adhere to the Single Responsibility Principle. Each component should do one thing well. (Rationale: Improves reusability, testability, and maintainability.) (Enforcement: Code review, AI component analysis.)
+SVELTE-COMP-002: [Props - Definition] Component props MUST be defined using `export let propName;`. (Rationale: Standard Svelte 4 prop definition.) (Enforcement: Code inspection, AI self-correction.)
+SVELTE-COMP-003: [Props - Typing] All props MUST be typed if using TypeScript (e.g., `export let propName: string;`). For JavaScript, use JSDoc for type hints. (Rationale: Early error detection, improved developer experience.) (Enforcement: TypeScript compiler, ESLint, AI self-correction.)
+SVELTE-COMP-004: [Props - Defaults] Optional props SHOULD have sensible default values (e.g., `export let count: number = 0;`). (Rationale: Robustness, ease of use.) (Enforcement: Code inspection.)
+SVELTE-COMP-005: [Props - Naming] Prop names MUST be `camelCase`. (Rationale: JavaScript convention.) (Enforcement: Linter, AI self-correction.)
+SVELTE-COMP-006: [Props - Primitives] Prefer passing primitive data types as props. Pass objects only when semantically grouped data is necessary. (Rationale: Simplifies change detection and component updates.) (Enforcement: Code review.)
+SVELTE-COMP-007: [Events - Dispatch] Custom events MUST be dispatched using `createEventDispatcher` and then calling the dispatcher function. For two-way binding with parent components, use the `bind:propName` directive. (Rationale: Standard Svelte 4 event handling and two-way binding.) (Enforcement: Code review.)
+SVELTE-COMP-008: [Events - Naming] Custom event names MUST be `lowercase` or `kebab-case` and be descriptive (e.g., `itemselected`, `valuechanged`). (Rationale: HTML attribute convention, clarity.) (Enforcement: Code inspection.)
+SVELTE-COMP-009: [Slots - Usage] Use slots for content projection. Named slots (`<slot name="foo">`) MUST be used when multiple content areas are needed. (Rationale: Flexibility, composition.) (Enforcement: Code inspection.)
+SVELTE-COMP-010: [Slots - Defaults] Provide default content for slots where appropriate to make components usable out-of-the-box. (Rationale: Improved developer experience.) (Enforcement: Code review.)
+SVELTE-COMP-011: [Logic Location] Component logic (event handlers, derived state calculations) MUST reside within the `<script>` tag. Avoid complex JavaScript directly in the template. (Rationale: Separation of concerns, testability.) (Enforcement: Code inspection.)
+SVELTE-COMP-012: [Structure Order] Svelte component structure MUST be: `<script>` (imports, props, state, logic) → template (HTML markup) → `<style>` (scoped styles). (Rationale: Common convention, logical flow: setup -> view -> style.) (Enforcement: Prettier, AI code formatting.)
+SVELTE-COMP-013: [Accessibility - Core] Components MUST implement appropriate ARIA attributes (e.g., `role`, `aria-label`, `aria-live`) for accessibility, especially for custom interactive elements and dynamic content updates. (Rationale: Inclusivity, usability for all users.) (Enforcement: Accessibility linters, code review.)
+SVELTE-COMP-014: [Accessibility - Semantic HTML] Use semantic HTML elements (`<nav>`, `<article>`, `<button>`, `<main>`, `<aside>`, `<footer>`, `<header>`) over generic `<div>` or `<span>` where appropriate. (Rationale: Accessibility, SEO, clarity.) (Enforcement: Code review, linters.)
+SVELTE-COMP-015: [Styling - Scope] The `<style>` section MUST only contain component-scoped CSS. Global styles belong in a dedicated global CSS file. `:global()` selectors within components are discouraged and MUST be wrapped by a local Svelte selector if unavoidable. (Rationale: Prevents style leakage, maintainability.) (Enforcement: Code review, style linters.)
+SVELTE-COMP-016: [Styling - Inline Styles] Inline styles (`style="..."`) are PROHIBITED. Use classes from your chosen styling solution or scoped `<style>` tags. (Rationale: Maintainability, separation of concerns, consistency.) (Enforcement: Linter, code review.)
+
+# --- IV. Svelte 4 - Reactivity & State Management (SVELTE-STATE) ---
+
+SVELTE-STATE-001: [Local State] Local component reactive state MUST be declared using `let variableName;`. (Rationale: Standard Svelte 4 reactivity.) (Enforcement: Code inspection.)
+SVELTE-STATE-002: [Derived State] Derived state and reactive statements MUST be computed using `$: variableName = ...;` or `$: { /* reactive block */ }`. (Rationale: Efficient and declarative derived values and side effects in Svelte 4.) (Enforcement: Code inspection.)
+SVELTE-STATE-003: [Side Effects] Side effects (e.g., API calls, DOM manipulations outside Svelte's control, subscriptions) that depend on reactive values MUST be managed using `$: ` reactive statements or blocks. For debouncing or throttling, use utility functions within these reactive blocks or event handlers. (Rationale: Proper lifecycle management for effects in Svelte 4.) (Enforcement: Code inspection, performance profiling.)
+SVELTE-STATE-004: [Stores - Usage] Svelte stores (`writable`, `readable`, `derived` from `svelte/store`) MUST be used for state shared across multiple, unrelated components or global application state. (Rationale: Centralized and predictable state management.) (Enforcement: Code review.)
+SVELTE-STATE-005: [Stores - Granularity] Prefer fine-grained stores over large, monolithic stores. (Rationale: Better performance, easier to reason about.) (Enforcement: Code review.)
+SVELTE-STATE-006: [Stores - Mutability] Mutations to `writable` stores SHOULD occur through their `.set()` or `.update()` methods, or via methods on custom stores. Direct store value assignments (e.g. `$store = value`) are the primary way to update, but complex logic should be encapsulated. (Rationale: Centralized logic, easier debugging.) (Enforcement: Code review.)
+# SVELTE-STATE-007 (Bindable Props) covered by SVELTE-COMP-007 `bind:`.
+
+# --- V. Styling Conventions (STYLING) ---
+# IMPORTANT: This section MUST be customized based on your chosen styling solution (e.g., Tailwind CSS standalone, SCSS with BEM, CSS Modules).
+
+STYLING-001: [Primary Method] Styles MUST be applied primarily using [Your Chosen Method, e.g., Tailwind utility classes, BEM class names, CSS Module classes]. (Rationale: Consistency with the chosen styling architecture.) (Enforcement: Code review, AI style analysis.)
+STYLING-002: [Custom CSS Scope] If using a utility-first framework like Tailwind, custom scoped CSS (`<style>`) SHOULD only be used for styles not achievable with utilities or for complex component-specific selectors. If using plain CSS/SCSS, all component styles are typically scoped. (Rationale: Maintainability and adherence to chosen framework's philosophy.) (Enforcement: Code review.)
+STYLING-003: [Global Styles] Global styles MUST be defined in a designated global stylesheet (e.g., `app.css`, `src/global.scss`) and kept to a minimum (e.g., base HTML element styling, CSS variable definitions, font-face rules). (Rationale: Clear separation of global vs. component concerns.) (Enforcement: Code review.)
+STYLING-004: [Naming Conventions] IF NOT using utility classes like Tailwind, CSS class names MUST follow a consistent naming convention (e.g., BEM `block__element--modifier`, PascalCase for CSS Modules). (Rationale: Readability, maintainability, collision avoidance.) (Enforcement: Linter (if available for convention), code review.)
+STYLING-005: [CSS Variables] Utilize CSS custom properties (variables) for theming (colors, spacing, typography units) to promote consistency and easier theme adjustments. Define global variables in the global stylesheet. (Rationale: Theming, maintainability.) (Enforcement: Code review.)
+STYLING-006: [Responsiveness] Responsive design MUST be achieved using [Your Chosen Method, e.g., Tailwind responsive prefixes, CSS media queries]. Apply a mobile-first approach. (Rationale: Consistent responsive behavior.) (Enforcement: UI testing, code review.)
+STYLING-007: [Color Palette] Adhere strictly to a defined project color palette. Define colors as CSS variables or in your Tailwind config. Avoid arbitrary hex color codes directly in component styles. (Rationale: Visual consistency.) (Enforcement: Code review, linter for color values.)
+STYLING-008: [Spacing & Sizing] Use a consistent spacing and sizing scale (e.g., Tailwind spacing scale, predefined CSS variables for `rem` units). Avoid arbitrary pixel values for layout. (Rationale: Visual harmony, maintainability.) (Enforcement: Code review.)
+STYLING-009: [CSS `!important`] The `!important` CSS declaration is PROHIBITED, except in highly justified, documented cases for overriding third-party library styles. (Rationale: Maintainability, predictable cascade.) (Enforcement: Linter, code review.)
+# STYLING-010: [Class Ordering - For Tailwind] IF using Tailwind CSS, classes SHOULD follow a logical order. Automated formatting tools (e.g., Prettier with Tailwind plugin) MUST be used. (Rationale: Readability, consistency.) (Enforcement: Prettier, code review.)
+
+# --- VI. JavaScript/TypeScript (JS-TS) ---
+
+JS-TS-001: [Language Level] Code MUST adhere to modern JavaScript (ES2020+). If using TypeScript, it MUST be configured with `strict: true` in `tsconfig.json`. (Rationale: Leverage modern features, catch errors early.) (Enforcement: Linter, TS compiler.)
+JS-TS-002: [Formatting] Code MUST be formatted using Prettier with the project's agreed-upon configuration. (Rationale: Consistent code style, reduced debate.) (Enforcement: Pre-commit hooks, CI.)
+JS-TS-003: [Linting] Code MUST pass ESLint checks based on the project's configuration (e.g., extending `eslint-plugin-svelte3` - ensure correct plugin for Svelte 4). (Rationale: Catches common errors and enforces style.) (Enforcement: IDE integration, pre-commit hooks, CI.)
+JS-TS-004: [Naming - Variables/Functions] Variables and function names MUST use `camelCase`. (Rationale: JS convention.) (Enforcement: Linter.)
+JS-TS-005: [Naming - Constants] Constants (true constants, not just `const` variables) MAY use `UPPER_SNAKE_CASE` if they represent global, unchanging values. (Rationale: Convention for distinguishing constants.) (Enforcement: Linter, code review.)
+JS-TS-006: [Naming - DOM IDs] DOM element `id` attributes MUST use `kebab-case`. (Rationale: HTML/CSS convention, consistency.) (Enforcement: Linter, code review.)
+JS-TS-007: [Modules] Use ES Modules (`import`/`export`) syntax. CommonJS (`require`) is forbidden in frontend code. (Rationale: Modern standard, tree-shaking.) (Enforcement: Linter.)
+JS-TS-008: [Async/Await] `async/await` MUST be used for asynchronous operations over raw Promises or callbacks where it improves readability. All `async` functions MUST be wrapped in `try/catch` blocks or have their promises explicitly handled with `.catch()`. (Rationale: Cleaner async code, robust error handling.) (Enforcement: Code review, linter.)
+JS-TS-009: [Type Inference] In TypeScript, allow type inference where types are obvious (e.g., `const name = "AI"`), but explicitly type function parameters, return types, and complex object structures. (Rationale: Balance between verbosity and clarity.) (Enforcement: TS compiler, code review.)
+# JS-TS-010 (Rune declarations first) removed as runes are Svelte 5.
+
+# --- VII. UI/UX Consistency (UIUX) ---
+
+UIUX-001: [Visual Hierarchy] Ensure clear visual hierarchy using typography, spacing, and color as defined by the project's design system/style guide. (Rationale: User scannability and comprehension.) (Enforcement: Design review, UI testing.)
+UIUX-002: [User Feedback] Provide immediate and clear feedback for user actions (e.g., loading indicators, success/error messages using appropriate UI elements defined by the project). (Rationale: Improves perceived performance and user confidence.) (Enforcement: UI testing, UX review.)
+UIUX-003: [Interaction Consistency] Standard interactions (e.g., closing modals, submitting forms, navigation) MUST be consistent across the application. (Rationale: Predictability, ease of use.) (Enforcement: UX review, UI testing.)
+UIUX-004: [Form Handling] Forms MUST provide clear validation messages (ideally inline, associated with form controls using `aria-describedby`) and indicate required fields. Error messages SHOULD use appropriate ARIA roles (e.g., `role="alert"`) and consistent styling. (Rationale: User experience, data integrity, accessibility.) (Enforcement: UI testing, code review.)
+UIUX-005: [Empty States] Components displaying lists or collections of data MUST handle empty states gracefully, providing informative messages (e.g., "No items found. Add one?") potentially using a dedicated `<EmptyState>` component. (Rationale: Good UX, clarity.) (Enforcement: UI testing, code review.)
+UIUX-006: [Loading States] Components fetching data MUST display appropriate loading indicators (e.g., spinners, skeleton loaders if implemented). (Rationale: User feedback, perceived performance.) (Enforcement: UI testing, code review.)
+UIUX-007: [Accessibility - Keyboard & Focus] All interactive elements MUST be keyboard navigable (focusable and operable using Tab, Enter, Space, Arrow keys as appropriate). Focus states MUST be clearly visible and consistently styled. (Rationale: Accessibility for keyboard-only users and users with motor impairments.) (Enforcement: Manual keyboard testing, accessibility audits.)
+UIUX-008: [Accessibility - State Variants] Interactive elements MUST visually reflect their current state (e.g., disabled, active, hover) clearly and consistently. (Rationale: Clarity of UI state, accessibility.) (Enforcement: Code review, UI testing.)
+UIUX-009: [Dark Mode] IF dark mode is a project requirement, it MUST be implemented consistently across the application. Provide a user-accessible mechanism for theme switching. (Rationale: Enhanced user experience, adherence to user preferences.) (Enforcement: UI testing, code review.)
+
+# --- VIII. Codebase Patterns (PATTERNS) ---
+# ... (Rules PATTERNS-001 to PATTERNS-004, PATTERNS-006 to PATTERNS-009 remain largely unchanged. PATTERNS-005 regarding DaisyUI Abstraction needs re-evaluation for your new stack) ...
+PATTERNS-001: [API Services] API interactions SHOULD be abstracted into dedicated service functions or classes, typically located in `src/lib/services/` or `src/lib/utils/api.ts`. (Rationale: Separation of concerns, testability, reusability.) (Enforcement: Code review.)
+PATTERNS-002: [Configuration & Environments] Environment-specific configuration MUST be handled via SvelteKit's environment variable mechanisms (e.g., `$env/static/public`, `$env/dynamic/private`). Code MUST account for differences between `dev`, `test`, and `prod` environments where necessary. (Rationale: Security, flexibility, environment-specific behavior.) (Enforcement: Code review, testing across environments.)
+PATTERNS-003: [Internationalization - i18n] If i18n is required, a consistent library and pattern (e.g., `svelte-i18n`) MUST be used. Keys should be organized logically. (Rationale: Maintainability for multilingual applications.) (Enforcement: Code review.)
+PATTERNS-004: [Logging] Use a consistent logging strategy. Sensitive information MUST NOT be logged in production. Consider a dedicated global error logging utility (see ERROR-003). (Rationale: Debuggability, security.) (Enforcement: Code review.)
+# PATTERNS-005: [UI Component Abstraction] IF using a third-party UI library OR aiming for high design system flexibility, primitive UI components MAY be wrapped. (Rationale: Centralized control, easier refactoring.) (Enforcement: Architectural decision.)
+PATTERNS-006: [Iterative Development] AI MUST prioritize iterating on existing codebase patterns and components over introducing new ones, especially when fixing bugs or making minor feature enhancements. Drastic pattern changes require explicit approval. (Rationale: Maintains codebase consistency, reduces cognitive load, leverages existing tested code.) (Enforcement: AI self-correction, code review.)
+PATTERNS-007: [Pattern Evolution for Bug Fixes] When fixing an issue, if a new pattern or technology is deemed essential after exhausting options with the existing implementation, the old implementation related to the fix MUST be removed to avoid duplication or dead code. (Rationale: Prevents technical debt, ensures clarity.) (Enforcement: Code review, AI self-correction.)
+PATTERNS-008: [Feature Stability] Avoid major refactoring or architectural changes to features that are stable and functioning well, unless explicitly instructed or driven by significant new requirements. (Rationale: "If it ain't broke, don't fix it unnecessarily," stability over churn.) (Enforcement: AI task scoping, code review.)
+PATTERNS-009: [Data Handling - No Mocking in Prod/Dev] Mock data, stubs, or fake data patterns MUST ONLY be used for automated tests. Such patterns MUST NOT be present in code affecting `dev` or `prod` environments. (Rationale: Ensures data integrity and realistic behavior in development and production.) (Enforcement: Code review, CI checks.)
+
+# --- IX. Performance (PERF) ---
+PERF-001: [Lazy Loading - Images] Images, especially below-the-fold or in lists, SHOULD be lazy-loaded. Consider a dedicated `<LazyImage>` component. (Rationale: Improves initial page load time, reduces bandwidth.) (Enforcement: Code review, performance audit tools.)
+PERF-002: [Asset Optimization - Fonts] Web fonts SHOULD be preloaded (e.g., in `app.html` or root layout) or loaded efficiently using font-display strategies. (Rationale: Prevents FOUT/FOIT, improves perceived performance.) (Enforcement: Network panel analysis, performance audit tools.)
+PERF-003: [Asset Optimization - Icons] Prefer SVG icons. For multiple icons, consider using SVG sprites (e.g., via a dedicated `<Icon>` component) over individual image files or font icons. (Rationale: Scalability, performance, accessibility.) (Enforcement: Code review, asset analysis.)
+PERF-004: [Bundle Splitting] Monitor bundle sizes. Leverage SvelteKit's automatic code splitting and consider manual splitting for very large, non-critical sections if needed. (Rationale: Faster initial load times, better resource utilization.) (Enforcement: Build analysis tools, performance audits.)
+PERF-005: [Memoization] Utilize `$: ` reactive statements for derived values to ensure they only recompute when dependencies change. For expensive, non-reactive computations within components, consider manual memoization if profiling indicates a bottleneck. (Rationale: Prevents unnecessary re-renders and computations.) (Enforcement: Code review, Svelte Devtools, profiling.)
+
+# --- X. Error Handling (ERROR) ---
+# ... (Rules ERROR-001 to ERROR-004 remain largely unchanged) ...
+ERROR-001: [Async Error Handling] All asynchronous operations (API calls, etc.) MUST have comprehensive error handling using `try/catch` blocks with `async/await`, or `.catch()` for promises (as per JS-TS-008). (Rationale: Prevents unhandled promise rejections, ensures application stability.) (Enforcement: Code review, static analysis.)
+ERROR-002: [Component Error Boundaries] For critical sections of the UI, consider using Svelte's error handling capabilities (e.g., `handleError` hook at layout/page level, or custom component-level error boundaries if Svelte introduces them more formally) to catch rendering errors and display fallback UI. (Rationale: Graceful degradation, prevents entire page crashes.) (Enforcement: Code review, testing error scenarios.)
+ERROR-003: [Global Error Logging] Implement a global error handling utility (e.g., in `src/lib/utils/errorHandler.ts` or SvelteKit's `handleError` hook) to catch unhandled exceptions and log them to a monitoring service (e.g., Sentry, LogRocket) in production. (Rationale: Centralized error tracking, facilitates debugging of production issues.) (Enforcement: Code review, testing integration.)
+ERROR-004: [User-Facing Fallbacks] Provide user-friendly fallback UIs for common error states:
+    - API call failures: Display an informative message (e.g., using a dedicated `<ApiError>` component), potentially with a retry option.
+    - Not found (404): Utilize SvelteKit's `handleError` hook and a custom `+error.svelte` page for a branded 404 experience.
+    (Rationale: Improves UX during failures, guides the user.) (Enforcement: UI testing, code review.)
+
+# --- XI. Documentation (DOC) ---
+# ... (Rules DOC-001 to DOC-003 remain largely unchanged) ...
+DOC-001: [Component Props - JSDoc] All exported Svelte components and their props MUST be documented using JSDoc comments. Include prop types, descriptions, and default values if applicable. (Rationale: Improves component discoverability and usability, aids auto-completion in IDEs.) (Enforcement: Code review, documentation generation tools.)
+DOC-002: [Complex Logic - Comments/Diagrams] For complex business logic, state machines, or algorithms within components or utilities, provide clear comments. For highly complex state interactions, consider ASCII state charts in comments or linked `.md` / `.svg` diagrams. (Rationale: Enhances understanding of intricate parts of the codebase.) (Enforcement: Code review.)
+DOC-003: [Architecture Decisions - ADRs] Significant architectural decisions or deviations from standard patterns MUST be documented using Architecture Decision Records (ADRs), potentially stored in a `/docs/adr` directory or alongside relevant component directories for local decisions. (Rationale: Records rationale, context, and consequences of important decisions for future reference.) (Enforcement: Code review, team process.)
+
+# --- XII. Testing (TEST) ---
+# ... (Rules TEST-001 to TEST-002 remain largely unchanged) ...
+TEST-001: [Test Scope] For any new feature development or bug fix, AI MUST write relevant unit and/or integration tests for the modified or added code. AI tasks do not typically include creating comprehensive end-to-end test suites for the entire existing application unless specifically instructed. (Rationale: Ensures code quality and prevents regressions for new/changed logic, focuses AI effort effectively.) (Enforcement: Code review, CI test coverage checks.)
+TEST-002: [Data Mocking] Data mocking, stubbing, or fake data patterns are ONLY permissible within automated test files and test environments. (Rationale: Ensures tests are deterministic and do not rely on external services, while keeping dev/prod environments realistic.) (Enforcement: Code review, see PATTERNS-009.)
+
+# --- XIII. AI Agent Interaction & Workflow (AI-INTERACTION) ---
+# ... (Rules AI-INTERACTION-001 to AI-INTERACTION-013 remain largely unchanged) ...
+AI-INTERACTION-001: [Contextual Understanding] Before starting a task, AI MUST review relevant documentation (e.g., `PRD.md`, `todo-*.md files`, existing code related to the task) to gain a thorough understanding of requirements, existing patterns, and codebase state. (Rationale: Ensures changes are aligned with project goals and existing architecture.) (Enforcement: AI self-check, prompt engineering.)
+AI-INTERACTION-002: [Rule Adherence] AI agent MUST prioritize adherence to these rules above all other stylistic or architectural preferences it might possess. (Rationale: Ensures project consistency.) (Enforcement: Self-auditing, output review.)
+AI-INTERACTION-003: [Clarification] If any rule is unclear, seems contradictory in a specific context, or if task requirements are ambiguous, AI MUST request clarification from the human architect/reviewer before proceeding. (Rationale: Prevents misinterpretation and wasted effort.) (Enforcement: Prompt engineering.)
+AI-INTERACTION-004: [Justification for Deviation] If AI believes a deviation from a rule or established pattern is necessary, it MUST explicitly state the rule/pattern, the reason for deviation, and request approval. (Rationale: Controlled flexibility, maintains documentation of exceptions.) (Enforcement: AI output analysis.)
+AI-INTERACTION-005: [Referencing Rules] When proposing solutions or making changes, AI SHOULD, where relevant, reference the specific rule(s) guiding its decision. (Rationale: Transparency, aids learning for human reviewers.) (Enforcement: AI output analysis.)
+AI-INTERACTION-006: [Optimization] AI SHOULD proactively identify opportunities for optimization (performance, readability, DRY principles) within the bounds of these rules and current task scope. (Rationale: Continuous improvement.) (Enforcement: AI suggestions review.)
+AI-INTERACTION-007: [Security] AI MUST be mindful of common web security vulnerabilities (XSS, CSRF, etc.) and implement Svelte/HTML/JS best practices to mitigate them. (Rationale: Application security.) (Enforcement: Security code review, vulnerability scanning tools.)
+AI-INTERACTION-008: [Task Scope Adherence] AI MUST focus on making changes only within the scope of the requested task or bug fix. Unrelated code or patterns MUST NOT be modified unless directly impacted and well-understood. (Rationale: Prevents scope creep, reduces risk of unintended side effects.) (Enforcement: AI self-monitoring, code review.)
+AI-INTERACTION-009: [Impact Assessment] Before committing changes, AI MUST consider potential impacts on other areas of the codebase. (Rationale: Promotes holistic development and reduces regressions.) (Enforcement: AI self-reflection, dependency analysis if available.)
+AI-INTERACTION-010: [Post-Task Validation] After completing coding tasks, AI MUST ensure the codebase is error-free by running relevant checks (e.g., `pnpm check`, linters, type checkers). (Rationale: Maintains codebase integrity.) (Enforcement: Automated checks in AI workflow, CI pipeline.)
+AI-INTERACTION-011: [Knowledge Update] After completing tasks and receiving feedback, AI SHOULD update its internal knowledge representation or "memory bank" regarding project specifics, successful patterns, and resolved ambiguities. (Rationale: Improves future performance and adherence to evolving project standards.) (Enforcement: AI internal process, periodic review of AI learning.)
+AI-INTERACTION-012: [Environment Management - Servers] If the AI manages development servers, it MUST ensure any existing related server processes are terminated before attempting to start new ones for testing or development. (Rationale: Prevents port conflicts and ensures a clean testing environment.) (Enforcement: AI operational procedure.)
+AI-INTERACTION-013: [Environment Management - .env] AI MUST NOT overwrite or modify `.env` files without explicit prior confirmation from a human developer. (Rationale: Protects sensitive and environment-specific configurations.) (Enforcement: AI operational safety check.)
+
+# --- End of .clinerules ---
