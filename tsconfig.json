@@ -10,9 +10,55 @@
 		"sourceMap": true,
 		"strict": true,
 		"moduleResolution": "bundler",
+		"types": [
+			"node"
+		],
+		"target": "ESNext",
+		"useDefineForClassFields": true,
+		"module": "ESNext",
+		"isolatedModules": true,
 		"verbatimModuleSyntax": true
-	}
+	},
+	"include": [
+		"src/**/*.d.ts",
+		"src/**/*.ts",
+		"src/**/*.js",
+		"src/**/*.svelte"
+	],
+	"env": {
+		"browser": true,
+		"node": true,
+		"es2021": true
+	},
+	"parser": "svelte-eslint-parser", // <-- you might say typescript here
+	"parserOptions": {
+		"sourceType": "module",
+		"extraFileExtensions": [
+			".svelte"
+		],
+		"parser": {
+			// Specify a parser for each lang.
+			"ts": "@typescript-eslint/parser",
+			"js": "espree",
+			"typescript": "@typescript-eslint/parser"
+		}
+	},
+	"plugins": [
+		"@typescript-eslint"
+	],
+	"overrides": [
+		{
+			"files": [
+				"*.svelte"
+			],
+			"parser": "svelte-eslint-parser",
+			"parserOptions": {
+				"parser": "@typescript-eslint/parser" // <-- you HAVE TO say typescript here again
+			}
+		}
+	]
 	// Path aliases are handled by https://kit.svelte.dev/docs/configuration#alias
+	// except $lib which is handled by https://kit.svelte.dev/docs/configuration#files
 	//
 	// If you want to overwrite includes/excludes, make sure to copy over the relevant includes/excludes
 	// from the referenced tsconfig.json - TypeScript does not merge them in

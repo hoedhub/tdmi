@@ -27,30 +27,74 @@
 		// For SvelteKit, use: $page.url.pathname === href
 		return currentPath === href || (href === '/' && currentPath.startsWith('/#'));
 	}
+	const themes = [
+		'light',
+		'dark',
+		'cupcake',
+		'bumblebee',
+		'emerald',
+		'corporate',
+		'synthwave',
+		'retro',
+		'cyberpunk',
+		'valentine',
+		'halloween',
+		'garden',
+		'forest',
+		'aqua',
+		'lofi',
+		'pastel',
+		'fantasy',
+		'wireframe',
+		'black',
+		'luxury',
+		'dracula',
+		'cmyk',
+		'autumn',
+		'business',
+		'acid',
+		'lemonade',
+		'night',
+		'coffee',
+		'winter',
+		'dim',
+		'nord',
+		'sunset'
+	];
+	let currentTheme = 'cupcake'; // Default theme
+	let saveTheme = false; // State for saving theme preference
+	function toggleTheme(theme: string) {
+		document.documentElement.setAttribute('data-theme', theme);
+		isDarkMode = theme === 'dark';
+		currentTheme = theme;
+		// Optional: Persist theme choice in localStorage
+		if (saveTheme) localStorage.setItem('theme', theme);
+	}
 
-	function toggleTheme() {
-		isDarkMode = !isDarkMode;
-		const newTheme = isDarkMode ? 'dark' : 'light';
-		document.documentElement.setAttribute('data-theme', newTheme);
+	function previewTheme(theme: string) {
+		document.documentElement.setAttribute('data-theme', theme);
 		// Optional: Persist theme choice in localStorage
 		// localStorage.setItem('theme', newTheme);
 	}
 
 	// If using SvelteKit's theme controller script, this function might not be needed,
 	// but this is a simple JS-only way.
-	// onMount(() => {
-	//   const savedTheme = localStorage.getItem('theme');
-	//   if (savedTheme) {
-	//     document.documentElement.setAttribute('data-theme', savedTheme);
-	//     isDarkMode = savedTheme === 'dark';
-	//   } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-	//     document.documentElement.setAttribute('data-theme', 'dark');
-	//     isDarkMode = true;
-	//   }
-	// });
+	onMount(() => {
+		saveTheme = localStorage.getItem('save-theme') === 'true';
+		const savedTheme = localStorage.getItem('theme');
+		currentTheme = savedTheme || currentTheme;
+		if (savedTheme) {
+			document.documentElement.setAttribute('data-theme', savedTheme);
+			isDarkMode = savedTheme === 'dark';
+		}
+		//   else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+		//     document.documentElement.setAttribute('data-theme', 'dark');
+		//     isDarkMode = true;
+		//   }
+	});
 </script>
 
-<div class="drawer lg:drawer-open">
+<div class="drawer md:drawer-open">
 	<input
 		id="sidebar-drawer-toggle"
 		type="checkbox"
@@ -59,9 +103,9 @@
 	/>
 
 	<!-- Page Content -->
-	<div class="drawer-content bg-base-100 flex flex-col">
+	<div class="drawer-content flex flex-col bg-base-100">
 		<!-- Navbar for Mobile -->
-		<div class="navbar bg-base-200 sticky top-0 z-30 shadow lg:hidden">
+		<div class="navbar sticky top-0 z-30 bg-base-200 shadow md:hidden">
 			<div class="flex-none">
 				<label
 					for="sidebar-drawer-toggle"
@@ -75,7 +119,7 @@
 				<a href="/" class="btn btn-ghost text-xl normal-case">MyApp</a>
 			</div>
 			<!-- Optional: Theme toggle in mobile navbar -->
-			<div class="flex-none">
+			<!-- <div class="flex-none">
 				<button class="btn btn-square btn-ghost" on:click={toggleTheme} aria-label="Toggle theme">
 					{#if isDarkMode}
 						<Sun size={20} />
@@ -83,7 +127,7 @@
 						<Moon size={20} />
 					{/if}
 				</button>
-			</div>
+			</div> -->
 		</div>
 
 		<!-- Main content area -->
@@ -95,7 +139,7 @@
 		</main>
 
 		<!-- Optional Footer -->
-		<footer class="footer footer-center bg-base-300 text-base-content p-4">
+		<footer class="footer footer-center bg-base-300 p-4 text-base-content">
 			<aside>
 				<p>Copyright © {new Date().getFullYear()} - All right reserved by MyApp Industries Ltd</p>
 			</aside>
@@ -105,7 +149,7 @@
 	<!-- Sidebar -->
 	<aside class="drawer-side z-40">
 		<label for="sidebar-drawer-toggle" aria-label="close sidebar" class="drawer-overlay"></label>
-		<div class="menu bg-base-200 text-base-content flex min-h-full w-64 flex-col p-4 md:w-72">
+		<div class="menu flex min-h-full w-64 flex-col bg-base-200 p-4 text-base-content md:w-72">
 			<!-- Sidebar header/logo -->
 			<div class="mb-6 mt-2">
 				<a href="/" class="btn btn-ghost flex items-center text-2xl font-semibold normal-case">
@@ -119,7 +163,7 @@
 						stroke-width="2"
 						stroke-linecap="round"
 						stroke-linejoin="round"
-						class="lucide lucide-box text-primary mr-2"
+						class="lucide lucide-box mr-2 text-primary"
 						><path
 							d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"
 						/><polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line
@@ -153,24 +197,44 @@
 			<!-- Sidebar footer/actions -->
 			<div class="mt-auto pt-4">
 				<!-- Theme Toggle Example -->
-				<div class="form-control mb-2">
-					<label class="label cursor-pointer gap-2">
-						<span class="label-text flex items-center">
-							{#if isDarkMode}
-								<Moon size={18} class="mr-2" />
-							{:else}
-								<Sun size={18} class="mr-2" />
-							{/if}
-							Theme
-						</span>
-						<input
-							type="checkbox"
-							class="toggle toggle-primary"
-							bind:checked={isDarkMode}
-							on:change={toggleTheme}
-						/>
-					</label>
+				<div class="form-control -mb-2 flex flex-row items-center">
+					Theme
+					<div class="dropdown dropdown-top">
+						<div tabindex="0" role="button" class="btn m-1">{currentTheme}</div>
+						<ul
+							class="menu dropdown-content z-[1] h-96 w-52 overflow-y-auto rounded-box bg-base-100 p-2 shadow"
+						>
+							{#each themes as theme}
+								<li>
+									<button
+										class:active={currentTheme === theme}
+										on:click|preventDefault={() => toggleTheme(theme)}
+										on:mouseover|preventDefault={() => previewTheme(theme)}
+										on:focus|preventDefault={() => previewTheme(theme)}
+										on:mouseleave|preventDefault={() => toggleTheme(currentTheme)}
+										on:blur|preventDefault={() => toggleTheme(currentTheme)}
+									>
+										{theme}
+									</button>
+								</li>
+							{/each}
+						</ul>
+					</div>
 				</div>
+				<label class="label m-0 flex cursor-pointer justify-start">
+					<input
+						id="save-theme"
+						type="checkbox"
+						bind:checked={saveTheme}
+						on:click={() =>
+							setTimeout(
+								() => localStorage.setItem('save-theme', saveTheme ? 'true' : 'false'),
+								100
+							)}
+						class="checkbox checkbox-xs"
+					/>
+					<span class="label-text px-1 text-xs">Save Theme</span>
+				</label>
 				<div class="divider my-1"></div>
 				<ul>
 					<li>
