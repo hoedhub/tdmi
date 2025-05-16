@@ -17,7 +17,17 @@
 		"useDefineForClassFields": true,
 		"module": "ESNext",
 		"isolatedModules": true,
-		"verbatimModuleSyntax": true
+		"verbatimModuleSyntax": true,
+		"baseUrl": ".",
+		"paths": {
+			"$lib": [
+				"src/lib"
+			],
+			"$lib/*": [
+				"src/lib/*"
+			]
+			// SvelteKit's internal types like $app/* are usually handled by the ./.svelte-kit/tsconfig.json
+		}
 	},
 	"include": [
 		"src/**/*.d.ts",

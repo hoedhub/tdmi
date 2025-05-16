@@ -83,7 +83,6 @@ export const usersTable = sqliteTable(
 		createdAt_idx: index('created_at_idx').on(table.created_at)
 	})
 );
-
 export type SelectUser = typeof usersTable.$inferSelect;
 
 export const propTable = sqliteTable('prop', {
