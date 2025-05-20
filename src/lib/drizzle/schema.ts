@@ -9,7 +9,7 @@ import {
 	type AnySQLiteColumn
 } from 'drizzle-orm/sqlite-core';
 
-const userRoles = ['admin', 'mun', 'muf', 'tamu'] as const;
+const userRoles = ['admin', 'un', 'uf', 'tamu'] as const;
 const marhalah = [1, 2, 3] as const;
 
 export const sessionTable = sqliteTable("session", {

@@ -70,6 +70,7 @@
 						<input
 							type="text"
 							id="username"
+							name="username"
 							placeholder="username"
 							class="input input-bordered w-full"
 							required
@@ -87,6 +88,7 @@
 								<input
 									type="text"
 									id="password-input"
+									name="password"
 									placeholder="••••••••"
 									class="input join-item input-bordered w-full"
 									required
@@ -97,6 +99,7 @@
 								<input
 									type="password"
 									id="password-input"
+									name="password"
 									placeholder="••••••••"
 									class="input join-item input-bordered w-full"
 									required

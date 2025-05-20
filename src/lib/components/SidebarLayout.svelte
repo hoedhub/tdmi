@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
 
 	// Import Lucide icons
 	import { Home, Settings, Users, Menu as MenuIcon, LogOut, Sun, Moon } from 'lucide-svelte';
@@ -8,6 +9,18 @@
 	let isSidebarOpen = false; // For mobile drawer state
 	let currentPath = '';
 	let isDarkMode = false; // Simple state for theme toggle example
+
+	async function logout() {
+		if (!confirm("You're about to logout... Are you sure?")) return;
+		const response = await fetch('/api/logout', { method: 'POST' });
+		if (response.ok) {
+			// Redirect or update UI as needed
+			goto('/login'); // or wherever you want to redirect after logout
+		} else {
+			// Handle error
+			console.error('Logout failed');
+		}
+	}
 
 	onMount(() => {
 		if (typeof window !== 'undefined') {
@@ -241,7 +254,7 @@
 						<a
 							href="/logout"
 							on:click|preventDefault={() => {
-								alert('Logging out...');
+								logout();
 								isSidebarOpen = false;
 							}}
 							class="flex items-center space-x-3"
