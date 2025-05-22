@@ -1,6 +1,6 @@
 import { Argon2id } from 'oslo/password';
 import { db } from '$lib/drizzle';
-import { usersTable, userRoles } from '$lib/drizzle/schema';
+import { usersTable, userRoles, muridTable } from '$lib/drizzle/schema';
 import { eq, and, ne } from 'drizzle-orm';
 import { fail, redirect, error } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
@@ -27,9 +27,15 @@ export const load: PageServerLoad = async ({ locals, params }) => {
         throw error(404, 'User not found');
     }
 
+    const allMurids = await db.select({
+        id: muridTable.id,
+        nama: muridTable.nama
+    }).from(muridTable);
+
     return {
         userToEdit: userToEdit[0],
-        availableRoles: userRoles
+        availableRoles: userRoles,
+        allMurids: allMurids // Pass the list of murids to the page
     };
 };
 

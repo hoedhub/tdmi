@@ -3,19 +3,12 @@
 	import { enhance } from '$app/forms';
 
 	export let form: ActionData;
-	export let data: PageData;
+	export let data: PageData & { allMurids: { id: number; nama: string }[] };
 
 	let username: string | undefined;
 	let selectedRole: string | undefined;
 	let isActive: boolean | null;
 	let muridId: string | undefined;
-
-	// if(data.userToEdit){
-	// 	username = data.userToEdit.username;
-	// 	selectedRole = data.userToEdit.role;
-	// 	isActive = data.userToEdit.active;
-	// 	muridId = data.userToEdit.muridId === null || data.userToEdit.muridId === 0 ? '' : String(data.userToEdit.muridId);
-	// }
 
 	$: username = form?.username ?? data.userToEdit.username;
 	$: selectedRole = form?.role ?? data.userToEdit.role;
@@ -129,18 +122,19 @@
 
 				<div class="form-control">
 					<label class="label" for="muridId">
-						<span class="label-text">Murid ID (optional)</span>
+						<span class="label-text">Murid (optional)</span>
 					</label>
-					<input
-						type="number"
+					<select
 						id="muridId"
 						name="muridId"
-						class="input input-bordered w-full"
+						class="select select-bordered w-full"
 						bind:value={muridId}
-						placeholder={data.userToEdit.muridId === null || data.userToEdit.muridId === 0
-							? '0'
-							: String(data.userToEdit.muridId)}
-					/>
+					>
+						<option value="">Select Murid</option>
+						{#each data.allMurids as muridOption}
+							<option value={muridOption.id}>{muridOption.nama}</option>
+						{/each}
+					</select>
 				</div>
 
 				<div class="form-control">
