@@ -9,7 +9,7 @@ import {
 	type AnySQLiteColumn
 } from 'drizzle-orm/sqlite-core';
 
-const userRoles = ['admin', 'un', 'uf', 'tamu'] as const;
+export const userRoles = ['admin', 'un', 'uf', 'tamu'] as const;
 const marhalah = [1, 2, 3] as const;
 
 export const sessionTable = sqliteTable("session", {
@@ -52,10 +52,9 @@ function createMuridTable() {
 			nik: text('nik', { length: 16 }).unique(),
 			foto: blob('foto')
 		},
-		(table) => ({
-			namaIdx: index('nama_idx').on(table.nama),
-			namaArabIdx: index('nama_arab_idx').on(table.namaArab)
-		})
+		(table) => ([index('nama_idx').on(table.nama),
+		index('nama_arab_idx').on(table.namaArab)
+		])
 	);
 }
 
@@ -78,10 +77,10 @@ export const usersTable = sqliteTable(
 			.notNull()
 			.default(sql`CURRENT_TIMESTAMP`)
 	},
-	(table) => ({
-		username_idx: index('username_idx').on(table.username),
-		createdAt_idx: index('created_at_idx').on(table.created_at)
-	})
+	(table) => ([
+		index('username_idx').on(table.username),
+		index('created_at_idx').on(table.created_at)
+	])
 );
 export type SelectUser = typeof usersTable.$inferSelect;
 
@@ -89,9 +88,8 @@ export const propTable = sqliteTable('prop', {
 	id: integer('id').primaryKey(),
 	propinsi: text('propinsi').unique().notNull(),
 },
-	(table) => ({
-		propIdx: index('prop_idx').on(table.propinsi)
-	})
+	(table) => ([index('prop_idx').on(table.propinsi)]
+	)
 );
 
 export const kokabTable = sqliteTable('kokab', {
@@ -99,18 +97,18 @@ export const kokabTable = sqliteTable('kokab', {
 	idProp: integer('id_prop').notNull().references((): AnySQLiteColumn => propTable.id),
 	kokab: text('kokab').notNull()
 },
-	(table) => ({
-		kokabIdx: index('kokab_idx').on(table.kokab)
-	}));
+	(table) => (
+		[index('kokab_idx').on(table.kokab)]
+	));
 
 export const kecamatanTable = sqliteTable('kecamatan', {
 	id: integer('id').primaryKey(),
 	idKokab: integer('id_kokab').notNull().references((): AnySQLiteColumn => kokabTable.id),
 	kecamatan: text('kecamatan').notNull()
 },
-	(table) => ({
-		kecamatanIdx: index('kecamatan_idx').on(table.kecamatan)
-	}));
+	(table) => (
+		[index('kecamatan_idx').on(table.kecamatan)]
+	));
 
 export const deskelTable = sqliteTable('deskel', {
 	id: integer('id').primaryKey(),

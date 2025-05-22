@@ -1,0 +1,29 @@
+import { db } from '$lib/drizzle'; // Adjust path to your Drizzle client
+import { usersTable } from '$lib/drizzle/schema';
+import type { PageServerLoad } from './$types';
+import { error } from '@sveltejs/kit';
+
+export const load: PageServerLoad = async ({ locals }) => {
+    // This check is somewhat redundant due to the layout, but good for defense in depth
+    if (locals.user?.role !== 'admin') {
+        throw error(403, 'Forbidden');
+    }
+
+    try {
+        const users = await db.select({
+            id: usersTable.id,
+            username: usersTable.username,
+            role: usersTable.role,
+            active: usersTable.active,
+            muridId: usersTable.muridId,
+            createdAt: usersTable.created_at
+        }).from(usersTable).orderBy(usersTable.username); // Optional: order users
+
+        return {
+            users
+        };
+    } catch (e) {
+        console.error("Error fetching users:", e);
+        throw error(500, "Failed to load users due to a server error.");
+    }
+};

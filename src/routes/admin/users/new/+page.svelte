@@ -1,0 +1,144 @@
+<script lang="ts">
+	import type { ActionData, PageData } from './$types';
+	// import IconUserPlus from '~icons/mdi/account-plus-outline';
+	// import IconCancel from '~icons/mdi/cancel';
+
+	export let form: ActionData;
+	export let data: PageData; // Contains availableRoles
+</script>
+
+<div class="flex justify-center">
+	<div class="card w-full max-w-lg bg-base-100 shadow-xl">
+		<div class="card-body">
+			<h1 class="card-title mb-6 text-2xl">Create New User</h1>
+			{#if form?.message}
+				<div
+					class="alert {form.message.toLowerCase().includes('fail') ||
+					form.message.toLowerCase().includes('invalid') ||
+					form.message.toLowerCase().includes('must be') ||
+					form.message.toLowerCase().includes('taken')
+						? 'alert-error'
+						: 'alert-success'} mb-4 shadow-lg"
+				>
+					<div>
+						{#if form.message.toLowerCase().includes('fail') || form.message
+								.toLowerCase()
+								.includes('invalid') || form.message
+								.toLowerCase()
+								.includes('must be') || form.message.toLowerCase().includes('taken')}
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								class="h-6 w-6 shrink-0 stroke-current"
+								fill="none"
+								viewBox="0 0 24 24"
+								><path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M10 14l2-2m0 0l2-2m-2 2l-2 2m2-2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+								/></svg
+							>
+						{:else}
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								class="h-6 w-6 shrink-0 stroke-current"
+								fill="none"
+								viewBox="0 0 24 24"
+								><path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+								/></svg
+							>
+						{/if}
+						<span>{form.message}</span>
+					</div>
+				</div>
+			{/if}
+
+			<form method="POST" class="space-y-4">
+				<div class="form-control">
+					<label class="label" for="username">
+						<span class="label-text">Username</span>
+					</label>
+					<input
+						type="text"
+						id="username"
+						name="username"
+						required
+						minlength="3"
+						maxlength="16"
+						class="input input-bordered w-full"
+						value={form?.username ?? ''}
+					/>
+				</div>
+
+				<div class="form-control">
+					<label class="label" for="password">
+						<span class="label-text">Password</span>
+					</label>
+					<input
+						type="password"
+						id="password"
+						name="password"
+						required
+						minlength="6"
+						class="input input-bordered w-full"
+					/>
+				</div>
+
+				<div class="form-control">
+					<label class="label" for="role">
+						<span class="label-text">Role</span>
+					</label>
+					<select id="role" name="role" required class="select select-bordered w-full">
+						{#each data.availableRoles as roleOption}
+							<option value={roleOption} selected={(form?.role ?? 'tamu') === roleOption}>
+								{roleOption}
+							</option>
+						{/each}
+					</select>
+				</div>
+
+				<div class="form-control">
+					<label class="label" for="muridId">
+						<span class="label-text">Murid ID (optional)</span>
+					</label>
+					<input
+						type="number"
+						id="muridId"
+						name="muridId"
+						class="input input-bordered w-full"
+						value={form?.muridIdStr ?? ''}
+						placeholder="0"
+					/>
+				</div>
+
+				<div class="form-control">
+					<label class="label cursor-pointer justify-start gap-2">
+						<input
+							type="checkbox"
+							id="active"
+							name="active"
+							class="checkbox-primary checkbox"
+							checked={form?.active ?? true}
+						/>
+						<span class="label-text">Active</span>
+					</label>
+				</div>
+
+				<div class="card-actions justify-end pt-4">
+					<a href="/admin/users" class="btn btn-ghost">
+						<!-- <IconCancel class="w-5 h-5 mr-2" /> -->
+						Cancel
+					</a>
+					<button type="submit" class="btn btn-primary">
+						<!-- <IconUserPlus class="w-5 h-5 mr-2" /> -->
+						Create User
+					</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>

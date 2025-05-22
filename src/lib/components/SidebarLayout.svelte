@@ -1,9 +1,10 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
+	import { page } from '$app/stores';
 
 	// Import Lucide icons
-	import { Home, Settings, Users, Menu as MenuIcon, LogOut, Sun, Moon } from 'lucide-svelte';
+	import { Home, Settings, Users, Menu as MenuIcon, LogOut } from 'lucide-svelte';
 	// For SvelteKit, you might use: import { page } from '$app/stores';
 
 	let isSidebarOpen = false; // For mobile drawer state
@@ -75,13 +76,14 @@
 		'sunset'
 	];
 	let currentTheme = 'cupcake'; // Default theme
-	let saveTheme = false; // State for saving theme preference
+	let saveTheme = true; // State for saving theme preference
+	let themeDropdownButton: HTMLDivElement; // Reference to the dropdown button
+
 	function toggleTheme(theme: string) {
 		document.documentElement.setAttribute('data-theme', theme);
 		isDarkMode = theme === 'dark';
 		currentTheme = theme;
-		// Optional: Persist theme choice in localStorage
-		if (saveTheme) localStorage.setItem('theme', theme);
+		if (saveTheme) localStorage.setItem(`${$page.data.user?.id || 'default'}-theme`, theme);
 	}
 
 	function previewTheme(theme: string) {
@@ -93,11 +95,11 @@
 	// If using SvelteKit's theme controller script, this function might not be needed,
 	// but this is a simple JS-only way.
 	onMount(() => {
-		saveTheme = localStorage.getItem('save-theme') === 'true';
-		const savedTheme = localStorage.getItem('theme');
+		// saveTheme = localStorage.getItem(`${$page.data.user?.id || 'default'}-theme`) === 'true';
+		const savedTheme = localStorage.getItem(`${$page.data.user?.id || 'default'}-theme`);
 		currentTheme = savedTheme || currentTheme;
 		if (savedTheme) {
-			document.documentElement.setAttribute('data-theme', savedTheme);
+			// document.documentElement.setAttribute('data-theme', savedTheme);
 			isDarkMode = savedTheme === 'dark';
 		}
 		//   else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
@@ -213,7 +215,9 @@
 				<div class="form-control -mb-2 flex flex-row items-center">
 					Theme
 					<div class="dropdown dropdown-top">
-						<div tabindex="0" role="button" class="btn m-1">{currentTheme}</div>
+						<div tabindex="0" role="button" class="btn m-1" bind:this={themeDropdownButton}>
+							{currentTheme}
+						</div>
 						<ul
 							class="menu dropdown-content z-[1] h-96 w-52 overflow-y-auto rounded-box bg-base-100 p-2 shadow"
 						>
@@ -221,7 +225,11 @@
 								<li>
 									<button
 										class:active={currentTheme === theme}
-										on:click|preventDefault={() => toggleTheme(theme)}
+										on:click|preventDefault={() => {
+											toggleTheme(theme);
+											// Close the dropdown by blurring the button
+											themeDropdownButton.blur();
+										}}
 										on:mouseover|preventDefault={() => previewTheme(theme)}
 										on:focus|preventDefault={() => previewTheme(theme)}
 										on:mouseleave|preventDefault={() => toggleTheme(currentTheme)}
@@ -234,7 +242,7 @@
 						</ul>
 					</div>
 				</div>
-				<label class="label m-0 flex cursor-pointer justify-start">
+				<!-- <label class="label m-0 flex cursor-pointer justify-start">
 					<input
 						id="save-theme"
 						type="checkbox"
@@ -247,7 +255,7 @@
 						class="checkbox checkbox-xs"
 					/>
 					<span class="label-text px-1 text-xs">Save Theme</span>
-				</label>
+				</label> -->
 				<div class="divider my-1"></div>
 				<ul>
 					<li>
