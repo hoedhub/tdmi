@@ -20,6 +20,13 @@
 	export let customClass: ToastMessage['customClass'] = '';
 	export let allowHtml: ToastMessage['allowHtml'] = false;
 	// onDismiss is handled by the store when dismiss() is called
+	// ***** ADD THESE EXPORTED PROPS *****
+	export let onDismiss: ToastMessage['onDismiss'] = undefined; // Even if not used directly in this component's logic
+	export let createdAt: ToastMessage['createdAt']; // This prop must exist if it's passed
+
+	$: if (false) {
+		console.log(onDismiss, createdAt);
+	}
 
 	let timerId: number | undefined = undefined;
 	let remainingDuration: number = duration;

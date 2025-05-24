@@ -9,14 +9,7 @@
 		loading
 	} from '$lib/components/toast';
 	// If you prefer, you can import the specific icon components for more control
-	import {
-		Info,
-		CheckCircle2,
-		AlertTriangle,
-		XCircle,
-		Loader2,
-		MessageSquare
-	} from 'lucide-svelte';
+	// import { Info, CheckCircle2, AlertTriangle, XCircle, Loader2, MessageSquare } from 'lucide-svelte';
 
 	// Array of available toast types
 	const toastTypes: ToastType[] = ['info', 'success', 'warning', 'error', 'loading'];
@@ -68,35 +61,25 @@
 
 		// Use the generic 'show' function or a map of specific functions
 		// Option 1: Using the generic 'show'
-		show({
-			type: randomType,
-			// title: title,
-			icon:
-				randomType === 'loading'
-					? Loader2
-					: randomType === 'info'
-						? Info
-						: randomType === 'success'
-							? CheckCircle2
-							: randomType === 'warning'
-								? AlertTriangle
-								: XCircle,
-			message: message,
-			duration: randomType === 'loading' ? 3500 : 5000 // loading might be shorter or longer
-			// You could also add a random icon here if desired
-			// icon: getRandomIconForType(randomType)
-		});
+		// show({
+		// 	type: randomType,
+		// 	title: title,
+		// 	message: message,
+		// 	duration: randomType === 'loading' ? 3500 : 5000 // loading might be shorter or longer
+		// You could also add a random icon here if desired
+		// icon: getRandomIconForType(randomType)
+		// });
 
 		// Option 2: Using a map of specific functions (if you prefer that structure)
-		// const toastFn = toastFunctions[randomType];
-		// if (toastFn) {
-		//   toastFn(message, {
-		//     title: title,
-		//     duration: randomType === 'loading' ? 3500 : 5000,
-		//   });
-		// } else {
-		//   console.error("Unknown toast type for random toast:", randomType);
-		// }
+		const toastFn = toastFunctions[randomType];
+		if (toastFn) {
+			toastFn(message, {
+				title: title,
+				duration: randomType === 'loading' ? 3500 : 5000
+			});
+		} else {
+			console.error('Unknown toast type for random toast:', randomType);
+		}
 	}
 
 	// --- Other existing functions from your previous examples ---

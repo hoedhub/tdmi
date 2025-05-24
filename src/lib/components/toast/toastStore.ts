@@ -54,20 +54,22 @@ function generateId(): string {
 }
 
 function getDefaultIcon(type: ToastType) {
+    let iconComponent;
     switch (type) {
         case 'info':
-            return Info;
+            iconComponent = Info; break;
         case 'success':
-            return CheckCircle2;
+            iconComponent = CheckCircle2; break;
         case 'warning':
-            return AlertTriangle;
+            iconComponent = AlertTriangle; break;
         case 'error':
-            return XCircle;
+            iconComponent = XCircle; break;
         case 'loading':
-            return Loader2;
+            iconComponent = Loader2; break;
         default:
-            return undefined; // For 'custom' or if no default
+            iconComponent = undefined; break; // For 'custom' or if no default
     }
+    return iconComponent
 }
 
 function trimToasts() {

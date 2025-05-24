@@ -22,7 +22,8 @@
 			}
 
 			// Show success toast before redirecting
-			if (result.type === 'success') {
+			if (result.type === 'redirect') {
+				console.log('Login successful:', result);
 				success('Login successful!', {
 					duration: 3000,
 					icon: CheckCircle2
