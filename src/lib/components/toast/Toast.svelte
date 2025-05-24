@@ -1,211 +1,198 @@
 <!-- src/lib/components/toast/Toast.svelte -->
 <script lang="ts">
-	import { fade } from 'svelte/transition';
-	import {
-		Info,
-		CheckCircle,
-		AlertTriangle,
-		XCircle,
-		LoaderCircle, // Using LoaderCircle for a potentially looping loading icon
-		X
-	} from 'lucide-svelte';
+	import { onMount, onDestroy } from 'svelte';
+	import type { ToastMessage, SvelteLucideIcon } from './types';
+	import { dismiss } from './toastStore'; // To dismiss itself
+	import { X } from 'lucide-svelte'; // Default close icon
 
-	// Assuming these types are defined in your service file (e.g., src/lib/toast.service.ts)
-	// You might need to adjust the import path
-	import type { ToastOptions, ToastAction } from './toast.service.svelte';
+	// --- Props (all from ToastMessage interface) ---
+	export let id: string;
+	export let type: ToastMessage['type'];
+	export let title: ToastMessage['title'] = undefined;
+	export let message: ToastMessage['message'];
+	export let icon: ToastMessage['icon'] = undefined;
+	export let iconProps: ToastMessage['iconProps'] = { size: 24 };
+	export let duration: ToastMessage['duration']; // ms, Infinity for persistent
+	export let showCloseButton: ToastMessage['showCloseButton'];
+	export let progress: ToastMessage['progress'];
+	export let pauseOnHover: ToastMessage['pauseOnHover'];
+	export let actions: ToastMessage['actions'] = [];
+	export let customClass: ToastMessage['customClass'] = '';
+	export let allowHtml: ToastMessage['allowHtml'] = false;
+	// onDismiss is handled by the store when dismiss() is called
 
-	// --- Props ---
-	// Get all props defined in ToastOptions, plus the essential _dismiss function
-	// Default values are set here.
-	let {
-		id,
-		type = 'info',
-		title = undefined,
-		content = '',
-		icon = undefined, // Allow overriding the default icon
-		duration = 5000, // Default 5 seconds
-		persistent = false,
-		actions = [],
-		pauseOnHover = true,
-		onClose = () => {}, // No-op default callback
-		_dismiss // Passed from the ToastContainer/Service - REQUIRED
-	}: ToastOptions & { _dismiss: (id: string | number) => void } = $props();
+	let timerId: number | undefined = undefined;
+	let remainingDuration: number = duration;
+	let startTime: number = Date.now();
+	let isPaused: boolean = false;
 
-	// --- Internal State ---
-	let hostElement = $state<HTMLElement>(); // Reference to the host element for potential future use
-	let remaining = $state(duration); // Time remaining for dismissal timer
-	let paused = $state(false); // Is the timer currently paused (e.g., on hover)
-	let startTime = $state(performance.now()); // Track when the timer effect starts/resumes
+	// --- Computed properties for styling ---
+	$: alertClass = {
+		info: 'alert-info',
+		success: 'alert-success',
+		warning: 'alert-warning',
+		error: 'alert-error',
+		loading: 'alert-info', // Or a specific loading style
+		custom: '' // Custom type relies on customClass
+	}[type];
 
-	// --- Derived State ---
-	const isPersistent = $derived(persistent || duration <= 0);
+	$: progressColorClass = {
+		info: 'bg-info-content', // Or 'bg-info' for DaisyUI v3, check v4 variables
+		success: 'bg-success-content',
+		warning: 'bg-warning-content',
+		error: 'bg-error-content',
+		loading: 'bg-info-content',
+		custom: 'bg-neutral-content' // A sensible default for custom
+	}[type];
 
-	// Map toast type to DaisyUI alert classes
-	const alertClasses = $derived(
-		{
-			info: 'alert-info',
-			success: 'alert-success',
-			warning: 'alert-warning',
-			error: 'alert-error',
-			loading: 'alert-info' // Use info style for loading, or create a custom one
-		}[type] || 'alert-info' // Default fallback
-	);
+	// --- Auto-dismiss Logic ---
+	function startTimer() {
+		if (duration === Infinity || duration <= 0) return;
+		isPaused = false;
+		startTime = Date.now();
+		clearTimeout(timerId); // Clear any existing timer
 
-	// Map toast type to default Lucide icons
-	const DefaultIcon = $derived(
-		{
-			info: Info,
-			success: CheckCircle,
-			warning: AlertTriangle,
-			error: XCircle,
-			loading: LoaderCircle
-		}[type] || Info // Default fallback
-	);
+		timerId = window.setTimeout(() => {
+			dismiss(id);
+		}, remainingDuration);
+	}
 
-	// Determine the icon component to render (passed icon or default)
-	const IconComponent = $derived(icon ?? DefaultIcon);
+	function pauseTimer() {
+		if (!pauseOnHover || duration === Infinity || duration <= 0 || isPaused) return;
+		isPaused = true;
+		clearTimeout(timerId);
+		const elapsed = Date.now() - startTime;
+		remainingDuration -= elapsed;
+	}
 
-	// --- Effects ---
-	// Effect for handling the auto-dismiss timer
-	$effect(() => {
-		// Don't run timer if persistent, paused, or already dismissed somehow
-		if (isPersistent || paused) {
-			return; // Exit effect, no cleanup needed unless timer was running
+	function resumeTimer() {
+		if (!pauseOnHover || duration === Infinity || duration <= 0 || !isPaused) return;
+		// isPaused is set to false in startTimer
+		startTimer();
+	}
+
+	onMount(() => {
+		if (duration > 0 && duration !== Infinity) {
+			startTimer();
 		}
-
-		// Record the start time when the timer effect begins running
-		startTime = performance.now();
-
-		const timerId = setTimeout(() => {
-			handleDismissClick(); // Dismiss when timer finishes
-		}, remaining);
-
-		// Cleanup function: Runs when dependencies change (paused, isPersistent) or component unmounts
-		return () => {
-			clearTimeout(timerId);
-			// If it wasn't paused manually by hover, calculate elapsed time and update remaining
-			// This ensures the timer resumes correctly if dependencies change mid-timeout
-			if (!paused) {
-				const elapsed = performance.now() - startTime;
-				remaining = Math.max(0, remaining - elapsed); // Prevent negative remaining time
-			}
-		};
 	});
 
+	onDestroy(() => {
+		clearTimeout(timerId);
+	});
+
+	// Reactive statement to restart timer if duration changes (e.g., via toastStore.update)
+	// This is a basic way; a more robust way might involve a unique key changing
+	$: if (duration && id) {
+		// Check id to ensure it's not during initial undefined state
+		remainingDuration = duration;
+		if (duration > 0 && duration !== Infinity) {
+			startTimer();
+		} else {
+			clearTimeout(timerId); // If duration becomes 0 or Infinity
+		}
+	}
+
 	// --- Event Handlers ---
-	function handleMouseEnter() {
-		if (pauseOnHover && !isPersistent) {
-			paused = true;
-			// Accurately calculate time elapsed since effect started running
-			const elapsed = performance.now() - startTime;
-			remaining = Math.max(0, remaining - elapsed); // Update remaining time
-		}
+	function handleClose() {
+		dismiss(id);
 	}
 
-	function handleMouseLeave() {
-		if (pauseOnHover && !isPersistent) {
-			paused = false;
-			// startTime will be reset by the $effect when `paused` changes back to false
-		}
-	}
-
-	function handleDismissClick() {
-		_dismiss(id!); // Call the dismiss function from the service
-		onClose(); // Call the user-provided callback
-	}
-
-	function handleActionClick(action: ToastAction) {
-		action.onClick?.(); // Execute the action's callback
-		if (action.dismissOnClick !== false) {
-			// Dismiss the toast unless explicitly told not to
-			handleDismissClick();
-		}
+	function handleActionClick(actionOnClick: (toastId: string) => void) {
+		actionOnClick(id);
+		// Optionally, dismiss after action by default, or let the action handler decide
+		// dismiss(id);
 	}
 </script>
 
 <div
-	bind:this={hostElement}
-	class="alert {alertClasses} w-full max-w-md shadow-lg"
-	role={type === 'error' || type === 'warning' ? 'alert' : 'status'}
-	aria-live={type === 'error' ? 'assertive' : 'polite'}
-	onmouseenter={handleMouseEnter}
-	onmouseleave={handleMouseLeave}
-	transition:fade={{ duration: 250 }}
+	class="alert w-full shadow-lg {alertClass} {customClass}"
+	role="alert"
+	aria-live={type === 'error' || type === 'warning' ? 'assertive' : 'polite'}
+	on:mouseenter={pauseTimer}
+	on:mouseleave={resumeTimer}
+	on:focusin={pauseTimer}
+	on:focusout={resumeTimer}
 >
 	<!-- Icon -->
-	<span class:animate-spin={type === 'loading'}>
-		{#if IconComponent}
-			<IconComponent size={24} strokeWidth={1.75} />
-		{/if}
-	</span>
-
-	<!-- Content Area -->
-	<div class="flex-1">
-		{#if title}
-			<h3 class="font-bold">{title}</h3>
-		{/if}
-		<div class="text-sm">
-			{@html content}
-			<!-- SECURITY WARNING: Only use @html if 'content' is trusted HTML.
-			     If 'content' is plain text or potentially untrusted, use
-			     {@text content} or just {content} instead to prevent XSS attacks. -->
+	{#if icon}
+		<div class="flex-shrink-0">
+			<svelte:component this={icon} {...iconProps} />
 		</div>
+	{/if}
+
+	<!-- Content -->
+	<div class="flex-grow">
+		{#if title}
+			<h3 class="text-lg font-bold">{title}</h3>
+		{/if}
+		{#if allowHtml}
+			<div class="text-sm">{@html message}</div>
+		{:else}
+			<div class="text-sm">{message}</div>
+		{/if}
 	</div>
 
-	<!-- Actions & Close Button -->
-	<div class="flex flex-none gap-2">
-		{#if actions.length > 0}
-			<div class="flex items-center gap-2">
-				{#each actions as action}
-					<button
-						class="btn btn-sm {action.class ??
-							(type === 'error' || type === 'warning' ? 'btn-neutral' : 'btn-ghost')}"
-						onclick={() => handleActionClick(action)}
-					>
-						{action.label}
-					</button>
-				{/each}
-			</div>
-		{/if}
+	<!-- Actions (if any) - Placed before close button for typical layout -->
+	{#if actions && actions.length > 0}
+		<div
+			class="flex flex-shrink-0 flex-col gap-2 sm:flex-row {title || message
+				? 'sm:ml-auto'
+				: ''} items-center"
+		>
+			{#each actions as action}
+				<button
+					class="btn btn-sm {action.class ||
+						(type === 'custom' ? 'btn-outline' : `btn-outline btn-${type}`)}"
+					on:click={() => handleActionClick(action.onClick)}
+				>
+					{#if action.icon}
+						<svelte:component
+							this={action.icon}
+							{...action.iconProps || { size: 16, class: 'mr-1' }}
+						/>
+					{/if}
+					{action.label}
+				</button>
+			{/each}
+		</div>
+	{/if}
 
-		{#if !isPersistent}
+	<!-- Close Button -->
+	{#if showCloseButton}
+		<div class="flex-shrink-0">
 			<button
-				class="btn btn-sm btn-ghost aspect-square p-1"
-				onclick={handleDismissClick}
+				class="btn btn-circle btn-ghost btn-sm"
+				on:click={handleClose}
 				aria-label="Close notification"
 			>
-				<X size={18} />
+				<X size={20} />
 			</button>
-		{/if}
-	</div>
+		</div>
+	{/if}
 
-	<!-- Optional Progress Bar (Example - Needs refinement for smoother animation) -->
-	<!-- {#if !isPersistent && duration > 0 && !paused}
-		<progress
-			class="progress progress-primary absolute bottom-0 left-0 w-full h-1"
-			value={remaining}
-			max={duration}>
-		</progress>
-	{/if} -->
+	<!-- Progress Bar -->
+	{#if progress && duration > 0 && duration !== Infinity}
+		<div
+			class="absolute bottom-0 left-0 right-0 h-1 opacity-70 {progressColorClass}"
+			style:animation="toast-progress {duration}ms linear forwards"
+			style:animation-play-state={isPaused ? 'paused' : 'running'}
+		></div>
+	{/if}
 </div>
 
 <style>
-	/* Optional: Add any specific styles here if needed */
-	.alert {
-		/* Ensure alerts stack nicely if container uses flex column */
-		width: fit-content; /* Or set a specific max-width */
-		min-width: 250px; /* Example minimum width */
-	}
-	.animate-spin {
-		/* Ensure DaisyUI's spin animation works if not applied by default */
-		animation: spin 1s linear infinite;
-	}
-	@keyframes spin {
+	@keyframes toast-progress {
 		from {
-			transform: rotate(0deg);
+			width: 100%;
 		}
 		to {
-			transform: rotate(360deg);
+			width: 0%;
 		}
+	}
+	/* Ensure alert itself is relative for absolute positioning of progress bar */
+	.alert {
+		position: relative;
+		overflow: hidden; /* To clip progress bar if it somehow exceeds bounds */
 	}
 </style>

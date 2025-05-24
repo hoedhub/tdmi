@@ -2,23 +2,34 @@
 	import { onMount } from 'svelte';
 	import { applyAction, enhance } from '$app/forms';
 	import type { ActionResult } from '@sveltejs/kit';
-	import { Eye, EyeOff } from 'lucide-svelte'; // Using lucide-svelte for icons
+	import { Eye, EyeOff, CheckCircle2 } from 'lucide-svelte'; // Using lucide-svelte for icons
+	import { error, success } from '$lib/components/toast'; // Import toast functions
 
 	let rememberMe = false;
 	let showPassword = false;
 	let isLoading = false;
-	let errorMessage = '';
 
 	async function handleSubmit() {
 		if (isLoading) return;
 		isLoading = true;
-		errorMessage = '';
 
 		return async ({ result }: { result: ActionResult }) => {
 			if (result.type === 'error') {
 				isLoading = false;
+				// Display error toast
+				error(result.error?.msg || 'An unknown error occurred during login.', { duration: 5000 });
 				return;
 			}
+
+			// Show success toast before redirecting
+			if (result.type === 'success') {
+				success('Login successful!', {
+					duration: 3000,
+					icon: CheckCircle2
+				});
+			}
+
+			// If result.type is 'success' or 'redirect', applyAction will handle it
 			await applyAction(result);
 		};
 	}
@@ -44,7 +55,8 @@
 			<div class="card-body">
 				<h2 class="card-title mb-6 justify-center text-2xl">Login</h2>
 
-				{#if errorMessage}
+				<!-- Removed the old errorMessage display block -->
+				<!-- {#if errorMessage}
 					<div role="alert" class="alert alert-error mb-4">
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
@@ -60,7 +72,7 @@
 						>
 						<span>{errorMessage}</span>
 					</div>
-				{/if}
+				{/if} -->
 
 				<form use:enhance={handleSubmit} action="./login" method="post">
 					<div class="form-control">
