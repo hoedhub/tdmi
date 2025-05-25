@@ -14,9 +14,9 @@ export const load: LayoutServerLoad = async ({ locals, url }) => { // Add 'url'
     } else {
         // Optional: If the user IS logged in and tries to access /login or /signup,
         // you might want to redirect them to a dashboard or home page.
-        console.log('[LOAD] User is logged in:', locals.user);
+        // console.log('[LOAD] User is logged in:', locals.user);
         if (unauthenticatedRoutes.includes(url.pathname) || url.pathname === '/') {
-            console.log('[LOAD] Redirecting logged-in user to /member');
+            // console.log('[LOAD] Redirecting logged-in user to /member');
             throw redirect(303, '/member'); // Or your main authenticated route
         }
     }
