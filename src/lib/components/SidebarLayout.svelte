@@ -33,7 +33,7 @@
 
 	const menuItems = [
 		{ href: '/', label: 'Dashboard', icon: Home },
-		{ href: '/users', label: 'Users', icon: Users },
+		{ href: '/member/users', label: 'Users', icon: Users },
 		{ href: '/settings', label: 'Settings', icon: Settings }
 	];
 

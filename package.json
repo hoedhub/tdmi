@@ -42,8 +42,10 @@
 	"dependencies": {
 		"@libsql/client": "^0.15.6",
 		"@lucia-auth/adapter-drizzle": "^1.1.0",
+		"@types/lodash.debounce": "^4.0.9",
 		"dotenv": "^16.5.0",
 		"drizzle-orm": "^0.43.1",
+		"lodash.debounce": "^4.0.8",
 		"lucide-svelte": "^0.510.0",
 		"oslo": "^1.2.1"
 	}
