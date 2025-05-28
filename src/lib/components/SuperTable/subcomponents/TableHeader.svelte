@@ -76,7 +76,7 @@
 				role="columnheader"
 				aria-label={`${column.label}${column.sortable ? '. Click to sort' : ''}`}
 			>
-				<div class="flex items-center gap-2">
+				<div class="flex items-center justify-between gap-2">
 					<span>{column.label}</span>
 					{#if column.sortable}
 						<span class="opacity-50">
@@ -143,5 +143,6 @@
 	th {
 		position: relative;
 		white-space: nowrap;
+		vertical-align: top !important;
 	}
 </style>

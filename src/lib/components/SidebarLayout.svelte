@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
+	import { ChartNoAxesGantt } from 'lucide-svelte';
 
 	// Import Lucide icons
 	import { Home, Settings, Users, Menu as MenuIcon, LogOut } from 'lucide-svelte';
@@ -208,6 +209,17 @@
 					</li>
 				{/each}
 			</ul>
+			{#if $page.data.user?.role === 'admin'}
+				<div class="divider my-1"></div>
+				<a
+					href={'/admin'}
+					on:click={() => (isSidebarOpen = false)}
+					class="flex items-center justify-start"
+				>
+					<svelte:component this={ChartNoAxesGantt} size={20} class="opacity-75" />
+					<span>{'Admin'}</span>
+				</a>
+			{/if}
 
 			<!-- Sidebar footer/actions -->
 			<div class="mt-auto pt-4">

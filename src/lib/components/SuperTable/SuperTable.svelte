@@ -1,7 +1,7 @@
 <!-- SuperTable.svelte -->
 <script lang="ts">
 	import type { ColumnDef, SortConfig, FilterState, SuperTableProps } from './types';
-	import { createEventDispatcher } from 'svelte';
+	import { createEventDispatcher, onMount } from 'svelte';
 	import {
 		sortState,
 		filterState,
@@ -55,15 +55,24 @@
 		paginatedData.length > 0 && paginatedData.every((row) => $selectedIds.has(row[rowKey]));
 	$: someSelected = paginatedData.some((row) => $selectedIds.has(row[rowKey]));
 
+	import { browser } from '$app/environment';
+
 	// Mobile detection
-	let isMobile: boolean;
+	let isMobile: boolean = false;
 
 	function onResize() {
-		isMobile = window.innerWidth < 768;
+		if (typeof window !== 'undefined') {
+			isMobile = window.innerWidth < 768;
+		}
 	}
 
-	// Initialize isMobile on mount
-	onResize();
+	onMount(() => {
+		onResize();
+		if (typeof window !== 'undefined') {
+			window.addEventListener('resize', onResize);
+			return () => window.removeEventListener('resize', onResize);
+		}
+	});
 
 	// Event handlers
 	function handleSort(event: CustomEvent<SortConfig | null>) {
