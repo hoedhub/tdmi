@@ -164,7 +164,7 @@
 
 	<!-- Main table/cards section with card styling -->
 	<div class="card bg-base-100 shadow">
-		<div class="card-body p-4">
+		<div class="card-body px-0 py-0">
 			{#if $isLoading}
 				<slot name="loading-state">
 					<div class="flex w-full justify-center p-8">
@@ -178,7 +178,7 @@
 			{:else}
 				<!-- Mobile card view -->
 				{#if isMobile && mobileView === 'cards'}
-					<div class="grid gap-4 sm:grid-cols-2">
+					<div class="grid gap-4 px-4 sm:grid-cols-2">
 						{#each paginatedData as row (String(row[rowKey]))}
 							<TableRowMobileCard
 								{row}

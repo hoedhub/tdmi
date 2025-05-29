@@ -56,7 +56,7 @@
 			<th class="w-1 py-2">
 				<input
 					type="checkbox"
-					class="checkbox checkbox-sm"
+					class="checkbox checkbox-xs"
 					checked={allSelected}
 					indeterminate={someSelected && !allSelected}
 					on:change={(e) => dispatch('selectAll', { selected: e.currentTarget.checked })}
