@@ -135,99 +135,110 @@
 
 <svelte:window on:resize={onResize} />
 
-<div class="w-full">
-	<!-- Global filter and bulk actions -->
-	<div class="mb-4 flex items-center justify-between">
-		<div class="w-64">
-			<slot
-				name="global-filter"
-				searchTerm={$filterState.global}
-				updateSearchTerm={handleGlobalFilter}
-			>
-				<FilterInput
-					value={$filterState.global || ''}
-					on:input={(e) => handleGlobalFilter(e.detail)}
-				/>
-			</slot>
-		</div>
+<div class="w-full space-y-4">
+	<!-- Bulk actions and global filter section with card styling -->
+	<div class="card bg-base-200 shadow-sm">
+		<div class="card-body p-4">
+			<div class="flex items-center justify-between gap-4">
+				<div class="w-64">
+					<slot
+						name="global-filter"
+						searchTerm={$filterState.global}
+						updateSearchTerm={handleGlobalFilter}
+					>
+						<FilterInput
+							value={$filterState.global || ''}
+							on:input={(e) => handleGlobalFilter(e.detail)}
+						/>
+					</slot>
+				</div>
 
-		{#if $selectedIds.size > 0}
-			<div class="flex items-center gap-2">
-				<slot name="bulk-actions" selectedIds={Array.from($selectedIds)}></slot>
+				{#if $selectedIds.size > 0}
+					<div class="flex items-center gap-2">
+						<slot name="bulk-actions" selectedIds={Array.from($selectedIds)} />
+					</div>
+				{/if}
 			</div>
-		{/if}
+		</div>
 	</div>
 
-	{#if $isLoading}
-		<slot name="loading-state">
-			<div class="flex w-full justify-center p-8">
-				<span class="loading loading-spinner"></span>
-			</div>
-		</slot>
-	{:else if data.length === 0}
-		<slot name="empty-state">
-			<div class="p-8 text-center text-base-content/70">No data available</div>
-		</slot>
-	{:else}
-		<!-- Mobile card view -->
-		{#if isMobile && mobileView === 'cards'}
-			<div class="grid gap-4 sm:grid-cols-2">
-				{#each paginatedData as row (String(row[rowKey]))}
-					<TableRowMobileCard
-						{row}
-						{columns}
-						rowKey={String(rowKey)}
-						isSelectable={true}
-						className={typeof rowClass === 'function' ? rowClass(row) : rowClass}
-						{cardClass}
-						on:select={handleSelect}
-						on:swipe={handleSwipe}
-					>
-						<svelte:fragment slot="row-actions" let:row>
-							<slot name="row-actions" {row}></slot>
-						</svelte:fragment>
-					</TableRowMobileCard>
-				{/each}
-			</div>
-			<!-- Table view -->
-		{:else}
-			<div class="overflow-x-auto">
-				<table class="table table-zebra w-full {tableClass}">
-					<TableHeader
-						{columns}
-						currentSort={$sortState}
-						filterValues={$filterState.columns}
-						isSelectable={true}
-						{allSelected}
-						{someSelected}
-						on:sort={handleSort}
-						on:filter={handleFilter}
-						on:selectAll={handleSelectAll}
-					/>
-
-					<tbody>
+	<!-- Main table/cards section with card styling -->
+	<div class="card bg-base-100 shadow">
+		<div class="card-body p-4">
+			{#if $isLoading}
+				<slot name="loading-state">
+					<div class="flex w-full justify-center p-8">
+						<span class="loading loading-spinner" />
+					</div>
+				</slot>
+			{:else if data.length === 0}
+				<slot name="empty-state">
+					<div class="p-8 text-center text-base-content/70">No data available</div>
+				</slot>
+			{:else}
+				<!-- Mobile card view -->
+				{#if isMobile && mobileView === 'cards'}
+					<div class="grid gap-4 sm:grid-cols-2">
 						{#each paginatedData as row (String(row[rowKey]))}
-							<TableRowDesktop
+							<TableRowMobileCard
 								{row}
 								{columns}
 								rowKey={String(rowKey)}
 								isSelectable={true}
 								className={typeof rowClass === 'function' ? rowClass(row) : rowClass}
+								{cardClass}
 								on:select={handleSelect}
 								on:swipe={handleSwipe}
 							>
 								<svelte:fragment slot="row-actions" let:row>
-									<slot name="row-actions" {row}></slot>
+									<slot name="row-actions" {row} />
 								</svelte:fragment>
-							</TableRowDesktop>
+							</TableRowMobileCard>
 						{/each}
-					</tbody>
-				</table>
-			</div>
-		{/if}
+					</div>
+					<!-- Table view -->
+				{:else}
+					<div class="overflow-x-auto">
+						<table class="table table-zebra w-full {tableClass}">
+							<TableHeader
+								{columns}
+								currentSort={$sortState}
+								filterValues={$filterState.columns}
+								isSelectable={true}
+								{allSelected}
+								{someSelected}
+								on:sort={handleSort}
+								on:filter={handleFilter}
+								on:selectAll={handleSelectAll}
+							/>
 
-		<!-- Pagination -->
-		<div class="mt-4">
+							<tbody>
+								{#each paginatedData as row (String(row[rowKey]))}
+									<TableRowDesktop
+										{row}
+										{columns}
+										rowKey={String(rowKey)}
+										isSelectable={true}
+										className={typeof rowClass === 'function' ? rowClass(row) : rowClass}
+										on:select={handleSelect}
+										on:swipe={handleSwipe}
+									>
+										<svelte:fragment slot="row-actions" let:row>
+											<slot name="row-actions" {row} />
+										</svelte:fragment>
+									</TableRowDesktop>
+								{/each}
+							</tbody>
+						</table>
+					</div>
+				{/if}
+			{/if}
+		</div>
+	</div>
+
+	<!-- Pagination section with card styling -->
+	<div class="card bg-base-200 shadow-sm">
+		<div class="card-body px-4 py-2">
 			<PaginationControls
 				currentPage={$currentPage}
 				totalPages={totalPageCount}
@@ -237,5 +248,5 @@
 				on:itemsPerPageChange={handleItemsPerPageChange}
 			/>
 		</div>
-	{/if}
+	</div>
 </div>
