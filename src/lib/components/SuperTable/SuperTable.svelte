@@ -20,6 +20,7 @@
 	import TableRowMobileCard from './subcomponents/TableRowMobileCard.svelte';
 	import PaginationControls from './subcomponents/PaginationControls.svelte';
 	import FilterInput from './subcomponents/FilterInput.svelte';
+	import { XCircle, Trash2 } from 'lucide-svelte';
 
 	// Props
 	export let data: SuperTableProps['data'] = [];
@@ -49,6 +50,7 @@
 	$: totalItems = totalItemsProp ?? sortedData.length;
 	$: totalPageCount = calculateTotalPages(totalItems, $itemsPerPage);
 	$: paginatedData = paginateData(sortedData, $currentPage, $itemsPerPage);
+	$: totalFilteredAndSortedItems = sortedData.length;
 
 	// Selection state
 	$: allSelected =
@@ -131,6 +133,22 @@
 	function handleSwipe(event: CustomEvent<{ row: any; direction: 'left' | 'right' }>) {
 		dispatch('swipe', event.detail);
 	}
+
+	function clearSelection() {
+		$selectedIds = new Set();
+		dispatch('selectionChange', []);
+	}
+
+	function selectAllFilteredAndSorted() {
+		const newSelectedIds = new Set($selectedIds);
+		sortedData.forEach((row) => newSelectedIds.add(row[rowKey]));
+		$selectedIds = newSelectedIds;
+		dispatch('selectionChange', Array.from(newSelectedIds));
+	}
+
+	function handleDeleteSelected() {
+		dispatch('deleteSelected', Array.from($selectedIds));
+	}
 </script>
 
 <svelte:window on:resize={onResize} />
@@ -154,7 +172,20 @@
 				</div>
 
 				{#if $selectedIds.size > 0}
-					<div class="flex items-center gap-2">
+					<div class="flex items-center gap-4">
+						<span class="text-sm text-base-content/70">{$selectedIds.size} selected</span>
+						<button class="btn btn-ghost btn-sm" on:click={clearSelection}>
+							<XCircle class="h-4 w-4" />
+						</button>
+						{#if $selectedIds.size < totalFilteredAndSortedItems}
+							<button class="btn btn-link btn-sm" on:click={selectAllFilteredAndSorted}>
+								Select all ({totalFilteredAndSortedItems})
+							</button>
+						{/if}
+						<button class="btn btn-error btn-sm" on:click={handleDeleteSelected}>
+							<Trash2 class="h-4 w-4" />
+							Delete Selected
+						</button>
 						<slot name="bulk-actions" selectedIds={Array.from($selectedIds)} />
 					</div>
 				{/if}
