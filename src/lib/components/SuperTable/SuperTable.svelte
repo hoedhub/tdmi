@@ -135,9 +135,9 @@
 
 <svelte:window on:resize={onResize} />
 
-<div class="w-full space-y-4">
+<div class="w-full space-y-1">
 	<!-- Bulk actions and global filter section with card styling -->
-	<div class="card bg-base-200 shadow-sm">
+	<div class="card mb-4 bg-base-100 shadow">
 		<div class="card-body p-4">
 			<div class="flex items-center justify-between gap-4">
 				<div class="w-64">
@@ -237,7 +237,7 @@
 	</div>
 
 	<!-- Pagination section with card styling -->
-	<div class="card bg-base-200 shadow-sm">
+	<div class="borer card mx-0 bg-base-100 shadow">
 		<div class="card-body px-4 py-2">
 			<PaginationControls
 				currentPage={$currentPage}
