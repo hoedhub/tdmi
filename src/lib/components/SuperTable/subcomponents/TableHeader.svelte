@@ -53,7 +53,7 @@
 	<tr>
 		<!-- Selection column header -->
 		{#if isSelectable}
-			<th class="w-1">
+			<th class="w-1 py-2">
 				<input
 					type="checkbox"
 					class="checkbox checkbox-sm"
@@ -67,7 +67,7 @@
 
 		{#each columns.filter((col) => !col.hidden) as column}
 			<th
-				class="hover:bg-base-200 {column.headerClass || ''} {column.sortable
+				class="py-2 hover:bg-base-200 {column.headerClass || ''} {column.sortable
 					? 'cursor-pointer select-none'
 					: ''}"
 				on:click={() => handleSort(column)}
@@ -111,10 +111,10 @@
 		{#each columns.filter((col) => !col.hidden) as column}
 			<th class={column.headerClass || ''}>
 				{#if column.filterable}
-					<div class="mt-2">
+					<div class="mt-1">
 						{#if column.filterOptions}
 							<select
-								class="select select-bordered select-sm w-full max-w-xs"
+								class="select select-bordered select-xs w-full max-w-xs"
 								value={getFilterValue(column)}
 								on:change={(e) => handleFilterChange(column, e.currentTarget.value)}
 								aria-label={`Filter ${column.label}`}
@@ -131,7 +131,7 @@
 						{:else}
 							<input
 								type="text"
-								class="input input-sm input-bordered w-full max-w-xs"
+								class="input input-xs input-bordered w-full max-w-xs"
 								value={getFilterValue(column)}
 								placeholder={`Filter ${column.label.toLowerCase()}...`}
 								on:input={(e) => handleFilterChange(column, e.currentTarget.value)}
@@ -162,6 +162,7 @@
 
 	thead tr:last-child th {
 		border-top: 1px solid hsl(var(--b3));
-		padding-top: 0.5rem;
+		padding-top: 0.25rem;
+		padding-bottom: 0.5rem;
 	}
 </style>

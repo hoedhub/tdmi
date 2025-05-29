@@ -199,7 +199,7 @@
 					<!-- Table view -->
 				{:else}
 					<div class="overflow-x-auto">
-						<table class="table table-zebra w-full {tableClass}">
+						<table class="table table-zebra table-sm w-full {tableClass}">
 							<TableHeader
 								{columns}
 								currentSort={$sortState}

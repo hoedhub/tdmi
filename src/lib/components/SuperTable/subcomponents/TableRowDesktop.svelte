@@ -56,10 +56,10 @@
 	on:longpress={handleLongPress}
 >
 	{#if isSelectable}
-		<td class="w-4">
+		<td class="w-4 py-1">
 			<input
 				type="checkbox"
-				class="checkbox"
+				class="checkbox checkbox-xs"
 				checked={isSelected}
 				aria-checked={isSelected}
 				on:change={handleCheckboxChange}
@@ -70,7 +70,7 @@
 	{#each columns.filter((col) => !col.hidden) as column}
 		{@const value = row[String(column.key)]}
 		<td
-			class={`${column.cellClass || ''} ${typeof column.cellClass === 'function' ? column.cellClass(value, row) : ''}`}
+			class={`py-1 ${column.cellClass || ''} ${typeof column.cellClass === 'function' ? column.cellClass(value, row) : ''}`}
 		>
 			{#if column.formatter}
 				{#if isSvelteComponent(column.formatter)}
@@ -84,7 +84,7 @@
 		</td>
 	{/each}
 
-	<td>
+	<td class="py-1">
 		<slot name="row-actions" {row} />
 	</td>
 </tr>
