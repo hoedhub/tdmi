@@ -24,7 +24,7 @@
 
 <div class="flex items-center justify-between" role="navigation" aria-label="Pagination">
 	<div class="text-sm text-base-content/70" aria-live="polite">
-		Showing {startItem}-{endItem} of {totalItems} items
+		Showing <b>{startItem}-{endItem}</b> of <b>{totalItems}</b> items
 	</div>
 
 	<div class="join" role="group" aria-label="Pagination controls">

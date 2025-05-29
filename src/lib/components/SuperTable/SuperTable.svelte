@@ -173,14 +173,24 @@
 
 				{#if $selectedIds.size > 0}
 					<div class="flex items-center gap-4">
-						<span class="text-sm text-base-content/70">{$selectedIds.size} selected</span>
-						<button class="btn btn-ghost btn-sm" on:click={clearSelection}>
-							<XCircle class="h-4 w-4" />
-						</button>
-						{#if $selectedIds.size < totalFilteredAndSortedItems}
+						<div class="flex items-center gap-1">
+							<span class="text-sm text-base-content/70">{$selectedIds.size} selected</span>
+							<div class="tooltip tooltip-bottom" data-tip="Clear selection">
+								<button
+									class="btn btn-circle btn-ghost btn-sm"
+									on:click={clearSelection}
+									aria-label="Clear selection"
+								>
+									<XCircle class="h-4 w-4" />
+								</button>
+							</div>
+						</div>
+						{#if someSelected && !allSelected}
 							<button class="btn btn-link btn-sm" on:click={selectAllFilteredAndSorted}>
 								Select all ({totalFilteredAndSortedItems})
 							</button>
+						{:else if allSelected}
+							<button class="btn btn-link btn-sm" on:click={clearSelection}> Deselect all </button>
 						{/if}
 						<button class="btn btn-error btn-sm" on:click={handleDeleteSelected}>
 							<Trash2 class="h-4 w-4" />

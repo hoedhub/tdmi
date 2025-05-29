@@ -69,7 +69,7 @@
 			<th
 				class="py-2 hover:bg-base-200 {column.headerClass || ''} {column.sortable
 					? 'cursor-pointer select-none'
-					: ''}"
+					: ''} {currentSort?.key === column.key ? 'text-primary' : ''}"
 				on:click={() => handleSort(column)}
 				aria-sort={currentSort?.key === column.key
 					? currentSort.direction === 'asc'

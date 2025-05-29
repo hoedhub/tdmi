@@ -56,6 +56,11 @@
 	use:longPress
 	on:swipe={handleSwipe}
 	on:longpress={handleLongPress}
+	on:click={() => {
+		if (isSelectable) {
+			dispatch('select', { row, selected: !isSelected });
+		}
+	}}
 >
 	{#if isSelectable}
 		<td class="w-4 py-1">
