@@ -51,14 +51,15 @@
 
 <thead>
 	<tr>
+		<!-- Selection column header -->
 		{#if isSelectable}
-			<th class="w-4">
+			<th class="w-1">
 				<input
 					type="checkbox"
-					class="checkbox"
+					class="checkbox checkbox-sm"
 					checked={allSelected}
 					indeterminate={someSelected && !allSelected}
-					on:change={handleSelectAll}
+					on:change={(e) => dispatch('selectAll', { selected: e.currentTarget.checked })}
 					aria-label="Select all rows"
 				/>
 			</th>
@@ -66,7 +67,9 @@
 
 		{#each columns.filter((col) => !col.hidden) as column}
 			<th
-				class="{column.headerClass || ''} {column.sortable ? 'cursor-pointer select-none' : ''}"
+				class="hover:bg-base-200 {column.headerClass || ''} {column.sortable
+					? 'cursor-pointer select-none'
+					: ''}"
 				on:click={() => handleSort(column)}
 				aria-sort={currentSort?.key === column.key
 					? currentSort.direction === 'asc'
@@ -92,15 +95,29 @@
 						</span>
 					{/if}
 				</div>
+			</th>
+		{/each}
 
+		<!-- Actions column header -->
+		<th class="w-auto" />
+	</tr>
+
+	<!-- Filter row -->
+	<tr class="border-t border-base-300 bg-black/5">
+		{#if isSelectable}
+			<th class="w-1" />
+		{/if}
+
+		{#each columns.filter((col) => !col.hidden) as column}
+			<th class={column.headerClass || ''}>
 				{#if column.filterable}
 					<div class="mt-2">
-						{#if column.filterable === 'select' && column.filterOptions}
+						{#if column.filterOptions}
 							<select
 								class="select select-bordered select-sm w-full max-w-xs"
 								value={getFilterValue(column)}
 								on:change={(e) => handleFilterChange(column, e.currentTarget.value)}
-								aria-label={`Filter by ${column.label}`}
+								aria-label={`Filter ${column.label}`}
 							>
 								<option value="">All</option>
 								{#each column.filterOptions as option}
@@ -111,14 +128,6 @@
 									{/if}
 								{/each}
 							</select>
-						{:else if column.filterable === 'date'}
-							<input
-								type="date"
-								class="input input-sm input-bordered w-full max-w-xs"
-								value={getFilterValue(column)}
-								on:change={(e) => handleFilterChange(column, e.currentTarget.value)}
-								aria-label={`Filter ${column.label} by date`}
-							/>
 						{:else}
 							<input
 								type="text"
@@ -134,8 +143,8 @@
 			</th>
 		{/each}
 
-		<!-- Actions column header -->
-		<th class="w-auto"></th>
+		<!-- Actions column filter space -->
+		<th class="w-auto" />
 	</tr>
 </thead>
 
@@ -144,5 +153,15 @@
 		position: relative;
 		white-space: nowrap;
 		vertical-align: top !important;
+	}
+
+	/* Add border between header sections */
+	thead tr:first-child {
+		border-bottom: none;
+	}
+
+	thead tr:last-child th {
+		border-top: 1px solid hsl(var(--b3));
+		padding-top: 0.5rem;
 	}
 </style>
