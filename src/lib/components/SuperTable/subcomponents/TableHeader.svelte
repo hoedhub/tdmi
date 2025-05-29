@@ -50,7 +50,7 @@
 </script>
 
 <thead>
-	<tr>
+	<tr class="bg-base-200/50">
 		<!-- Selection column header -->
 		{#if isSelectable}
 			<th class="w-1 py-2">
@@ -103,7 +103,7 @@
 	</tr>
 
 	<!-- Filter row -->
-	<tr class="border-t border-base-300 bg-black/5">
+	<tr class="border-t border-base-300 bg-base-200/50">
 		{#if isSelectable}
 			<th class="w-1" />
 		{/if}

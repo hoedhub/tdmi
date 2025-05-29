@@ -84,7 +84,6 @@
 				data={data.users}
 				{columns}
 				rowKey="id"
-				rowClass="hover:bg-base-200 cursor-pointer"
 				on:rowClick={({ detail }) => goto(`/admin/users/${detail.id}/edit`)}
 			>
 				<svelte:fragment slot="row-actions" let:row>
