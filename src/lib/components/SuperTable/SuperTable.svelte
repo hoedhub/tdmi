@@ -20,7 +20,7 @@
 	import TableRowMobileCard from './subcomponents/TableRowMobileCard.svelte';
 	import PaginationControls from './subcomponents/PaginationControls.svelte';
 	import FilterInput from './subcomponents/FilterInput.svelte';
-	import { XCircle, Trash2 } from 'lucide-svelte';
+	import { XCircle, Trash2, Columns } from 'lucide-svelte';
 
 	// Props
 	export let data: SuperTableProps['data'] = [];
@@ -44,9 +44,19 @@
 		$isLoading = isLoadingProp ?? false;
 	}
 
+	// Internal state for column visibility
+	let internalColumns: ColumnDef[] = [];
+	$: internalColumns = columns.map((col) => ({ ...col })); // Deep copy to allow modification
+
+	function toggleColumnVisibility(key: string) {
+		internalColumns = internalColumns.map((col) =>
+			col.key === key ? { ...col, hidden: !col.hidden } : col
+		);
+	}
+
 	// Reactive data processing
-	$: filteredData = filterData(data, $filterState, columns);
-	$: sortedData = sortData(filteredData, $sortState, columns);
+	$: filteredData = filterData(data, $filterState, internalColumns); // Use internalColumns
+	$: sortedData = sortData(filteredData, $sortState, internalColumns); // Use internalColumns
 	$: totalItems = totalItemsProp ?? sortedData.length;
 	$: totalPageCount = calculateTotalPages(totalItems, $itemsPerPage);
 	$: paginatedData = paginateData(sortedData, $currentPage, $itemsPerPage);
@@ -199,6 +209,40 @@
 						<slot name="bulk-actions" selectedIds={Array.from($selectedIds)} />
 					</div>
 				{/if}
+
+				<!-- Column Visibility Toggler -->
+				<div class="dropdown dropdown-end">
+					<div tabindex="0" role="button" class="btn btn-sm">
+						<Columns class="h-4 w-4" />
+						Columns
+						<svg
+							width="12px"
+							height="12px"
+							class="inline-block h-2 w-2 fill-current opacity-60"
+							xmlns="http://www.w3.org/2000/svg"
+							viewBox="0 0 2048 2048"
+							><path d="M1799 349l-839 839-839-839-128 128 967 967 967-967z" /></svg
+						>
+					</div>
+					<ul
+						tabindex="0"
+						class="menu dropdown-content z-[1] w-52 rounded-box bg-base-100 p-2 shadow"
+					>
+						{#each internalColumns as column (column.key)}
+							<li>
+								<label class="label cursor-pointer">
+									<span class="label-text">{column.label}</span>
+									<input
+										type="checkbox"
+										class="checkbox checkbox-sm"
+										checked={!column.hidden}
+										on:change={() => toggleColumnVisibility(String(column.key))}
+									/>
+								</label>
+							</li>
+						{/each}
+					</ul>
+				</div>
 			</div>
 		</div>
 	</div>
@@ -223,7 +267,7 @@
 						{#each paginatedData as row (String(row[rowKey]))}
 							<TableRowMobileCard
 								{row}
-								{columns}
+								columns={internalColumns}
 								rowKey={String(rowKey)}
 								isSelectable={true}
 								className={typeof rowClass === 'function' ? rowClass(row) : rowClass}
@@ -242,7 +286,7 @@
 					<div class="overflow-x-auto">
 						<table class="table table-sm w-full {tableClass}">
 							<TableHeader
-								{columns}
+								columns={internalColumns}
 								currentSort={$sortState}
 								filterValues={$filterState.columns}
 								isSelectable={true}
@@ -257,7 +301,7 @@
 								{#each paginatedData as row (String(row[rowKey]))}
 									<TableRowDesktop
 										{row}
-										{columns}
+										columns={internalColumns}
 										rowKey={String(rowKey)}
 										isSelectable={true}
 										className={typeof rowClass === 'function' ? rowClass(row) : rowClass}
