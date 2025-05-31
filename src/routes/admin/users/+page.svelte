@@ -2,10 +2,16 @@
 	import type { PageData } from './$types';
 	import { invalidateAll } from '$app/navigation';
 	import { SuperTable } from '$lib/components/SuperTable';
-	import type { ColumnDef } from '$lib/components/SuperTable/types';
+	import type { ColumnDef, SortConfig } from '$lib/components/SuperTable/types';
 	import { goto } from '$app/navigation';
 
 	export let data: PageData;
+
+	let loading = false;
+	let users = data.users;
+	let totalItems = data.users.length;
+	let currentPage = 1;
+	const pageSize = 10;
 
 	const columns: ColumnDef[] = [
 		{
@@ -44,6 +50,56 @@
 		}
 	];
 
+	async function fetchTableData(
+		sort?: SortConfig | null,
+		filters?: Record<string, any>,
+		page: number = 1
+	) {
+		loading = true;
+		try {
+			const response = await fetch('/admin/users/table', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					sort,
+					filters,
+					page,
+					pageSize
+				})
+			});
+
+			if (!response.ok) {
+				throw new Error('Failed to fetch users');
+			}
+
+			const result = await response.json();
+			users = result.users;
+			totalItems = result.totalItems;
+			currentPage = result.currentPage;
+		} catch (error) {
+			console.error('Error fetching users:', error);
+		} finally {
+			loading = false;
+		}
+	}
+
+	async function handleSort(event: CustomEvent<SortConfig | null>) {
+		await fetchTableData(event.detail);
+	}
+
+	async function handleFilter(
+		event: CustomEvent<{ column: ColumnDef; value: any; columnKey: string }>
+	) {
+		const { value, columnKey } = event.detail;
+		await fetchTableData(undefined, { [columnKey]: value });
+	}
+
+	async function handlePageChange(event: CustomEvent<number>) {
+		await fetchTableData(undefined, undefined, event.detail);
+	}
+
 	async function handleDeleteUser(userId: string, username: string) {
 		if (userId === data.user?.id) {
 			alert('You cannot delete your own account.');
@@ -79,11 +135,21 @@
 			<a href="/admin/users/new" class="btn btn-primary"> Create New User </a>
 		</div>
 
-		{#if data.users && data.users.length > 0}
+		{#if loading}
+			<div class="flex justify-center py-8">
+				<span class="loading loading-spinner loading-lg text-primary"></span>
+			</div>
+		{:else if users && users.length > 0}
 			<SuperTable
-				data={data.users}
+				data={users}
 				{columns}
 				rowKey="id"
+				totalItemsProp={totalItems}
+				itemsPerPageProp={pageSize}
+				isLoadingProp={loading}
+				on:sort={handleSort}
+				on:filter={handleFilter}
+				on:pageChange={handlePageChange}
 				on:rowClick={({ detail }) => goto(`/admin/users/${detail.id}/edit`)}
 			>
 				<svelte:fragment slot="row-actions" let:row>
@@ -108,24 +174,9 @@
 					</div>
 				</svelte:fragment>
 			</SuperTable>
-		{:else if data.users}
-			<div class="alert alert-info shadow-lg">
-				<div>
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						fill="none"
-						viewBox="0 0 24 24"
-						class="h-6 w-6 shrink-0 stroke-current"
-					>
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							stroke-width="2"
-							d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-						/>
-					</svg>
-					<span>No users found.</span>
-				</div>
+		{:else}
+			<div class="py-8 text-center">
+				<p class="text-base-content/60">No users found</p>
 			</div>
 		{/if}
 	</div>
