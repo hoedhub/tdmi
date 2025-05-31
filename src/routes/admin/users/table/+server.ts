@@ -67,14 +67,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
         // Calculate pagination
         const offset = (page - 1) * pageSize;
 
-        console.log('Sort parameters:', {
-            key: sort?.key,
-            direction: sort?.direction,
-            hasSort: !!sort,
-            conditions: conditions.length,
-            offset,
-            pageSize
-        });
+
 
         // Execute queries with a single query builder construction
         const [users, countResult] = await Promise.all([
@@ -85,7 +78,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
                     if (!sort || !sort.key) {
                         return [asc(usersTable.created_at)]; // Default sorting by created_at when no sort is specified
                     }
-                    
+
                     let sortColumn;
                     switch (sort.key) {
                         case 'createdAt':
@@ -106,7 +99,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
                         default:
                             sortColumn = usersTable.created_at; // Fallback to created_at
                     }
-                    
+
                     return sort.direction === 'desc' ? [desc(sortColumn)] : [asc(sortColumn)];
                 })
                 .limit(pageSize)

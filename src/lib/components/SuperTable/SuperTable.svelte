@@ -82,27 +82,28 @@
 		onResize();
 		if (typeof window !== 'undefined') {
 			window.addEventListener('resize', onResize);
-			return () => window.removeEventListener('resize', onResize);
+			return () => {
+				if (filterTimeout) clearTimeout(filterTimeout);
+				window.removeEventListener('resize', onResize);
+			};
 		}
 	});
 
 	// Event handlers
 	function handleSort(event: CustomEvent<SortConfig | null>) {
-		const newSortState = event.detail;
-		console.log('SuperTable handleSort:', { oldState: $sortState, newState: newSortState });
-		$sortState = newSortState;
-		dispatch('sort', newSortState);
+		$sortState = event.detail;
+		dispatch('sort', event.detail);
 	}
 
 	function handleFilter(event: CustomEvent<{ column: ColumnDef; value: any; columnKey: string }>) {
 		const { column, value, columnKey } = event.detail;
 		$filterState.columns = { ...$filterState.columns, [columnKey]: value };
-		dispatch('filter', $filterState);
+		debouncedDispatchFilter($filterState);
 	}
 
 	function handleGlobalFilter(value: string) {
 		$filterState.global = value;
-		dispatch('filter', $filterState);
+		debouncedDispatchFilter($filterState);
 	}
 
 	function handleSelectAll(event: CustomEvent<{ selected: boolean }>) {
@@ -160,6 +161,16 @@
 
 	function handleDeleteSelected() {
 		dispatch('deleteSelected', Array.from($selectedIds));
+	}
+
+	let filterTimeout: NodeJS.Timeout;
+	const FILTER_DEBOUNCE_MS = 1500; // 1.5 second debounce
+
+	function debouncedDispatchFilter(filterState: FilterState) {
+		if (filterTimeout) clearTimeout(filterTimeout);
+		filterTimeout = setTimeout(() => {
+			dispatch('filter', filterState);
+		}, FILTER_DEBOUNCE_MS);
 	}
 </script>
 

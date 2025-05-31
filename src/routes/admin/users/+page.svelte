@@ -12,7 +12,7 @@
 	let totalItems = data.users.length;
 	let currentPage = 1;
 	const pageSize = 10;
-	
+
 	// Track current state
 	let currentSort: SortConfig | undefined = undefined;
 	let currentFilters: Record<string, any> = {};
@@ -60,7 +60,6 @@
 		page: number = 1
 	) {
 		loading = true;
-		console.log('Fetching with params:', { sort, filters, page });
 		try {
 			const response = await fetch('/admin/users/table', {
 				method: 'POST',
@@ -91,9 +90,7 @@
 	}
 
 	async function handleSort(event: CustomEvent<SortConfig | null>) {
-		// Convert null to undefined for consistency with SuperTable's initialSort type
 		currentSort = event.detail ?? undefined;
-		console.log('Page handleSort:', currentSort);
 		await fetchTableData(currentSort, currentFilters, currentPage);
 	}
 

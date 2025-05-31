@@ -28,8 +28,6 @@
 		if (!column.sortable) return;
 
 		const columnKey = String(column.key);
-		console.log('TableHeader handleSort:', { columnKey, currentSort });
-
 		let newSort: SortConfig | null;
 		if (!currentSort || currentSort.key !== columnKey) {
 			// First click on this column - sort ascending
@@ -41,8 +39,6 @@
 			// Third click - remove sorting
 			newSort = null;
 		}
-
-		console.log('TableHeader dispatching:', { currentSort, newSort });
 		dispatch('sort', newSort);
 	}
 
