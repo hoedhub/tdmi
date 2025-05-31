@@ -37,12 +37,12 @@
 
 	const dispatch = createEventDispatcher();
 
-	// Initialize stores
-	$: {
+	// Initialize stores only once on mount
+	onMount(() => {
 		$sortState = initialSort ?? null;
 		$itemsPerPage = itemsPerPageProp ?? 10;
 		$isLoading = isLoadingProp ?? false;
-	}
+	});
 
 	// Internal state for column visibility
 	let internalColumns: ColumnDef[] = [];
@@ -88,8 +88,10 @@
 
 	// Event handlers
 	function handleSort(event: CustomEvent<SortConfig | null>) {
-		$sortState = event.detail;
-		dispatch('sort', event.detail);
+		const newSortState = event.detail;
+		console.log('SuperTable handleSort:', { oldState: $sortState, newState: newSortState });
+		$sortState = newSortState;
+		dispatch('sort', newSortState);
 	}
 
 	function handleFilter(event: CustomEvent<{ column: ColumnDef; value: any; columnKey: string }>) {

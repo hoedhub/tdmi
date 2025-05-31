@@ -12,6 +12,10 @@
 	let totalItems = data.users.length;
 	let currentPage = 1;
 	const pageSize = 10;
+	
+	// Track current state
+	let currentSort: SortConfig | undefined = undefined;
+	let currentFilters: Record<string, any> = {};
 
 	const columns: ColumnDef[] = [
 		{
@@ -56,6 +60,7 @@
 		page: number = 1
 	) {
 		loading = true;
+		console.log('Fetching with params:', { sort, filters, page });
 		try {
 			const response = await fetch('/admin/users/table', {
 				method: 'POST',
@@ -86,18 +91,23 @@
 	}
 
 	async function handleSort(event: CustomEvent<SortConfig | null>) {
-		await fetchTableData(event.detail);
+		// Convert null to undefined for consistency with SuperTable's initialSort type
+		currentSort = event.detail ?? undefined;
+		console.log('Page handleSort:', currentSort);
+		await fetchTableData(currentSort, currentFilters, currentPage);
 	}
 
 	async function handleFilter(
 		event: CustomEvent<{ column: ColumnDef; value: any; columnKey: string }>
 	) {
 		const { value, columnKey } = event.detail;
-		await fetchTableData(undefined, { [columnKey]: value });
+		currentFilters = { ...currentFilters, [columnKey]: value };
+		await fetchTableData(currentSort, currentFilters, currentPage);
 	}
 
 	async function handlePageChange(event: CustomEvent<number>) {
-		await fetchTableData(undefined, undefined, event.detail);
+		currentPage = event.detail;
+		await fetchTableData(currentSort, currentFilters, currentPage);
 	}
 
 	async function handleDeleteUser(userId: string, username: string) {
@@ -147,6 +157,7 @@
 				totalItemsProp={totalItems}
 				itemsPerPageProp={pageSize}
 				isLoadingProp={loading}
+				initialSort={currentSort}
 				on:sort={handleSort}
 				on:filter={handleFilter}
 				on:pageChange={handlePageChange}

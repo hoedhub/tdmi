@@ -27,15 +27,23 @@
 	function handleSort(column: ColumnDef) {
 		if (!column.sortable) return;
 
-		if (currentSort?.key === column.key) {
-			if (currentSort.direction === 'asc') {
-				dispatch('sort', { key: column.key, direction: 'desc' });
-			} else {
-				dispatch('sort', null);
-			}
+		const columnKey = String(column.key);
+		console.log('TableHeader handleSort:', { columnKey, currentSort });
+
+		let newSort: SortConfig | null;
+		if (!currentSort || currentSort.key !== columnKey) {
+			// First click on this column - sort ascending
+			newSort = { key: columnKey, direction: 'asc' };
+		} else if (currentSort.direction === 'asc') {
+			// Second click - switch to descending
+			newSort = { key: columnKey, direction: 'desc' };
 		} else {
-			dispatch('sort', { key: column.key, direction: 'asc' });
+			// Third click - remove sorting
+			newSort = null;
 		}
+
+		console.log('TableHeader dispatching:', { currentSort, newSort });
+		dispatch('sort', newSort);
 	}
 
 	function handleSelectAll(event: Event) {
@@ -69,9 +77,9 @@
 			<th
 				class="py-2 hover:bg-base-200 {column.headerClass || ''} {column.sortable
 					? 'cursor-pointer select-none'
-					: ''} {currentSort?.key === column.key ? 'text-primary' : ''}"
+					: ''} {currentSort?.key === String(column.key) ? 'text-primary' : ''}"
 				on:click={() => handleSort(column)}
-				aria-sort={currentSort?.key === column.key
+				aria-sort={currentSort?.key === String(column.key)
 					? currentSort.direction === 'asc'
 						? 'ascending'
 						: 'descending'
@@ -83,7 +91,7 @@
 					<span>{column.label}</span>
 					{#if column.sortable}
 						<span class="opacity-50">
-							{#if currentSort?.key === column.key}
+							{#if currentSort?.key === String(column.key)}
 								{#if currentSort.direction === 'asc'}
 									<ChevronUp size={16} />
 								{:else}

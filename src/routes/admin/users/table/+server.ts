@@ -5,7 +5,7 @@ import { asc, desc, eq, like, and, sql, type SQL } from 'drizzle-orm';
 import type { RequestHandler } from './$types';
 
 type UserRole = (typeof userRoles)[number];
-type SortableColumns = 'username' | 'role' | 'active' | 'muridId' | 'created_at';
+type SortableColumns = 'username' | 'role' | 'active' | 'muridId' | 'createdAt';
 
 interface TableRequest {
     sort?: {
@@ -64,22 +64,51 @@ export const POST: RequestHandler = async ({ request, locals }) => {
             }
         }
 
-        // Build sort expression
-        const sortExpr = sort?.key
-            ? sort.direction === 'asc'
-                ? asc(usersTable[sort.key])
-                : desc(usersTable[sort.key])
-            : asc(usersTable.username);
-
         // Calculate pagination
         const offset = (page - 1) * pageSize;
+
+        console.log('Sort parameters:', {
+            key: sort?.key,
+            direction: sort?.direction,
+            hasSort: !!sort,
+            conditions: conditions.length,
+            offset,
+            pageSize
+        });
 
         // Execute queries with a single query builder construction
         const [users, countResult] = await Promise.all([
             db.select(baseSelect)
                 .from(usersTable)
                 .where(conditions.length > 0 ? and(...conditions) : undefined)
-                .orderBy(sortExpr)
+                .orderBy(() => {
+                    if (!sort || !sort.key) {
+                        return [asc(usersTable.created_at)]; // Default sorting by created_at when no sort is specified
+                    }
+                    
+                    let sortColumn;
+                    switch (sort.key) {
+                        case 'createdAt':
+                            sortColumn = usersTable.created_at;
+                            break;
+                        case 'muridId':
+                            sortColumn = usersTable.muridId;
+                            break;
+                        case 'username':
+                            sortColumn = usersTable.username;
+                            break;
+                        case 'role':
+                            sortColumn = usersTable.role;
+                            break;
+                        case 'active':
+                            sortColumn = usersTable.active;
+                            break;
+                        default:
+                            sortColumn = usersTable.created_at; // Fallback to created_at
+                    }
+                    
+                    return sort.direction === 'desc' ? [desc(sortColumn)] : [asc(sortColumn)];
+                })
                 .limit(pageSize)
                 .offset(offset),
             db.select({
