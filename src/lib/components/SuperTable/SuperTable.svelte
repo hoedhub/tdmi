@@ -34,15 +34,20 @@
 	export let tableClass: SuperTableProps['tableClass'] = '';
 	export let cardClass: SuperTableProps['cardClass'] = '';
 	export let rowClass: SuperTableProps['rowClass'] = '';
+	export let serverSide = false;
 
 	const dispatch = createEventDispatcher();
 
 	// Initialize stores only once on mount
+	// Initialize stores
 	onMount(() => {
 		$sortState = initialSort ?? null;
 		$itemsPerPage = itemsPerPageProp ?? 10;
-		$isLoading = isLoadingProp ?? false;
+		$isLoading = false;
 	});
+
+	// Keep loading state in sync with prop, ensuring we always have a boolean
+	$: $isLoading = Boolean(isLoadingProp);
 
 	// Internal state for column visibility
 	let internalColumns: ColumnDef[] = [];
@@ -54,8 +59,25 @@
 		);
 	}
 
+	// State for filtered and sorted data
+	let filteredData: typeof data = [];
+	let hasFilterListener = false;
+
+	// Use explicit serverSide prop for determining filtering mode
+	$: hasFilterListener = serverSide;
+
 	// Reactive data processing
-	$: filteredData = filterData(data, $filterState, internalColumns); // Use internalColumns
+	$: {
+		console.log('[SuperTable] Data update received:', {
+			serverSide,
+			dataLength: data.length,
+			filterState: $filterState,
+			loading: $isLoading
+		});
+
+		// Simply use the data as-is - filtering will be handled appropriately by event handlers
+		filteredData = data;
+	}
 	$: sortedData = sortData(filteredData, $sortState, internalColumns); // Use internalColumns
 	$: totalItems = totalItemsProp ?? sortedData.length;
 	$: totalPageCount = calculateTotalPages(totalItems, $itemsPerPage);
@@ -97,12 +119,29 @@
 
 	function handleFilter(event: CustomEvent<{ column: ColumnDef; value: any; columnKey: string }>) {
 		const { column, value, columnKey } = event.detail;
+		console.log('[SuperTable] Column filter change:', { column: columnKey, value, serverSide });
+
+		// Update filter state
 		$filterState.columns = { ...$filterState.columns, [columnKey]: value };
+
+		if (!serverSide) {
+			// Only apply client-side filtering if we're not in server-side mode
+			filteredData = filterData(data, $filterState, internalColumns);
+		}
+
 		debouncedDispatchFilter($filterState);
 	}
 
 	function handleGlobalFilter(value: string) {
+		console.log('[SuperTable] Global filter change:', { value, serverSide });
+		// Update filter state
 		$filterState.global = value;
+
+		if (!serverSide) {
+			// Only apply client-side filtering if we're not in server-side mode
+			filteredData = filterData(data, $filterState, internalColumns);
+		}
+
 		debouncedDispatchFilter($filterState);
 	}
 
@@ -163,12 +202,29 @@
 		dispatch('deleteSelected', Array.from($selectedIds));
 	}
 
+	// Debouncing configuration
 	let filterTimeout: NodeJS.Timeout;
-	const FILTER_DEBOUNCE_MS = 1500; // 1.5 second debounce
+	const FILTER_DEBOUNCE_MS = 300; // 300ms debounce - more responsive while still preventing excess calls
 
+	// Create a debounced function for filter updates
 	function debouncedDispatchFilter(filterState: FilterState) {
 		if (filterTimeout) clearTimeout(filterTimeout);
+		console.log('[SuperTable] Setting up filter dispatch with state:', {
+			globalFilter: filterState.global,
+			columnFilters: filterState.columns,
+			debounceDelay: FILTER_DEBOUNCE_MS,
+			serverSide
+		});
+
+		if (!serverSide) {
+			// Only update internal state for client-side filtering
+			filteredData = filterData(data, filterState, internalColumns);
+		}
+
+		// Debounce the event dispatch to parent
 		filterTimeout = setTimeout(() => {
+			console.log('[SuperTable] Dispatching debounced filter event to parent');
+			if (serverSide) $isLoading = true; // Show loading state for server-side filtering
 			dispatch('filter', filterState);
 		}, FILTER_DEBOUNCE_MS);
 	}

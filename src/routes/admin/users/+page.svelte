@@ -2,7 +2,7 @@
 	import type { PageData } from './$types';
 	import { invalidateAll } from '$app/navigation';
 	import { SuperTable } from '$lib/components/SuperTable';
-	import type { ColumnDef, SortConfig } from '$lib/components/SuperTable/types';
+	import type { ColumnDef, SortConfig, FilterState } from '$lib/components/SuperTable/types';
 	import { goto } from '$app/navigation';
 
 	export let data: PageData;
@@ -94,11 +94,28 @@
 		await fetchTableData(currentSort, currentFilters, currentPage);
 	}
 
-	async function handleFilter(
-		event: CustomEvent<{ column: ColumnDef; value: any; columnKey: string }>
-	) {
-		const { value, columnKey } = event.detail;
-		currentFilters = { ...currentFilters, [columnKey]: value };
+	async function handleFilter(event: CustomEvent<FilterState>) {
+		// Prevent default to indicate we're handling the filtering
+		event.preventDefault();
+
+		console.log('Page received filter event:', event.detail);
+		// Map the FilterState to our filter format
+		const newFilters: Record<string, any> = {};
+
+		// Handle global filter
+		if (event.detail.global) {
+			newFilters.global = event.detail.global;
+		}
+
+		// Handle column filters
+		Object.entries(event.detail.columns).forEach(([key, value]) => {
+			if (value) {
+				newFilters[key] = value;
+			}
+		});
+
+		console.log('About to fetch with filters:', newFilters);
+		currentFilters = newFilters;
 		await fetchTableData(currentSort, currentFilters, currentPage);
 	}
 
@@ -155,6 +172,7 @@
 				itemsPerPageProp={pageSize}
 				isLoadingProp={loading}
 				initialSort={currentSort}
+				serverSide={true}
 				on:sort={handleSort}
 				on:filter={handleFilter}
 				on:pageChange={handlePageChange}

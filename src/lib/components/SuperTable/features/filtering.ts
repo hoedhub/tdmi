@@ -1,4 +1,4 @@
-import type { FilterState, ColumnDef, FilterType } from '../types';
+import type { FilterState, FilterType, ColumnDef } from '../types';
 
 function isFilterType(value: any): value is FilterType {
     return typeof value === 'string' && ['text', 'select', 'date'].includes(value);
@@ -20,6 +20,12 @@ export function filterData<T>(
     filterState: FilterState,
     columns: ColumnDef<T>[]
 ): T[] {
+    console.log('[Client Filtering] Starting filtering with:', {
+        globalFilter: filterState.global,
+        columnFilters: filterState.columns,
+        dataLength: data.length
+    });
+
     let filtered = [...data];
 
     // Apply global filter if present
@@ -39,6 +45,12 @@ export function filterData<T>(
 
         const column = columns.find(col => col.key === key);
         if (!column || !column.filterable) return;
+
+        console.log('[Client Filtering] Applying column filter:', {
+            column: key,
+            filterValue,
+            filterType: column.filterable
+        });
 
         filtered = filtered.filter(row => {
             const cellValue = getValue(row, key);
@@ -63,6 +75,21 @@ export function filterData<T>(
                     return includesIgnoreCase(cellValue, String(filterValue));
             }
         });
+
+        console.log('[Client Filtering] After column filter:', {
+            column: key,
+            resultCount: filtered.length
+        });
+    });
+
+    console.log('[Client Filtering] Final filtered results:', {
+        data: filtered,
+        initialCount: data.length,
+        finalCount: filtered.length,
+        filtersApplied: {
+            global: !!filterState.global,
+            columns: Object.keys(filterState.columns).filter(k => filterState.columns[k])
+        }
     });
 
     return filtered;

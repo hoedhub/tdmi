@@ -98,6 +98,7 @@ export interface SuperTableProps<T = any> {
     tableClass?: string;
     cardClass?: string;
     rowClass?: string | ((row: T) => string);
+    serverSide?: boolean;  // Whether filtering/sorting/pagination is handled by the server
 }
 
 export interface SuperTableEvents<T = any> {

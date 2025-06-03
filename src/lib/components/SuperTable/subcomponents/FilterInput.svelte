@@ -40,7 +40,8 @@
 
 	{#if value}
 		<button
-			class="absolute inset-y-0 right-0 flex items-center pr-2 opacity-50 hover:opacity-100"
+			type="button"
+			class="absolute inset-y-0 right-0 flex items-center px-2 opacity-50 hover:opacity-100"
 			on:click={clearInput}
 			aria-label="Clear search"
 		>

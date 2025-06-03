@@ -14,15 +14,20 @@
 
 	const dispatch = createEventDispatcher();
 
-	const handleFilterChange = debounce((column: ColumnDef, value: any) => {
+	function handleFilterChange(column: ColumnDef, value: any) {
+		console.log('[TableHeader] Processing filter change:', {
+			column: column.key,
+			value,
+			filterType: column.filterable,
+			currentValues: filterValues
+		});
+
 		const columnKey = String(column.key);
 		const newFilterValues = { ...filterValues, [columnKey]: value };
-		dispatch('filter', { column, value, columnKey });
-	}, 300);
 
-	onDestroy(() => {
-		handleFilterChange.cancel();
-	});
+		console.log('[TableHeader] Dispatching filter event');
+		dispatch('filter', { column, value, columnKey });
+	}
 
 	function handleSort(column: ColumnDef) {
 		if (!column.sortable) return;

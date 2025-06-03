@@ -13,6 +13,7 @@ interface TableRequest {
         direction: 'asc' | 'desc';
     };
     filters?: {
+        global?: string;
         username?: string;
         role?: UserRole;
         active?: string;
@@ -42,6 +43,16 @@ export const POST: RequestHandler = async ({ request, locals }) => {
         // Build conditions array first
         const conditions: SQL[] = [];
         if (filters) {
+            // Handle global search first
+            if (filters.global) {
+                conditions.push(
+                    sql`(${usersTable.username} LIKE ${'%' + filters.global + '%'} OR 
+                        CAST(${usersTable.muridId} AS TEXT) LIKE ${'%' + filters.global + '%'} OR
+                        ${usersTable.role} LIKE ${'%' + filters.global + '%'})`
+                );
+            }
+
+            // Then handle specific column filters
             if (filters.username) {
                 conditions.push(like(usersTable.username, `%${filters.username}%`));
             }
