@@ -1,23 +1,51 @@
 <script lang="ts">
 	import type { ActionData, PageData } from './$types';
-	import { enhance } from '$app/forms';
+	import { enhance, applyAction } from '$app/forms';
+	import type { ActionResult } from '@sveltejs/kit';
+	import { success, error } from '$lib/components/toast';
+	import { Save, RefreshCw } from 'lucide-svelte';
 
 	export let form: ActionData;
 	export let data: PageData & { allMurids: { id: number; nama: string }[] };
-
-	let username: string | undefined;
-	let selectedRole: string | undefined;
-	let isActive: boolean | null;
-	let muridId: string | undefined;
-
-	$: username = form?.username ?? data.userToEdit.username;
-	$: selectedRole = form?.role ?? data.userToEdit.role;
-	$: isActive = form?.active ?? data.userToEdit.active;
-	$: muridId =
-		form?.muridIdStr ??
-		(data.userToEdit.muridId === null || data.userToEdit.muridId === 0
+	let isLoading: boolean = false;
+	let username: string = data.userToEdit.username;
+	let selectedRole: string = data.userToEdit.role;
+	let isActive: boolean | null = data.userToEdit.active;
+	let muridId: string =
+		data.userToEdit.muridId === null || data.userToEdit.muridId === 0
 			? ''
-			: String(data.userToEdit.muridId));
+			: String(data.userToEdit.muridId);
+	let newPassword: string = '';
+
+	async function handleSubmit() {
+		if (isLoading) return;
+		isLoading = true;
+
+		return async ({ result }: { result: ActionResult }) => {
+			if (result.type === 'error') {
+				isLoading = false;
+				// Display error toast
+				error(result.error?.msg || 'An unknown error occurred during login.', { duration: 5000 });
+				return;
+			}
+
+			// Show success toast before redirecting
+			if (result.type === 'redirect') {
+				console.log('Login successful:', result);
+				success('User updated successfully!');
+			}
+
+			// If result.type is 'success' or 'redirect', applyAction will handle it
+			await applyAction(result);
+		};
+	}
+	// Reactive assignments for form data on submission failure
+	$: if (form && 'userId' in form) {
+		// Check for a property that exists on the successful form data
+		if (form.role !== undefined) selectedRole = form.role;
+		if (form.active !== undefined) isActive = form.active;
+		if (form.muridIdStr !== undefined) muridId = form.muridIdStr;
+	}
 </script>
 
 <div class="flex justify-center">
@@ -73,7 +101,7 @@
 				</div>
 			{/if}
 
-			<form method="POST" class="space-y-4">
+			<form method="POST" class="space-y-4" use:enhance={handleSubmit}>
 				<div class="form-control">
 					<label class="label" for="username">
 						<span class="label-text">Username</span>
@@ -82,6 +110,7 @@
 						type="text"
 						id="username"
 						name="username"
+						readOnly={true}
 						required
 						minlength="3"
 						maxlength="16"
@@ -91,16 +120,28 @@
 				</div>
 
 				<div class="form-control">
-					<label class="label" for="password">
-						<span class="label-text">New Password (leave blank to keep current)</span>
-					</label>
-					<input
-						type="password"
-						id="password"
-						name="password"
-						minlength="6"
-						class="input input-bordered w-full"
-					/>
+					{#if newPassword}
+						<input
+							type="hidden"
+							id="password"
+							name="password"
+							minlength="6"
+							class="input input-bordered w-full"
+							bind:value={newPassword}
+						/>
+					{/if}
+					<!-- Button to reset password -->
+					<button
+						type="button"
+						class="btn btn-secondary btn-sm mb-2"
+						on:click={() => {
+							if (!confirm('Are you sure you want to reset the password?')) return;
+							newPassword = '123456';
+							success('Password has been reset successfully.');
+						}}
+					>
+						Reset Password
+					</button>
 				</div>
 
 				<div class="form-control">
@@ -156,7 +197,11 @@
 						Cancel
 					</a>
 					<button type="submit" class="btn btn-primary">
-						<!-- <IconSave class="w-5 h-5 mr-2" /> -->
+						{#if isLoading}
+							<RefreshCw class="mr-2 h-5 w-5 animate-spin" />
+						{:else}
+							<Save class="mr-2 h-5 w-5" />
+						{/if}
 						Update User
 					</button>
 				</div>

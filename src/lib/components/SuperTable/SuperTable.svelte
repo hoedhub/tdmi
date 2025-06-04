@@ -68,12 +68,12 @@
 
 	// Reactive data processing
 	$: {
-		console.log('[SuperTable] Data update received:', {
-			serverSide,
-			dataLength: data.length,
-			filterState: $filterState,
-			loading: $isLoading
-		});
+		// console.log('[SuperTable] Data update received:', {
+		// 	serverSide,
+		// 	dataLength: data.length,
+		// 	filterState: $filterState,
+		// 	loading: $isLoading
+		// });
 
 		// Simply use the data as-is - filtering will be handled appropriately by event handlers
 		filteredData = data;

@@ -48,7 +48,6 @@ export const actions: Actions = {
         const userIdToEdit = params.userId;
         const formData = await request.formData();
 
-        const username = formData.get('username') as string;
         const password = formData.get('password') as string; // New password, optional
         const role = formData.get('role') as (typeof userRoles)[number];
         const active = formData.has('active');
@@ -57,11 +56,8 @@ export const actions: Actions = {
         const originalUser = await db.select().from(usersTable).where(eq(usersTable.id, userIdToEdit));
         if (!originalUser) throw error(404, "User not found during update process.");
 
-        let formState = { username, role, active, muridIdStr, message: '', userId: userIdToEdit };
+        let formState = { role, active, muridIdStr, message: '', userId: userIdToEdit };
 
-        if (!username || username.length < 3 || username.length > 16) {
-            return fail(400, { ...formState, message: 'Username must be 3-16 characters.' });
-        }
         if (password && password.length < 6) { // Validate new password only if provided
             return fail(400, { ...formState, message: 'New password must be at least 6 characters.' });
         }
@@ -85,25 +81,7 @@ export const actions: Actions = {
         }
 
         try {
-            // Check if username is being changed and if the new one is taken
-            if (originalUser[0].username !== username) {
-                const existingUserWithNewUsername = await db
-                    .select()
-                    .from(usersTable)
-                    .where(
-                        and(
-                            eq(usersTable.username, username),
-                            ne(usersTable.id, userIdToEdit)
-                        )
-                    )
-                    .limit(1);
-                if (existingUserWithNewUsername) {
-                    return fail(400, { ...formState, message: 'New username already taken by another user.' });
-                }
-            }
-
             const updateValues: Partial<typeof usersTable.$inferInsert> = {
-                username,
                 role,
                 active,
                 muridId

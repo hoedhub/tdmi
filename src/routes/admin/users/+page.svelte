@@ -159,51 +159,51 @@
 			<a href="/admin/users/new" class="btn btn-primary"> Create New User </a>
 		</div>
 
-		{#if loading}
+		<!-- {#if loading}
 			<div class="flex justify-center py-8">
 				<span class="loading loading-spinner loading-lg text-primary"></span>
 			</div>
-		{:else if users && users.length > 0}
-			<SuperTable
-				data={users}
-				{columns}
-				rowKey="id"
-				totalItemsProp={totalItems}
-				itemsPerPageProp={pageSize}
-				isLoadingProp={loading}
-				initialSort={currentSort}
-				serverSide={true}
-				on:sort={handleSort}
-				on:filter={handleFilter}
-				on:pageChange={handlePageChange}
-				on:rowClick={({ detail }) => goto(`/admin/users/${detail.id}/edit`)}
-			>
-				<svelte:fragment slot="row-actions" let:row>
-					<div class="flex gap-2">
-						<a
-							href={`/admin/users/${row.id}/edit`}
-							class="btn btn-ghost btn-sm"
-							on:click|stopPropagation={() => {}}
+		{:else if users && users.length > 0} -->
+		<SuperTable
+			data={users}
+			{columns}
+			rowKey="id"
+			totalItemsProp={totalItems}
+			itemsPerPageProp={pageSize}
+			isLoadingProp={loading}
+			initialSort={currentSort}
+			serverSide={true}
+			on:sort={handleSort}
+			on:filter={handleFilter}
+			on:pageChange={handlePageChange}
+			on:rowClick={({ detail }) => goto(`/admin/users/${detail.id}/edit`)}
+		>
+			<svelte:fragment slot="row-actions" let:row>
+				<div class="flex gap-2">
+					<a
+						href={`/admin/users/${row.id}/edit`}
+						class="btn btn-ghost btn-sm"
+						on:click|stopPropagation={() => {}}
+					>
+						Edit
+					</a>
+					{#if row.id !== data.user?.id}
+						<button
+							class="btn btn-ghost btn-sm text-error"
+							on:click|stopPropagation={() => handleDeleteUser(row.id, row.username)}
 						>
-							Edit
-						</a>
-						{#if row.id !== data.user?.id}
-							<button
-								class="btn btn-ghost btn-sm text-error"
-								on:click|stopPropagation={() => handleDeleteUser(row.id, row.username)}
-							>
-								Delete
-							</button>
-						{:else}
-							<button class="btn btn-disabled btn-sm">Delete</button>
-						{/if}
-					</div>
-				</svelte:fragment>
-			</SuperTable>
-		{:else}
+							Delete
+						</button>
+					{:else}
+						<button class="btn btn-disabled btn-sm">Delete</button>
+					{/if}
+				</div>
+			</svelte:fragment>
+		</SuperTable>
+		<!-- {:else}
 			<div class="py-8 text-center">
 				<p class="text-base-content/60">No users found</p>
 			</div>
-		{/if}
+		{/if} -->
 	</div>
 </div>

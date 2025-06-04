@@ -27,5 +27,23 @@ export const handle: Handle = async ({ event, resolve }) => {
     }
     event.locals.user = user;
     event.locals.session = session;
-    return resolve(event);
+
+    return resolve(event, {
+        transformPageChunk: ({ html, done }) => {
+            if (done) {
+                const userId = event.locals.user?.id || 'default';
+                const script = `
+                    <script>
+                        window.currentUserThemeId = '${userId}';
+                        const savedTheme = localStorage.getItem(window.currentUserThemeId + '-theme');
+                        if (savedTheme) {
+                            document.documentElement.setAttribute('data-theme', savedTheme);
+                        }
+                    </script>
+                `;
+                return html.replace('</head>', `${script}</head>`);
+            }
+            return html;
+        }
+    });
 };
