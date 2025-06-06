@@ -173,7 +173,7 @@
 
 		<!-- Optional: Footer links or theme switcher -->
 		<div class="mt-8 text-center text-sm text-base-content/60">
-			<p>© {new Date().getFullYear()} MyApp. All rights reserved.</p>
+			<p>© {new Date().getFullYear()} TDMI. All rights reserved.</p>
 			<!-- Example Theme Switcher (very basic) -->
 			<div class="mt-2">
 				<label class="label inline-flex cursor-pointer gap-2">

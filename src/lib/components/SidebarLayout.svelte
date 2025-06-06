@@ -35,6 +35,7 @@
 	const menuItems = [
 		{ href: '/', label: 'Dashboard', icon: Home },
 		{ href: '/member/users', label: 'Users', icon: Users },
+		{ href: '/member/profile', label: 'Edit Profile', icon: Settings },
 		{ href: '/settings', label: 'Settings', icon: Settings }
 	];
 
@@ -157,7 +158,7 @@
 		<!-- Optional Footer -->
 		<footer class="footer footer-center bg-base-300 p-4 text-base-content">
 			<aside>
-				<p>Copyright © {new Date().getFullYear()} - All right reserved by MyApp Industries Ltd</p>
+				<p>Copyright © {new Date().getFullYear()} - TDMI. All right reserved</p>
 			</aside>
 		</footer>
 	</div>
