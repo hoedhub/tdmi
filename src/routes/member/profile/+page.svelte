@@ -3,7 +3,7 @@
 	import { enhance, applyAction } from '$app/forms';
 	import type { ActionResult } from '@sveltejs/kit';
 	import { success, error } from '$lib/components/toast';
-	import { Save, RefreshCw } from 'lucide-svelte';
+	import { Save, RefreshCw, Eye, EyeOff } from 'lucide-svelte';
 
 	export let form: ActionData;
 	export let data: PageData;
@@ -12,6 +12,10 @@
 	let currentPassword = '';
 	let newPassword = '';
 	let confirmPassword = '';
+
+	let showCurrentPassword = false;
+	let showNewPassword = false;
+	let showConfirmPassword = false;
 
 	async function handleSubmit() {
 		if (isLoading) return;
@@ -126,42 +130,114 @@
 					<label for="current-password" class="label">
 						<span class="label-text">Current Password</span>
 					</label>
-					<input
-						type="password"
-						id="current-password"
-						name="currentPassword"
-						class="input input-bordered w-full"
-						required
-						bind:value={currentPassword}
-					/>
+					<div class="relative">
+						{#if showCurrentPassword}
+							<input
+								type="text"
+								id="current-password"
+								name="currentPassword"
+								class="input input-bordered w-full pr-10"
+								required
+								bind:value={currentPassword}
+							/>
+						{:else}
+							<input
+								type="password"
+								id="current-password"
+								name="currentPassword"
+								class="input input-bordered w-full pr-10"
+								required
+								bind:value={currentPassword}
+							/>
+						{/if}
+						<button
+							type="button"
+							class="absolute inset-y-0 right-0 flex items-center pr-3"
+							on:click={() => (showCurrentPassword = !showCurrentPassword)}
+						>
+							{#if showCurrentPassword}
+								<EyeOff class="h-5 w-5 text-gray-500" />
+							{:else}
+								<Eye class="h-5 w-5 text-gray-500" />
+							{/if}
+						</button>
+					</div>
 				</div>
 
 				<div class="form-control">
 					<label for="new-password" class="label">
 						<span class="label-text">New Password</span>
 					</label>
-					<input
-						type="password"
-						id="new-password"
-						name="newPassword"
-						class="input input-bordered w-full"
-						required
-						bind:value={newPassword}
-					/>
+					<div class="relative">
+						{#if showNewPassword}
+							<input
+								type="text"
+								id="new-password"
+								name="newPassword"
+								class="input input-bordered w-full pr-10"
+								required
+								bind:value={newPassword}
+							/>
+						{:else}
+							<input
+								type="password"
+								id="new-password"
+								name="newPassword"
+								class="input input-bordered w-full pr-10"
+								required
+								bind:value={newPassword}
+							/>
+						{/if}
+						<button
+							type="button"
+							class="absolute inset-y-0 right-0 flex items-center pr-3"
+							on:click={() => (showNewPassword = !showNewPassword)}
+						>
+							{#if showNewPassword}
+								<EyeOff class="h-5 w-5 text-gray-500" />
+							{:else}
+								<Eye class="h-5 w-5 text-gray-500" />
+							{/if}
+						</button>
+					</div>
 				</div>
 
 				<div class="form-control">
 					<label for="confirm-password" class="label">
 						<span class="label-text">Confirm New Password</span>
 					</label>
-					<input
-						type="password"
-						id="confirm-password"
-						name="confirmPassword"
-						class="input input-bordered w-full"
-						required
-						bind:value={confirmPassword}
-					/>
+					<div class="relative">
+						{#if showConfirmPassword}
+							<input
+								type="text"
+								id="confirm-password"
+								name="confirmPassword"
+								class="input input-bordered w-full pr-10"
+								required
+								bind:value={confirmPassword}
+							/>
+						{:else}
+							<input
+								type="password"
+								id="confirm-password"
+								name="confirmPassword"
+								class="input input-bordered w-full pr-10"
+								required
+								bind:value={confirmPassword}
+							/>
+						{/if}
+						<button
+							type="button"
+							class="absolute inset-y-0 right-0 flex items-center pr-3"
+							on:click={() => (showConfirmPassword = !showConfirmPassword)}
+						>
+							{#if showConfirmPassword}
+								<EyeOff class="h-5 w-5 text-gray-500" />
+							{:else}
+								<Eye class="h-5 w-5 text-gray-500" />
+							{/if}
+						</button>
+					</div>
 				</div>
 
 				<div class="card-actions justify-end pt-4">

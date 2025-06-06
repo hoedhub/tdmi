@@ -5,7 +5,7 @@
 	import { ChartNoAxesGantt } from 'lucide-svelte';
 
 	// Import Lucide icons
-	import { Home, Settings, Users, Menu as MenuIcon, LogOut } from 'lucide-svelte';
+	import { Home, Settings, UserPen, Users, Menu as MenuIcon, LogOut } from 'lucide-svelte';
 	// For SvelteKit, you might use: import { page } from '$app/stores';
 
 	let isSidebarOpen = false; // For mobile drawer state
@@ -35,7 +35,7 @@
 	const menuItems = [
 		{ href: '/', label: 'Dashboard', icon: Home },
 		{ href: '/member/users', label: 'Users', icon: Users },
-		{ href: '/member/profile', label: 'Edit Profile', icon: Settings },
+		{ href: '/member/profile', label: 'Edit Profile', icon: UserPen },
 		{ href: '/settings', label: 'Settings', icon: Settings }
 	];
 
