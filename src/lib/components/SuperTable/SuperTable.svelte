@@ -237,8 +237,9 @@
 	<!-- Bulk actions and global filter section with card styling -->
 	<div class="card mb-4 bg-base-100 shadow">
 		<div class="card-body p-4">
-			<div class="flex items-center justify-between gap-4">
-				<div class="w-64">
+			<div class="flex flex-col gap-4">
+				<!-- First row: Filter input box -->
+				<div class="w-full">
 					<slot
 						name="global-filter"
 						searchTerm={$filterState.global}
@@ -251,68 +252,73 @@
 					</slot>
 				</div>
 
-				{#if $selectedIds.size > 0}
-					<div class="flex items-center gap-4">
-						<div class="flex items-center gap-1">
-							<span class="text-sm text-base-content/70">{$selectedIds.size} selected</span>
-							<div class="tooltip tooltip-bottom" data-tip="Clear selection">
-								<button
-									class="btn btn-circle btn-ghost btn-sm"
-									on:click={clearSelection}
-									aria-label="Clear selection"
-								>
-									<XCircle class="h-4 w-4" />
-								</button>
-							</div>
+				<!-- Second row: Rest of the elements -->
+				<div class="flex flex-wrap items-center justify-between gap-4">
+					<!-- Column Visibility Toggler -->
+					<div class="dropdown dropdown-end">
+						<div tabindex="0" role="button" class="btn btn-sm">
+							<Columns class="h-4 w-4" />
+							Columns
+							<svg
+								width="12px"
+								height="12px"
+								class="inline-block h-2 w-2 fill-current opacity-60"
+								xmlns="http://www.w3.org/2000/svg"
+								viewBox="0 0 2048 2048"
+								><path d="M1799 349l-839 839-839-839-128 128 967 967 967-967z" /></svg
+							>
 						</div>
-						{#if someSelected && !allSelected}
-							<button class="btn btn-link btn-sm" on:click={selectAllFilteredAndSorted}>
-								Select all ({totalFilteredAndSortedItems})
-							</button>
-						{:else if allSelected}
-							<button class="btn btn-link btn-sm" on:click={clearSelection}> Deselect all </button>
-						{/if}
-						<button class="btn btn-error btn-sm" on:click={handleDeleteSelected}>
-							<Trash2 class="h-4 w-4" />
-							Delete Selected
-						</button>
-						<slot name="bulk-actions" selectedIds={Array.from($selectedIds)} />
-					</div>
-				{/if}
-
-				<!-- Column Visibility Toggler -->
-				<div class="dropdown dropdown-end">
-					<div tabindex="0" role="button" class="btn btn-sm">
-						<Columns class="h-4 w-4" />
-						Columns
-						<svg
-							width="12px"
-							height="12px"
-							class="inline-block h-2 w-2 fill-current opacity-60"
-							xmlns="http://www.w3.org/2000/svg"
-							viewBox="0 0 2048 2048"
-							><path d="M1799 349l-839 839-839-839-128 128 967 967 967-967z" /></svg
+						<ul
+							role="menu"
+							tabindex="0"
+							class="menu dropdown-content z-[1] w-52 rounded-box bg-base-100 p-2 shadow"
 						>
+							{#each internalColumns as column (column.key)}
+								<li>
+									<label class="label cursor-pointer">
+										<span class="label-text">{column.label}</span>
+										<input
+											type="checkbox"
+											class="checkbox checkbox-sm"
+											checked={!column.hidden}
+											on:change={() => toggleColumnVisibility(String(column.key))}
+										/>
+									</label>
+								</li>
+							{/each}
+						</ul>
 					</div>
-					<ul
-						role="menu"
-						tabindex="0"
-						class="menu dropdown-content z-[1] w-52 rounded-box bg-base-100 p-2 shadow"
-					>
-						{#each internalColumns as column (column.key)}
-							<li>
-								<label class="label cursor-pointer">
-									<span class="label-text">{column.label}</span>
-									<input
-										type="checkbox"
-										class="checkbox checkbox-sm"
-										checked={!column.hidden}
-										on:change={() => toggleColumnVisibility(String(column.key))}
-									/>
-								</label>
-							</li>
-						{/each}
-					</ul>
+
+					{#if $selectedIds.size > 0}
+						<div class="flex items-center gap-4">
+							<div class="flex items-center gap-1">
+								<span class="text-sm text-base-content/70">{$selectedIds.size} selected</span>
+								<div class="tooltip tooltip-bottom" data-tip="Clear selection">
+									<button
+										class="btn btn-circle btn-ghost btn-sm"
+										on:click={clearSelection}
+										aria-label="Clear selection"
+									>
+										<XCircle class="h-4 w-4" />
+									</button>
+								</div>
+							</div>
+							{#if someSelected && !allSelected}
+								<button class="btn btn-link btn-sm" on:click={selectAllFilteredAndSorted}>
+									Select all ({totalFilteredAndSortedItems})
+								</button>
+							{:else if allSelected}
+								<button class="btn btn-link btn-sm" on:click={clearSelection}>
+									Deselect all
+								</button>
+							{/if}
+							<button class="btn btn-error btn-sm" on:click={handleDeleteSelected}>
+								<Trash2 class="h-4 w-4" />
+								Delete Selected
+							</button>
+							<slot name="bulk-actions" selectedIds={Array.from($selectedIds)} />
+						</div>
+					{/if}
 				</div>
 			</div>
 		</div>
