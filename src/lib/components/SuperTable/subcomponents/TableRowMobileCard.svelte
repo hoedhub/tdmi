@@ -20,6 +20,7 @@
 	export let isSelectable = false;
 	export let cardClass = '';
 	export let className = '';
+	export let maxVisibleColumns: number | undefined = undefined;
 
 	const dispatch = createEventDispatcher<{
 		swipe: { row: Record<string, any>; direction: 'left' | 'right' };
@@ -32,13 +33,38 @@
 
 	$: {
 		const visibleColumns = columns.filter((col) => !col.hidden);
-		prioritizedColumns = visibleColumns
-			.filter((col) => col.cardPriority !== undefined)
-			.sort((a, b) => (a.cardPriority ?? Infinity) - (b.cardPriority ?? Infinity));
-		otherColumns = visibleColumns.filter((col) => col.cardPriority === undefined);
+
+		// New logic: columns without cardPriority are prioritized
+		const columnsWithoutPriority = visibleColumns.filter(
+			(col) => col.cardOverflowPriority === undefined
+		);
+		const columnsWithPriority = visibleColumns
+			.filter((col) => col.cardOverflowPriority !== undefined)
+			.sort((a, b) => (a.cardOverflowPriority ?? Infinity) - (b.cardOverflowPriority ?? Infinity)); // Still sort these for consistent "other" section
+
+		let initiallyVisible: ColumnDef<typeof row>[] = [];
+		let remainingColumns: ColumnDef<typeof row>[] = [];
+
+		if (maxVisibleColumns !== undefined && maxVisibleColumns >= 0) {
+			// If maxVisibleColumns is defined, take that many from columnsWithoutPriority
+			initiallyVisible = columnsWithoutPriority.slice(0, maxVisibleColumns);
+			// Remaining columns are the rest of columnsWithoutPriority + all columnsWithPriority
+			remainingColumns = [
+				...columnsWithoutPriority.slice(maxVisibleColumns),
+				...columnsWithPriority
+			];
+		} else {
+			// If maxVisibleColumns is not defined, all columns without priority are initially visible
+			initiallyVisible = columnsWithoutPriority;
+			// Other columns are all columns with priority
+			remainingColumns = columnsWithPriority;
+		}
+
+		prioritizedColumns = initiallyVisible;
+		otherColumns = remainingColumns;
 	}
 
-	let showAllFields = false;
+	let showAllFields = true;
 
 	function handleSwipe(event: SwipeEvent) {
 		event.preventDefault();

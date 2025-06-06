@@ -35,6 +35,7 @@
 	export let cardClass: SuperTableProps['cardClass'] = '';
 	export let rowClass: SuperTableProps['rowClass'] = '';
 	export let serverSide = false;
+	export let maxVisibleColumns: SuperTableProps['maxVisibleColumns'] = undefined;
 
 	const dispatch = createEventDispatcher();
 
@@ -342,6 +343,7 @@
 								isSelectable={true}
 								className={typeof rowClass === 'function' ? rowClass(row) : rowClass}
 								{cardClass}
+								{maxVisibleColumns}
 								on:select={handleSelect}
 								on:swipe={handleSwipe}
 							>

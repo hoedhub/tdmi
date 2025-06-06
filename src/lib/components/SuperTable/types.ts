@@ -80,7 +80,7 @@ export interface ColumnDef<T = any> {
     cellClass?: string | ((value: any, row: T) => string);
     headerClass?: string;
     formatter?: Formatter<T>;
-    cardPriority?: number;
+    cardOverflowPriority?: number; // New name: defines priority for columns that go into the "Show More" section
     responsiveShow?: ResponsiveShow;
     filterOptions?: FilterOption[];
 }
@@ -99,6 +99,7 @@ export interface SuperTableProps<T = any> {
     cardClass?: string;
     rowClass?: string | ((row: T) => string);
     serverSide?: boolean;  // Whether filtering/sorting/pagination is handled by the server
+    maxVisibleColumns?: number; // Max columns to show initially in mobile card view
 }
 
 export interface SuperTableEvents<T = any> {
@@ -107,4 +108,3 @@ export interface SuperTableEvents<T = any> {
     selectionChange: CustomEvent<Array<T[keyof T]>>;
     pageChange: CustomEvent<number>;
 }
-
