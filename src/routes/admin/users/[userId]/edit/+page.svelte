@@ -1,20 +1,57 @@
 <script lang="ts">
-	import type { ActionData, PageData } from './$types';
+	import type { PageData as SvelteKitPageData, ActionData } from './$types';
 	import { enhance, applyAction } from '$app/forms';
 	import type { ActionResult } from '@sveltejs/kit';
 	import { success, error } from '$lib/components/toast';
 	import { Save, RefreshCw } from 'lucide-svelte';
 
-	export let form: ActionData;
-	export let data: PageData & { allMurids: { id: number; nama: string }[] };
+	type FormActionData = {
+		selectedRoles?: string[];
+		active?: boolean;
+		muridIdStr?: string;
+		message?: string;
+		userId?: string;
+	} | null; // Izinkan 'null' untuk state awal
+
+	interface RoleHierarchyLink {
+		parentRoleId: string;
+		childRoleId: string;
+	}
+
+	// (Anda mungkin sudah memiliki interface ini, pastikan mereka ada)
+	interface UserToEdit {
+		id: string;
+		username: string;
+		active: boolean | null;
+		muridId: number | null;
+		assignedRoles: string[];
+	}
+	interface RoleOption {
+		id: string;
+		name: string;
+		description: string | null;
+	}
+	interface MuridOption {
+		id: number;
+		nama: string;
+	}
+
+	// Tipe PageData lengkap yang cocok dengan return dari server
+	interface PageData extends SvelteKitPageData {
+		userToEdit: UserToEdit;
+		allAvailableRoles: RoleOption[];
+		allMurids: MuridOption[];
+		roleHierarchy: RoleHierarchyLink[]; // <-- TAMBAHKAN INI
+	}
+
+	export let data: PageData;
+	export let form: FormActionData;
 	let isLoading: boolean = false;
+
 	let username: string = data.userToEdit.username;
-	let selectedRole: string = data.userToEdit.role;
+	let selectedRoles: string[] = data.userToEdit.assignedRoles;
 	let isActive: boolean | null = data.userToEdit.active;
-	let muridId: string =
-		data.userToEdit.muridId === null || data.userToEdit.muridId === 0
-			? ''
-			: String(data.userToEdit.muridId);
+	let muridId: string = data.userToEdit.muridId === null ? '' : String(data.userToEdit.muridId);
 	let newPassword: string = '';
 
 	async function handleSubmit() {
@@ -42,9 +79,72 @@
 	// Reactive assignments for form data on submission failure
 	$: if (form && 'userId' in form) {
 		// Check for a property that exists on the successful form data
-		if (form.role !== undefined) selectedRole = form.role;
+		if (form.selectedRoles !== undefined) selectedRoles = form.selectedRoles;
 		if (form.active !== undefined) isActive = form.active;
 		if (form.muridIdStr !== undefined) muridId = form.muridIdStr;
+	}
+	const initialRoleNames = data.userToEdit.assignedRoles
+		.map((roleId) => data.allAvailableRoles.find((r) => r.id === roleId)?.name)
+		.filter(Boolean) as string[]; // filter(Boolean) untuk menghapus nilai undefined
+
+	// Buat daftar nama peran yang dipilih saat ini (akan berubah-ubah)
+	let currentSelectedRoleNames: string[] = [];
+	$: currentSelectedRoleNames = selectedRoles
+		.map((roleId) => data.allAvailableRoles.find((r) => r.id === roleId)?.name)
+		.filter(Boolean) as string[];
+
+	$: roleHierarchy = data.roleHierarchy || [];
+
+	function getDirectChildren(parentRoleId: string): string[] {
+		return roleHierarchy
+			.filter((link) => link.parentRoleId === parentRoleId)
+			.map((link) => link.childRoleId);
+	}
+
+	function getDirectParent(childRoleId: string): string | undefined {
+		const parentLink = roleHierarchy.find((link) => link.childRoleId === childRoleId);
+		return parentLink?.parentRoleId;
+	}
+
+	function handleRoleSelection(roleId: string, isChecked: boolean) {
+		if (isChecked) {
+			selectedRoles = [...selectedRoles, roleId];
+			const children = getDirectChildren(roleId);
+			if (children.length > 0) {
+				selectedRoles = selectedRoles.filter((id) => !children.includes(id));
+			}
+			const parent = getDirectParent(roleId);
+			if (parent && selectedRoles.includes(parent)) {
+				selectedRoles = selectedRoles.filter((id) => id !== parent);
+			}
+		} else {
+			selectedRoles = selectedRoles.filter((id) => id !== roleId);
+		}
+	}
+
+	$: isRoleDisabled = (currentRoleId: string): boolean => {
+		if (selectedRoles.includes(currentRoleId)) {
+			return false;
+		}
+		const parent = getDirectParent(currentRoleId);
+		if (parent && selectedRoles.includes(parent)) {
+			return true;
+		}
+		const children = getDirectChildren(currentRoleId);
+		for (const childId of children) {
+			if (selectedRoles.includes(childId)) {
+				return true;
+			}
+		}
+		return false;
+	};
+
+	let isRoleModalOpen = false;
+	function openRoleManagement() {
+		isRoleModalOpen = true;
+	}
+	function closeRoleManagement() {
+		isRoleModalOpen = false;
 	}
 </script>
 
@@ -102,6 +202,7 @@
 			{/if}
 
 			<form method="POST" class="space-y-4" use:enhance={handleSubmit}>
+				<!-- Username & Password Reset tidak perlu diubah -->
 				<div class="form-control">
 					<label class="label" for="username">
 						<span class="label-text">Username</span>
@@ -112,13 +213,10 @@
 						name="username"
 						readOnly={true}
 						required
-						minlength="3"
-						maxlength="16"
 						class="input input-bordered w-full"
 						bind:value={username}
 					/>
 				</div>
-
 				<div class="form-control">
 					{#if newPassword}
 						<input
@@ -130,14 +228,13 @@
 							bind:value={newPassword}
 						/>
 					{/if}
-					<!-- Button to reset password -->
 					<button
 						type="button"
 						class="btn btn-secondary btn-sm mb-2"
 						on:click={() => {
 							if (!confirm('Are you sure you want to reset the password?')) return;
 							newPassword = '123456';
-							success('Password has been reset successfully.');
+							alert('Password akan direset menjadi 123456 saat disimpan.');
 						}}
 					>
 						Reset Password
@@ -145,20 +242,30 @@
 				</div>
 
 				<div class="form-control">
-					<label class="label" for="role">
-						<span class="label-text">Role</span>
-					</label>
-					<select
-						id="role"
-						name="role"
-						required
-						class="select select-bordered w-full"
-						bind:value={selectedRole}
-					>
-						{#each data.availableRoles as roleOption}
-							<option value={roleOption}>{roleOption}</option>
-						{/each}
-					</select>
+					<div class="label">
+						<span class="label-text">Roles</span>
+					</div>
+
+					<!-- Tampilkan peran yang dipilih saat ini sebagai badge -->
+					<div class="flex min-h-12 flex-wrap items-center gap-2 rounded-lg bg-base-200 p-2">
+						{#if currentSelectedRoleNames.length > 0}
+							{#each currentSelectedRoleNames as roleName}
+								<div class="badge badge-primary">{roleName}</div>
+							{/each}
+						{:else}
+							<span class="px-2 text-sm text-base-content/60">Tidak ada peran dipilih</span>
+						{/if}
+					</div>
+
+					<!-- Tombol untuk membuka modal -->
+					<button type="button" class="btn btn-outline btn-sm mt-2" on:click={openRoleManagement}>
+						Manage Roles
+					</button>
+
+					<!-- PENTING: Input tersembunyi untuk mengirim data peran -->
+					{#each selectedRoles as roleId (roleId)}
+						<input type="hidden" name="roles" value={roleId} />
+					{/each}
 				</div>
 
 				<div class="form-control">
@@ -177,7 +284,6 @@
 						{/each}
 					</select>
 				</div>
-
 				<div class="form-control">
 					<label class="label cursor-pointer justify-start gap-2">
 						<input
@@ -191,12 +297,10 @@
 					</label>
 				</div>
 
+				<!-- Tombol-tombol tidak perlu diubah -->
 				<div class="card-actions justify-end pt-4">
-					<a href="/admin/users" class="btn btn-ghost">
-						<!-- <IconCancel class="w-5 h-5 mr-2" /> -->
-						Cancel
-					</a>
-					<button type="submit" class="btn btn-primary">
+					<a href="/admin/users" class="btn btn-ghost">Cancel</a>
+					<button type="submit" class="btn btn-primary" disabled={isLoading}>
 						{#if isLoading}
 							<RefreshCw class="mr-2 h-5 w-5 animate-spin" />
 						{:else}
@@ -209,3 +313,33 @@
 		</div>
 	</div>
 </div>
+{#if isRoleModalOpen}
+	<div class="modal modal-open">
+		<div class="modal-box w-11/12 max-w-lg">
+			<h3 class="text-lg font-bold">Manage Roles for {username}</h3>
+			<p class="py-4">Pilih peran untuk pengguna ini.</p>
+
+			<!-- Tidak ada <form> di sini, karena kita hanya memodifikasi state -->
+			<div class="form-control max-h-60 overflow-y-auto rounded-lg border bg-base-200 p-4">
+				{#each data.allAvailableRoles as role (role.id)}
+					<label class="label cursor-pointer justify-start gap-4">
+						<input
+							type="checkbox"
+							name="modal_roles"
+							value={role.id}
+							class="checkbox-primary checkbox"
+							checked={selectedRoles.includes(role.id)}
+							disabled={isRoleDisabled(role.id)}
+							on:change={(e) => handleRoleSelection(role.id, e.currentTarget.checked)}
+						/>
+						<span class="label-text">{role.name}</span>
+					</label>
+				{/each}
+			</div>
+
+			<div class="modal-action">
+				<button type="button" class="btn" on:click={closeRoleManagement}>Done</button>
+			</div>
+		</div>
+	</div>
+{/if}

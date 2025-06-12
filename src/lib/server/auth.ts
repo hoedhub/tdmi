@@ -6,6 +6,7 @@ import { drizzle } from "drizzle-orm/libsql";
 import { createClient } from "@libsql/client"; // Or your Turso client setup
 import { DrizzleSQLiteAdapter } from "@lucia-auth/adapter-drizzle";
 import { usersTable, sessionTable, type userRoles } from "../drizzle/schema"; // Adjust path to your schema file
+import * as schema from '../drizzle/schema';
 
 config({ path: '.env' });
 
@@ -15,7 +16,7 @@ const client = createClient({
     authToken: process.env.TURSO_AUTH_TOKEN!,
 });
 
-const db = drizzle(client);
+const db = drizzle(client, { schema });
 
 // Pass your Drizzle instance and table definitions to the adapter
 const adapter = new DrizzleSQLiteAdapter(db, sessionTable, usersTable);

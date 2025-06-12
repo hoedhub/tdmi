@@ -1,5 +1,5 @@
 <!-- SuperTable.svelte -->
-<script lang="ts">
+<script lang="ts" generics="T extends Record<string, any>">
 	import type { ColumnDef, SortConfig, FilterState, SuperTableProps } from './types';
 	import { createEventDispatcher, onMount } from 'svelte';
 	import {
@@ -23,17 +23,18 @@
 	import { XCircle, Trash2, Columns } from 'lucide-svelte';
 
 	// Props
-	export let data: SuperTableProps['data'] = [];
-	export let columns: SuperTableProps['columns'] = [];
-	export let rowKey: SuperTableProps['rowKey'];
-	export let mobileView: SuperTableProps['mobileView'] = 'cards';
-	export let initialSort: SuperTableProps['initialSort'] = undefined;
-	export let itemsPerPageProp: SuperTableProps['itemsPerPage'] = 10;
-	export let totalItemsProp: SuperTableProps['totalItems'] = undefined;
-	export let isLoadingProp: SuperTableProps['isLoading'] = false;
-	export let tableClass: SuperTableProps['tableClass'] = '';
-	export let cardClass: SuperTableProps['cardClass'] = '';
-	export let rowClass: SuperTableProps['rowClass'] = '';
+	type Props = SuperTableProps<T>;
+	export let data: Props['data'] = [];
+	export let columns: Props['columns'] = [];
+	export let rowKey: Props['rowKey'];
+	export let mobileView: Props['mobileView'] = 'cards';
+	export let initialSort: Props['initialSort'] = undefined;
+	export let itemsPerPageProp: Props['itemsPerPage'] = 10;
+	export let totalItemsProp: Props['totalItems'] = undefined;
+	export let isLoadingProp: Props['isLoading'] = false;
+	export let tableClass: Props['tableClass'] = '';
+	export let cardClass: Props['cardClass'] = '';
+	export let rowClass: Props['rowClass'] = '';
 	export let serverSide = false;
 	export let maxVisibleColumns: SuperTableProps['maxVisibleColumns'] = undefined;
 

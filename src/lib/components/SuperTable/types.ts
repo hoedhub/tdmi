@@ -1,6 +1,6 @@
 // Types for SuperTable component
-import type { ComponentType, SvelteComponent, SvelteComponentTyped } from 'svelte';
-import type { HTMLAttributes } from 'svelte/elements';
+import type { ComponentType, SvelteComponentTyped } from 'svelte';
+import { SvelteComponent } from 'svelte';
 
 // Basic types
 export type SortDirection = 'asc' | 'desc';
@@ -108,3 +108,10 @@ export interface SuperTableEvents<T = any> {
     selectionChange: CustomEvent<Array<T[keyof T]>>;
     pageChange: CustomEvent<number>;
 }
+
+// This class defines the component's public contract for TypeScript.
+export class SuperTableComponent<T extends Record<string, any>> extends SvelteComponent<
+    SuperTableProps<T>,
+    { [key: string]: any },
+    { 'row-actions': { row: T } } // Align this with the slot name you are using!
+> { }

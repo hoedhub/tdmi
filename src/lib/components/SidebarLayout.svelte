@@ -5,7 +5,15 @@
 	import { ChartNoAxesGantt } from 'lucide-svelte';
 
 	// Import Lucide icons
-	import { Home, Settings, UserPen, Users, Menu as MenuIcon, LogOut } from 'lucide-svelte';
+	import {
+		Home,
+		Settings,
+		UserPen,
+		Users,
+		Menu as MenuIcon,
+		LogOut,
+		UserCircle
+	} from 'lucide-svelte';
 	// For SvelteKit, you might use: import { page } from '$app/stores';
 
 	let isSidebarOpen = false; // For mobile drawer state
@@ -24,24 +32,17 @@
 		}
 	}
 
-	onMount(() => {
-		if (typeof window !== 'undefined') {
-			currentPath = window.location.pathname;
-			// Check initial theme preference
-			isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
-		}
-	});
-
 	const menuItems = [
 		{ href: '/', label: 'Dashboard', icon: Home },
 		{ href: '/member/users', label: 'Users', icon: Users },
-		{ href: '/member/profile', label: 'Edit Profile', icon: UserPen },
+		// { href: '/member/profile', label: 'Edit Profile', icon: UserPen },
 		{ href: '/settings', label: 'Settings', icon: Settings }
 	];
 
 	function isActive(href: String) {
 		// For SvelteKit, use: $page.url.pathname === href
-		return currentPath === href || (href === '/' && currentPath.startsWith('/#'));
+		// return currentPath === href || (href === '/' && currentPath.startsWith('/#'));
+		return $page.url.pathname === href; // Gunakan $page store untuk
 	}
 	const themes = [
 		'light',
@@ -78,36 +79,25 @@
 		'sunset'
 	];
 	let currentTheme = 'cupcake'; // Default theme
-	let saveTheme = true; // State for saving theme preference
-	let themeDropdownButton: HTMLDivElement; // Reference to the dropdown button
 
 	function toggleTheme(theme: string) {
+		if (currentTheme === theme) return;
 		document.documentElement.setAttribute('data-theme', theme);
-		isDarkMode = theme === 'dark';
 		currentTheme = theme;
-		if (saveTheme) localStorage.setItem(`${$page.data.user?.id || 'default'}-theme`, theme);
+		localStorage.setItem(`${$page.data.user?.id || 'default'}-theme`, theme);
 	}
 
 	function previewTheme(theme: string) {
 		document.documentElement.setAttribute('data-theme', theme);
-		// Optional: Persist theme choice in localStorage
-		// localStorage.setItem('theme', newTheme);
 	}
 
-	// If using SvelteKit's theme controller script, this function might not be needed,
-	// but this is a simple JS-only way.
 	onMount(() => {
-		// saveTheme = localStorage.getItem(`${$page.data.user?.id || 'default'}-theme`) === 'true';
-		const savedTheme = localStorage.getItem(`${$page.data.user?.id || 'default'}-theme`);
-		currentTheme = savedTheme || currentTheme;
-		if (savedTheme) {
-			// document.documentElement.setAttribute('data-theme', savedTheme);
-			isDarkMode = savedTheme === 'dark';
+		if (typeof window !== 'undefined') {
+			const savedTheme = localStorage.getItem(`${$page.data.user?.id || 'default'}-theme`);
+			if (savedTheme && currentTheme !== savedTheme) {
+				currentTheme = savedTheme;
+			}
 		}
-		//   else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-		//     document.documentElement.setAttribute('data-theme', 'dark');
-		//     isDarkMode = true;
-		//   }
 	});
 </script>
 
@@ -135,27 +125,14 @@
 			<div class="flex-1">
 				<a href="/" class="btn btn-ghost text-xl normal-case">MyApp</a>
 			</div>
-			<!-- Optional: Theme toggle in mobile navbar -->
-			<!-- <div class="flex-none">
-				<button class="btn btn-square btn-ghost" on:click={toggleTheme} aria-label="Toggle theme">
-					{#if isDarkMode}
-						<Sun size={20} />
-					{:else}
-						<Moon size={20} />
-					{/if}
-				</button>
-			</div> -->
 		</div>
 
 		<!-- Main content area -->
 		<main class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
-			<slot name="main-content">
-				<h1 class="text-2xl font-bold">Welcome!</h1>
-				<p>This is the main content area.</p>
-			</slot>
+			<slot name="main-content" />
 		</main>
 
-		<!-- Optional Footer -->
+		<!-- Footer -->
 		<footer class="footer footer-center bg-base-300 p-4 text-base-content">
 			<aside>
 				<p>Copyright © {new Date().getFullYear()} - TDMI. All right reserved</p>
@@ -166,10 +143,12 @@
 	<!-- Sidebar -->
 	<aside class="drawer-side z-40">
 		<label for="sidebar-drawer-toggle" aria-label="close sidebar" class="drawer-overlay"></label>
-		<div class="menu flex min-h-full w-64 flex-col bg-base-200 p-4 text-base-content md:w-72">
-			<!-- Sidebar header/logo -->
-			<div class="mb-6 mt-2">
-				<a href="/" class="btn btn-ghost flex items-center text-2xl font-semibold normal-case">
+
+		<!-- STRUKTUR UTAMA SIDEBAR YANG DIROMBAK -->
+		<div class="flex h-full w-64 flex-col bg-base-200 p-4 text-base-content md:w-72">
+			<!-- 1. Logo/Header -->
+			<div class="mb-4 mt-2 flex items-center justify-center">
+				<a href="/" class="btn btn-ghost text-2xl font-semibold normal-case">
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
 						width="28"
@@ -181,56 +160,60 @@
 						stroke-linecap="round"
 						stroke-linejoin="round"
 						class="lucide lucide-box mr-2 text-primary"
-						><path
-							d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"
-						/><polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line
-							x1="12"
-							y1="22.08"
-							x2="12"
-							y2="12"
-						/></svg
 					>
+						<path
+							d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"
+						/>
+						<polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+						<line x1="12" y1="22.08" x2="12" y2="12" />
+					</svg>
 					MyApp
 				</a>
 			</div>
+			<div class="divider my-0"></div>
 
-			<!-- Navigation Menu -->
-			<ul class="flex-grow space-y-1">
+			<!-- 2. Menu Navigasi Utama (Scrollable) -->
+			<ul class="menu flex-grow space-y-1 overflow-y-auto">
 				{#each menuItems as item}
 					<li>
 						<a
 							href={item.href}
 							class:active={isActive(item.href)}
 							on:click={() => (isSidebarOpen = false)}
-							class="flex items-center justify-start"
 						>
 							<svelte:component this={item.icon} size={20} class="opacity-75" />
 							<span>{item.label}</span>
 						</a>
 					</li>
 				{/each}
-			</ul>
-			{#if $page.data.user?.role === 'admin'}
-				<div class="divider my-1"></div>
-				<a
-					href={'/admin'}
-					on:click={() => (isSidebarOpen = false)}
-					class="flex items-center justify-start"
-				>
-					<svelte:component this={ChartNoAxesGantt} size={20} class="opacity-75" />
-					<span>{'Admin'}</span>
-				</a>
-			{/if}
 
-			<!-- Sidebar footer/actions -->
-			<div class="mt-auto pt-4">
-				<!-- Theme Toggle Example -->
-				<div class="form-control -mb-2 flex flex-row items-center">
-					Theme
+				<!-- Tautan Admin (Bagian dari Navigasi Utama) -->
+				{#if $page.data.canAccessAdmin}
+					<div class="divider my-1 text-xs">Admin Area</div>
+					<li>
+						<a
+							href={'/admin'}
+							class:active={$page.url.pathname.startsWith('/admin')}
+							on:click={() => (isSidebarOpen = false)}
+						>
+							<ChartNoAxesGantt size={20} class="opacity-75" />
+							<span>{'Admin'}</span>
+						</a>
+					</li>
+				{/if}
+			</ul>
+
+			<!-- 3. Bagian Bawah (Fixed): Aksi Pengguna & Sesi -->
+			<div class="mt-auto flex flex-col space-y-2 pt-4">
+				<!-- Pemilih Tema yang Lebih Baik -->
+				<label class="form-control flex w-full flex-row items-center">
+					<div class="label pt-[0.75rem]">
+						<span class="label-text">Theme</span>
+					</div>
 					<div class="dropdown dropdown-top">
-						<div tabindex="0" role="button" class="btn m-1" bind:this={themeDropdownButton}>
+						<button tabindex="0" class="btn btn-xs" on:click|preventDefault={() => null}>
 							{currentTheme}
-						</div>
+						</button>
 						<ul
 							class="menu dropdown-content z-[1] h-96 w-52 overflow-y-auto rounded-box bg-base-100 p-2 shadow"
 						>
@@ -240,13 +223,11 @@
 										class:active={currentTheme === theme}
 										on:click|preventDefault={() => {
 											toggleTheme(theme);
-											// Close the dropdown by blurring the button
-											themeDropdownButton.blur();
 										}}
 										on:mouseover|preventDefault={() => previewTheme(theme)}
 										on:focus|preventDefault={() => previewTheme(theme)}
-										on:mouseleave|preventDefault={() => toggleTheme(currentTheme)}
-										on:blur|preventDefault={() => toggleTheme(currentTheme)}
+										on:mouseleave|preventDefault={() => previewTheme(currentTheme)}
+										on:blur|preventDefault={() => previewTheme(currentTheme)}
 									>
 										{theme}
 									</button>
@@ -254,72 +235,43 @@
 							{/each}
 						</ul>
 					</div>
-				</div>
-				<!-- <label class="label m-0 flex cursor-pointer justify-start">
-					<input
-						id="save-theme"
-						type="checkbox"
-						bind:checked={saveTheme}
-						on:click={() =>
-							setTimeout(
-								() => localStorage.setItem('save-theme', saveTheme ? 'true' : 'false'),
-								100
-							)}
-						class="checkbox checkbox-xs"
-					/>
-					<span class="label-text px-1 text-xs">Save Theme</span>
-				</label> -->
-				<div class="divider my-1"></div>
-				<ul>
-					<li>
-						<a
-							href="/logout"
-							on:click|preventDefault={() => {
-								logout();
-								isSidebarOpen = false;
-							}}
-							class="flex items-center space-x-3"
+				</label>
+
+				<!-- Dropdown Profil Pengguna -->
+				{#if $page.data.user}
+					<div class="dropdown dropdown-top w-full">
+						<button tabindex="0" class="btn btn-ghost w-full justify-start">
+							<UserCircle size={24} />
+							<span class="truncate">Halo, {$page.data.user.username}</span>
+						</button>
+						<ul
+							tabindex="0"
+							role="menu"
+							class="menu dropdown-content z-[1] w-full rounded-box bg-base-300 p-2 shadow"
 						>
-							<LogOut size={20} class="opacity-75" />
-							<span>Logout</span>
-						</a>
-					</li>
-				</ul>
+							<li class="menu-title text-xs">Signed in as {$page.data.user.username}</li>
+							<div class="divider my-0"></div>
+							<li>
+								<a href="/member/profile" on:click={() => (isSidebarOpen = false)}>
+									<UserPen size={16} /> Edit Profile
+								</a>
+							</li>
+							<li>
+								<a href="/logout" on:click|preventDefault={logout}>
+									<LogOut size={16} /> Logout
+								</a>
+							</li>
+						</ul>
+					</div>
+				{/if}
 			</div>
 		</div>
 	</aside>
 </div>
 
 <style>
-	/* DaisyUI's .active class on menu items is usually sufficient */
-	/* .menu li > a.active { */
-	/* background-color: hsl(var(--p) / 0.1); /* Subtle primary background */
-	/* color: hsl(var(--p)); /* Primary color text */
-	/* font-weight: 600; */
-	/* } */
-	.menu li > a.active :global(svg) {
-		opacity: 1;
-		/* color: hsl(var(--p)); If you want icon color to also be primary */
+	/* Anda mungkin tidak perlu style tambahan karena DaisyUI sudah menanganinya */
+	.menu li > a.active {
+		font-weight: 600;
 	}
-
-	/* Ensure icons align nicely with text */
-	/* .menu li > a :global(svg), */
-	/* .sidebar-footer-actions :global(svg) { */
-	/* Lucide icons are already well-aligned, but you can add margin if needed */
-	/* margin-right: 0.75rem; */
-	/* } */
-
-	/* Ensure enough space for icons */
-	/* .menu li > a span {
-		flex-grow: 1;
-	} */
-
-	/* For the simple theme toggle, let's ensure the HTML data-theme is set.
-       If you install `theme-change` from DaisyUI, it handles this more robustly. */
-	/* :global(html[data-theme="light"]) { */
-	/* --your-light-theme-vars-- */
-	/* } */
-	/* :global(html[data-theme="dark"]) { */
-	/* --your-dark-theme-vars-- */
-	/* } */
 </style>
