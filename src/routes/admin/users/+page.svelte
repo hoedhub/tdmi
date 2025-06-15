@@ -29,7 +29,8 @@
 
 	export let data: ExtendedPageData;
 	export let form: { success?: boolean; message?: string } | null;
-
+	let users = data.users;
+	let totalItems = data.totalItems;
 	let loading = false;
 	const pageSize = 10;
 	let currentPage = 1;
@@ -38,23 +39,18 @@
 
 	// --- Reactive Data from Props ---
 	// to handle initial load and client-side navigation correctly.
-	$: users = (data.users || []).map((user) => ({
-		...user,
-		assignedRoles: user.assignedRoles || []
-	}));
+	// $: users = (data.users || []).map((user) => ({
+	// 	...user,
+	// 	assignedRoles: user.assignedRoles || []
+	// }));
 	$: allRoles = data.allRoles || [];
-	$: totalItems = data.totalItems || 0;
+	// $: totalItems = data.totalItems || 0;
 
 	// This depends on `allRoles`, which is now reactive, so this pattern is correct.
 	let columns: ColumnDef[] = [];
 	$: if (allRoles.length > 0) {
 		columns = [
-			{
-				key: 'username',
-				label: 'Username',
-				sortable: true,
-				filterable: 'text'
-			},
+			{ key: 'username', label: 'Username', sortable: true, filterable: 'text' },
 			{
 				key: 'assignedRoles',
 				label: 'Roles',
@@ -63,10 +59,7 @@
 				filterOptions: allRoles.map((role) => role.name),
 				formatter: (value: string[]) =>
 					value
-						.map((roleId: string) => {
-							const role = allRoles.find((r) => r.id === roleId);
-							return role ? role.name : roleId;
-						})
+						.map((roleId: string) => allRoles.find((r) => r.id === roleId)?.name || roleId)
 						.join(', ') || 'No Roles'
 			},
 			{
@@ -75,19 +68,15 @@
 				sortable: true,
 				filterable: 'select',
 				filterOptions: ['Active', 'Inactive'],
-				formatter: (value: boolean) => (value ? 'Active' : 'Inactive'),
-				cellClass: (value: boolean) => (value ? 'text-success' : 'text-error')
+				formatter: (value: boolean | null) => (value ? 'Active' : 'Inactive'),
+				cellClass: (value: boolean | null) => (value ? 'text-success' : 'text-error')
 			},
 			{
 				key: 'muridId',
 				label: 'Murid ID',
 				sortable: true,
-				formatter: (value: number | null) => {
-					if (value === null || value === 0) {
-						return 'N/A';
-					}
-					return value.toString();
-				}
+				formatter: (value: number | null) =>
+					value === null || value === 0 ? 'N/A' : value.toString()
 			},
 			{
 				key: 'createdAt',
@@ -108,28 +97,19 @@
 		try {
 			const response = await fetch('/admin/users/table', {
 				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({
-					sort,
-					filters,
-					page,
-					pageSize
-				})
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ sort, filters, page, pageSize })
 			});
 			if (!response.ok) throw new Error('Failed to fetch users');
+
 			const result = await response.json();
-			// No need to update `users` here reactively, Svelte will do it when `data` changes
-			// but for server-side tables, you must update the local state.
-			users = result.users.map((user: User & { assignedRoles: string[] }) => ({
-				...user,
-				assignedRoles: user.assignedRoles || []
-			}));
+
+			// Sekarang kita menugaskan nilai ke variabel `let` biasa, tidak ada konflik.
+			users = result.users;
 			totalItems = result.totalItems;
 			currentPage = result.currentPage;
 		} catch (error) {
-			console.error('Error fetching users:', error);
+			console.error('Error fetching table data:', error);
 		} finally {
 			loading = false;
 		}
@@ -141,18 +121,8 @@
 	}
 
 	async function handleFilter(event: CustomEvent<FilterState>) {
-		event.preventDefault();
-		const newFilters: Record<string, any> = {};
-		if (event.detail.global) {
-			newFilters.global = event.detail.global;
-		}
-		Object.entries(event.detail.columns).forEach(([key, value]) => {
-			if (value) {
-				newFilters[key] = value;
-			}
-		});
-		currentFilters = newFilters;
-		await fetchTableData(currentSort, currentFilters, 1); // Reset to page 1 on filter
+		currentFilters = { ...event.detail.columns, global: event.detail.global };
+		await fetchTableData(currentSort, currentFilters, 1); // Reset ke halaman 1 saat filter
 	}
 
 	async function handlePageChange(event: CustomEvent<number>) {
@@ -196,42 +166,43 @@
 			<h1 class="card-title text-2xl">User Management</h1>
 			<a href="/admin/users/new" class="btn btn-primary"> Create New User </a>
 		</div>
-
-		<SuperTable
-			data={users}
-			{columns}
-			rowKey="id"
-			itemsPerPage={pageSize}
-			{totalItems}
-			isLoading={loading}
-			initialSort={currentSort}
-			serverSide={true}
-			on:sort={handleSort}
-			on:filter={handleFilter}
-			on:pageChange={handlePageChange}
-			on:rowClick={({ detail }) => goto(`/admin/users/${detail.id}/edit`)}
-		>
-			<svelte:fragment slot="row-actions" let:row>
-				<div class="flex gap-2">
-					<a
-						href={`/admin/users/${row.id}/edit`}
-						class="btn btn-ghost btn-sm"
-						on:click|stopPropagation={() => {}}
-					>
-						<Pen class="h-4 w-4" />
-					</a>
-					{#if row.id !== data.user?.id}
-						<button
-							class="btn btn-ghost btn-sm text-error"
-							on:click|stopPropagation={() => handleDeleteUser(row.id, row.username)}
+		{#key users}
+			<SuperTable
+				data={users}
+				{columns}
+				rowKey="id"
+				itemsPerPage={pageSize}
+				{totalItems}
+				isLoading={loading}
+				initialSort={currentSort}
+				serverSide={true}
+				on:sort={handleSort}
+				on:filter={handleFilter}
+				on:pageChange={handlePageChange}
+				on:rowClick={({ detail }) => goto(`/admin/users/${detail.id}/edit`)}
+			>
+				<svelte:fragment slot="row-actions" let:row>
+					<div class="flex gap-2">
+						<a
+							href={`/admin/users/${row.id}/edit`}
+							class="btn btn-ghost btn-sm"
+							on:click|stopPropagation={() => {}}
 						>
-							<Trash class="h-4 w-4" />
-						</button>
-					{:else}
-						<button class="btn btn-disabled btn-sm"><Trash class="h-4 w-4" /></button>
-					{/if}
-				</div>
-			</svelte:fragment>
-		</SuperTable>
+							<Pen class="h-4 w-4" />
+						</a>
+						{#if row.id !== data.user?.id}
+							<button
+								class="btn btn-ghost btn-sm text-error"
+								on:click|stopPropagation={() => handleDeleteUser(row.id, row.username)}
+							>
+								<Trash class="h-4 w-4" />
+							</button>
+						{:else}
+							<button class="btn btn-disabled btn-sm"><Trash class="h-4 w-4" /></button>
+						{/if}
+					</div>
+				</svelte:fragment>
+			</SuperTable>
+		{/key}
 	</div>
 </div>

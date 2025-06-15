@@ -35,6 +35,7 @@
 	export let tableClass: Props['tableClass'] = '';
 	export let cardClass: Props['cardClass'] = '';
 	export let rowClass: Props['rowClass'] = '';
+	export let isSelectable: boolean = true;
 	export let serverSide = false;
 	export let maxVisibleColumns: SuperTableProps['maxVisibleColumns'] = undefined;
 
@@ -121,7 +122,7 @@
 
 	function handleFilter(event: CustomEvent<{ column: ColumnDef; value: any; columnKey: string }>) {
 		const { column, value, columnKey } = event.detail;
-		console.log('[SuperTable] Column filter change:', { column: columnKey, value, serverSide });
+		// console.log('[SuperTable] Column filter change:', { column: columnKey, value, serverSide });
 
 		// Update filter state
 		$filterState.columns = { ...$filterState.columns, [columnKey]: value };
@@ -211,12 +212,12 @@
 	// Create a debounced function for filter updates
 	function debouncedDispatchFilter(filterState: FilterState) {
 		if (filterTimeout) clearTimeout(filterTimeout);
-		console.log('[SuperTable] Setting up filter dispatch with state:', {
-			globalFilter: filterState.global,
-			columnFilters: filterState.columns,
-			debounceDelay: FILTER_DEBOUNCE_MS,
-			serverSide
-		});
+		// console.log('[SuperTable] Setting up filter dispatch with state:', {
+		// 	globalFilter: filterState.global,
+		// 	columnFilters: filterState.columns,
+		// 	debounceDelay: FILTER_DEBOUNCE_MS,
+		// 	serverSide
+		// });
 
 		if (!serverSide) {
 			// Only update internal state for client-side filtering
@@ -225,7 +226,7 @@
 
 		// Debounce the event dispatch to parent
 		filterTimeout = setTimeout(() => {
-			console.log('[SuperTable] Dispatching debounced filter event to parent');
+			// console.log('[SuperTable] Dispatching debounced filter event to parent');
 			if (serverSide) $isLoading = true; // Show loading state for server-side filtering
 			dispatch('filter', filterState);
 		}, FILTER_DEBOUNCE_MS);
@@ -328,19 +329,25 @@
 	<!-- Main table/cards section with card styling -->
 	<div class="card bg-base-100 shadow">
 		<div class="card-body px-0 py-0">
-			{#if $isLoading}
-				<slot name="loading-state">
-					<div class="flex w-full justify-center p-8">
-						<span class="loading loading-spinner" />
-					</div>
-				</slot>
-			{:else if data.length === 0}
-				<slot name="empty-state">
-					<div class="p-8 text-center text-base-content/70">No data available</div>
-				</slot>
-			{:else}
-				<!-- Mobile card view -->
-				{#if isMobile && mobileView === 'cards'}
+			<!-- ============================================= -->
+			<!--           STRUKTUR BARU DIMULAI DI SINI         -->
+			<!-- ============================================= -->
+
+			<!-- Tampilkan tabel bahkan jika tidak ada data, agar header tetap terlihat -->
+			<!-- Kita hanya akan menyembunyikan tabel jika sedang loading -->
+			{#if isMobile && mobileView === 'cards'}
+				<!-- Tampilan Mobile (Logikanya mirip) -->
+				{#if $isLoading}
+					<slot name="loading-state">
+						<div class="flex w-full justify-center p-8">
+							<span class="loading loading-spinner" />
+						</div>
+					</slot>
+				{:else if data.length === 0}
+					<slot name="empty-state">
+						<div class="p-8 text-center text-base-content/70">No data available</div>
+					</slot>
+				{:else}
 					<div class="grid gap-4 px-4 sm:grid-cols-2">
 						{#each paginatedData as row (String(row[rowKey]))}
 							<TableRowMobileCard
@@ -360,23 +367,49 @@
 							</TableRowMobileCard>
 						{/each}
 					</div>
-					<!-- Table view -->
-				{:else}
-					<div class="overflow-x-auto">
-						<table class="table table-sm w-full {tableClass}">
-							<TableHeader
-								columns={internalColumns}
-								currentSort={$sortState}
-								filterValues={$filterState.columns}
-								isSelectable={true}
-								{allSelected}
-								{someSelected}
-								on:sort={handleSort}
-								on:filter={handleFilter}
-								on:selectAll={handleSelectAll}
-							/>
+				{/if}
+			{:else}
+				<!-- Tampilan Desktop (Tabel) - Ini yang kita perbaiki -->
+				<div class="overflow-x-auto">
+					<table class="table table-sm w-full {tableClass}">
+						<!-- HEADER SELALU DIRENDER -->
+						<TableHeader
+							columns={internalColumns}
+							currentSort={$sortState}
+							filterValues={$filterState.columns}
+							isSelectable={true}
+							{allSelected}
+							{someSelected}
+							on:sort={handleSort}
+							on:filter={handleFilter}
+							on:selectAll={handleSelectAll}
+						/>
 
-							<tbody>
+						<!-- BODY BERUBAH BERDASARKAN STATE -->
+						<tbody>
+							{#if $isLoading}
+								<slot name="loading-state">
+									<tr>
+										<td
+											colspan={internalColumns.length + (isSelectable ? 1 : 0) + 1}
+											class="p-8 text-center"
+										>
+											<span class="loading loading-spinner" />
+										</td>
+									</tr>
+								</slot>
+							{:else if data.length === 0}
+								<slot name="empty-state">
+									<tr>
+										<td
+											colspan={internalColumns.length + (isSelectable ? 1 : 0) + 1}
+											class="p-8 text-center text-base-content/70"
+										>
+											No data available
+										</td>
+									</tr>
+								</slot>
+							{:else}
 								{#each paginatedData as row (String(row[rowKey]))}
 									<TableRowDesktop
 										{row}
@@ -392,11 +425,14 @@
 										</svelte:fragment>
 									</TableRowDesktop>
 								{/each}
-							</tbody>
-						</table>
-					</div>
-				{/if}
+							{/if}
+						</tbody>
+					</table>
+				</div>
 			{/if}
+			<!-- ============================================= -->
+			<!--           STRUKTUR BARU SELESAI               -->
+			<!-- ============================================= -->
 		</div>
 	</div>
 

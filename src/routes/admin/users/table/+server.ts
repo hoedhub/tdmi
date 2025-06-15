@@ -1,134 +1,142 @@
-import { db } from '$lib/drizzle';
-import { usersTable, userRoles } from '$lib/drizzle/schema';
-import { error, json } from '@sveltejs/kit';
-import { asc, desc, eq, like, and, sql, type SQL } from 'drizzle-orm';
+import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
+import { db } from '$lib/drizzle';
+import { usersTable, userRolesTable, rolesTable } from '$lib/drizzle/schema'; // Hapus impor rolesTable yang tidak terpakai
+import { userHasPermission } from '$lib/server/accessControl';
+import { count, asc, desc, like, eq, and, or } from 'drizzle-orm';
+import type { SQL } from 'drizzle-orm';
 
-type UserRole = (typeof userRoles)[number];
-type SortableColumns = 'username' | 'role' | 'active' | 'muridId' | 'createdAt';
 
-interface TableRequest {
-    sort?: {
-        key: SortableColumns;
-        direction: 'asc' | 'desc';
-    };
-    filters?: {
-        global?: string;
-        username?: string;
-        role?: UserRole;
-        active?: string;
-        muridId?: string | number;
-    };
-    page?: number;
-    pageSize?: number;
-}
+type ProcessedUser = {
+    id: string;
+    username: string;
+    active: boolean | null;
+    muridId: number | null;
+    createdAt: string;
+    assignedRoles: string[];
+};
 
 export const POST: RequestHandler = async ({ request, locals }) => {
-    if (locals.user?.role !== 'admin') {
+    if (!locals.user) {
+        throw error(401, 'Unauthorized');
+    }
+    const canReadUsers = await userHasPermission(locals.user.id, 'perm-user-read');
+    if (!canReadUsers) {
         throw error(403, 'Forbidden');
     }
 
-    const { sort, filters, page = 1, pageSize = 10 } = await request.json() as TableRequest;
-
     try {
-        const baseSelect = {
-            id: usersTable.id,
-            username: usersTable.username,
-            role: usersTable.role,
-            active: usersTable.active,
-            muridId: usersTable.muridId,
-            created_at: usersTable.created_at
-        } as const;
+        const body = await request.json();
+        const { sort, filters, page, pageSize } = body;
 
-        // Build conditions array first
-        const conditions: SQL[] = [];
+        // 1. Buat array untuk menampung semua kondisi WHERE
+        const conditions: (SQL | undefined)[] = [];
+
+        // 2. Iterasi melalui filter yang diterima dari frontend
         if (filters) {
-            // Handle global search first
-            if (filters.global) {
-                conditions.push(
-                    sql`(${usersTable.username} LIKE ${'%' + filters.global + '%'} OR 
-                        CAST(${usersTable.muridId} AS TEXT) LIKE ${'%' + filters.global + '%'} OR
-                        ${usersTable.role} LIKE ${'%' + filters.global + '%'})`
-                );
-            }
+            for (const [key, value] of Object.entries(filters)) {
+                // Lewati jika filter kosong atau 'All'
+                if (!value || value === 'All') continue;
 
-            // Then handle specific column filters
-            if (filters.username) {
-                conditions.push(like(usersTable.username, `%${filters.username}%`));
-            }
-
-            if (filters.role && userRoles.includes(filters.role)) {
-                const role: UserRole = filters.role;
-                conditions.push(eq(usersTable.role, role));
-            }
-
-            if (filters.active !== undefined) {
-                conditions.push(eq(usersTable.active, filters.active === 'Active'));
-            }
-
-            if (filters.muridId !== undefined) {
-                conditions.push(
-                    filters.muridId === 'N/A'
-                        ? eq(usersTable.muridId, 0)
-                        : eq(usersTable.muridId, Number(filters.muridId))
-                );
+                switch (key) {
+                    case 'global':
+                        conditions.push(
+                            or(
+                                like(usersTable.username, `%${value}%`),
+                                like(usersTable.active, `%${value}%`),
+                                like(rolesTable.name, `%${value}%`)
+                                // Anda bisa menambahkan kolom lain di sini, misal:
+                                // like(muridTable.nama, `%${value}%`)
+                            )
+                        );
+                        break;
+                    case 'username':
+                        conditions.push(like(usersTable.username, `%${value}%`));
+                        break;
+                    case 'active':
+                        // Konversi string 'Active'/'Inactive' menjadi boolean
+                        conditions.push(eq(usersTable.active, value === 'Active'));
+                        break;
+                    case 'assignedRoles':
+                        // Filter berdasarkan nama peran dari tabel 'roles'
+                        conditions.push(like(rolesTable.name, `%${value}%`));
+                        break;
+                    // 'global' filter bisa ditambahkan di sini jika perlu,
+                    // tapi filter per kolom biasanya lebih disukai.
+                }
             }
         }
 
-        // Calculate pagination
-        const offset = (page - 1) * pageSize;
+        // 3. Gabungkan semua kondisi dengan 'AND'
+        const finalWhereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
-
-
-        // Execute queries with a single query builder construction
-        const [users, countResult] = await Promise.all([
-            db.select(baseSelect)
-                .from(usersTable)
-                .where(conditions.length > 0 ? and(...conditions) : undefined)
-                .orderBy(() => {
-                    if (!sort || !sort.key) {
-                        return [asc(usersTable.created_at)]; // Default sorting by created_at when no sort is specified
-                    }
-
-                    let sortColumn;
-                    switch (sort.key) {
-                        case 'createdAt':
-                            sortColumn = usersTable.created_at;
-                            break;
-                        case 'muridId':
-                            sortColumn = usersTable.muridId;
-                            break;
-                        case 'username':
-                            sortColumn = usersTable.username;
-                            break;
-                        case 'role':
-                            sortColumn = usersTable.role;
-                            break;
-                        case 'active':
-                            sortColumn = usersTable.active;
-                            break;
-                        default:
-                            sortColumn = usersTable.created_at; // Fallback to created_at
-                    }
-
-                    return sort.direction === 'desc' ? [desc(sortColumn)] : [asc(sortColumn)];
-                })
-                .limit(pageSize)
-                .offset(offset),
-            db.select({
-                count: sql<number>`count(*)`
+        // Query untuk mengambil SEMUA baris yang cocok, termasuk duplikat karena peran
+        const allMatchingRows = await db
+            .select({
+                id: usersTable.id,
+                username: usersTable.username,
+                active: usersTable.active,
+                muridId: usersTable.muridId,
+                createdAt: usersTable.createdAt,
+                roleId: userRolesTable.roleId
             })
-                .from(usersTable)
-                .where(conditions.length > 0 ? and(...conditions) : undefined)
-        ]);
+            .from(usersTable)
+            .leftJoin(userRolesTable, eq(usersTable.id, userRolesTable.userId))
+            .leftJoin(rolesTable, eq(userRolesTable.roleId, rolesTable.id))
+            .where(finalWhereClause);
 
+        const usersMap = new Map<string, ProcessedUser>();
+
+        for (const row of allMatchingRows) {
+            if (!usersMap.has(row.id)) {
+                usersMap.set(row.id, { id: row.id, username: row.username, active: row.active, muridId: row.muridId, createdAt: row.createdAt, assignedRoles: [] });
+            }
+            if (row.roleId) {
+                usersMap.get(row.id)!.assignedRoles.push(row.roleId);
+            }
+        }
+
+        const totalItems = usersMap.size;
+        let usersForClient = Array.from(usersMap.values());
+
+        // --- DIUBAH: Logika Sorting yang Type-Safe ---
+        if (sort && sort.key) {
+            // Definisikan kunci yang valid untuk sorting
+            const sortableKeys: (keyof ProcessedUser)[] = ['username', 'active', 'muridId', 'createdAt'];
+
+            // Lakukan type assertion untuk memberi tahu TS bahwa kita sudah memvalidasi kuncinya
+            const sortKey = sort.key as keyof ProcessedUser;
+
+            if (sortableKeys.includes(sortKey)) {
+                usersForClient.sort((a, b) => {
+                    const valA = a[sortKey];
+                    const valB = b[sortKey];
+
+                    // Tangani null agar tidak crash
+                    if (valA === null) return 1;
+                    if (valB === null) return -1;
+
+                    if (valA < valB) return sort.direction === 'asc' ? -1 : 1;
+                    if (valA > valB) return sort.direction === 'asc' ? 1 : -1;
+                    return 0;
+                });
+            }
+        }
+
+        const paginatedUsers = usersForClient.slice((page - 1) * pageSize, page * pageSize);
+        // console.log('[API RESPONSE] Data yang dikirim:', JSON.stringify({
+        //     users: usersForClient,
+        //     totalItems: countResult[0].totalCount
+        // }, null, 2));
         return json({
-            users,
-            totalItems: Number(countResult[0].count),
-            currentPage: page
+            users: paginatedUsers,
+            totalItems: totalItems,
+            currentPage: page,
         });
+
     } catch (e) {
-        console.error('Error fetching users:', e);
-        throw error(500, 'Failed to load users');
+        console.error("Error fetching table data:", e);
+        // @ts-ignore
+        throw error(500, e.message || 'Failed to fetch user data');
     }
 };
