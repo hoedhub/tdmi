@@ -22,7 +22,11 @@
 	}
 </script>
 
-<div class="flex items-center justify-between" role="navigation" aria-label="Pagination">
+<div
+	class="flex flex-wrap items-center justify-between space-y-2"
+	role="navigation"
+	aria-label="Pagination"
+>
 	<div class="text-sm text-base-content/70" aria-live="polite">
 		Showing <b>{startItem}-{endItem}</b> of <b>{totalItems}</b> items
 	</div>

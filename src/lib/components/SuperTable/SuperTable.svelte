@@ -255,9 +255,8 @@
 				</div>
 
 				<!-- Second row: Rest of the elements -->
-				<div class="flex flex-wrap items-center justify-between gap-4">
-					<!-- Column Visibility Toggler -->
-					<div class="dropdown dropdown-end">
+				<div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+					<div class="dropdown">
 						<div tabindex="0" role="button" class="btn btn-sm">
 							<Columns class="h-4 w-4" />
 							Columns
@@ -292,7 +291,7 @@
 					</div>
 
 					{#if $selectedIds.size > 0}
-						<div class="flex items-center gap-4">
+						<div class="flex flex-grow flex-wrap items-center justify-end gap-x-4 gap-y-2">
 							<div class="flex items-center gap-1">
 								<span class="text-sm text-base-content/70">{$selectedIds.size} selected</span>
 								<div class="tooltip tooltip-bottom" data-tip="Clear selection">
@@ -305,6 +304,7 @@
 									</button>
 								</div>
 							</div>
+
 							{#if someSelected && !allSelected}
 								<button class="btn btn-link btn-sm" on:click={selectAllFilteredAndSorted}>
 									Select all ({totalFilteredAndSortedItems})
@@ -314,10 +314,12 @@
 									Deselect all
 								</button>
 							{/if}
+
 							<button class="btn btn-error btn-sm" on:click={handleDeleteSelected}>
 								<Trash2 class="h-4 w-4" />
 								Delete Selected
 							</button>
+
 							<slot name="bulk-actions" selectedIds={Array.from($selectedIds)} />
 						</div>
 					{/if}
@@ -344,25 +346,23 @@
 						<div class="p-8 text-center text-base-content/70">No data available</div>
 					</slot>
 				{:else}
-					<div class="grid gap-4 px-4 sm:grid-cols-2">
-						{#each paginatedData as row (String(row[rowKey]))}
-							<TableRowMobileCard
-								{row}
-								columns={internalColumns}
-								rowKey={String(rowKey)}
-								isSelectable={true}
-								className={typeof rowClass === 'function' ? rowClass(row) : rowClass}
-								{cardClass}
-								{maxVisibleColumns}
-								on:select={handleSelect}
-								on:swipe={handleSwipe}
-							>
-								<svelte:fragment slot="row-actions" let:row>
-									<slot name="row-actions" {row} />
-								</svelte:fragment>
-							</TableRowMobileCard>
-						{/each}
-					</div>
+					{#each paginatedData as row (String(row[rowKey]))}
+						<TableRowMobileCard
+							{row}
+							columns={internalColumns}
+							rowKey={String(rowKey)}
+							isSelectable={true}
+							className={typeof rowClass === 'function' ? rowClass(row) : rowClass}
+							{cardClass}
+							{maxVisibleColumns}
+							on:select={handleSelect}
+							on:swipe={handleSwipe}
+						>
+							<svelte:fragment slot="row-actions" let:row>
+								<slot name="row-actions" {row} />
+							</svelte:fragment>
+						</TableRowMobileCard>
+					{/each}
 				{/if}
 			{:else}
 				<!-- Tampilan Desktop (Tabel) -->
@@ -426,9 +426,6 @@
 					</table>
 				</div>
 			{/if}
-			<!-- ============================================= -->
-			<!--           STRUKTUR BARU SELESAI               -->
-			<!-- ============================================= -->
 		</div>
 	</div>
 

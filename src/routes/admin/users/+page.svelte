@@ -162,9 +162,9 @@
 
 <div class="card bg-base-100 shadow-xl">
 	<div class="card-body">
-		<div class="mb-6 flex items-center justify-between">
+		<div class="mb-6 flex flex-wrap items-center justify-between space-y-2">
 			<h1 class="card-title text-2xl">User Management</h1>
-			<a href="/admin/users/new" class="btn btn-primary"> Create New User </a>
+			<a href="/admin/users/new" class="btn btn-primary btn-sm"> Create New User </a>
 		</div>
 		{#key users}
 			<SuperTable
