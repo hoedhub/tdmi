@@ -139,7 +139,7 @@
 							</select>
 						{:else}
 							<input
-								type="text"
+								type="search"
 								class="input input-xs input-bordered w-full max-w-xs"
 								value={getFilterValue(column)}
 								placeholder={`Filter ${column.label.toLowerCase()}...`}

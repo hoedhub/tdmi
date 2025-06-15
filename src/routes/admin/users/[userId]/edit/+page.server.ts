@@ -1,6 +1,5 @@
 import { Argon2id } from 'oslo/password';
 import { db } from '$lib/drizzle';
-// --- DIUBAH: Impor yang diperlukan ---
 import { usersTable, muridTable } from '$lib/drizzle/schema';
 import { eq } from 'drizzle-orm';
 import { fail, redirect, error } from '@sveltejs/kit';
@@ -9,7 +8,7 @@ import { userHasPermission } from '$lib/server/accessControl';
 import { getAllRoles, getUserRoles, updateUserRoles, getRoleHierarchy } from '$lib/server/accessControlDB'; // <-- Impor fungsi RBAC
 
 export const load: PageServerLoad = async ({ locals, params, url }) => {
-    // --- DIUBAH: Pengecekan izin ---
+    // --- Pengecekan izin ---
     if (!locals.user) throw redirect(302, `/login?redirectTo=${url.pathname}`);
     const canWriteUsers = await userHasPermission(locals.user.id, 'perm-user-write');
     if (!canWriteUsers) {
@@ -77,7 +76,6 @@ export const actions: Actions = {
             }
         }
 
-        // --- LOGIKA MURID ID YANG DIPERBAIKI ---
         let muridId: number | null = null;
         if (muridIdStr) {
             const parsedId = parseInt(muridIdStr, 10);
@@ -90,7 +88,7 @@ export const actions: Actions = {
         try {
             const updateUserTablePromise = db.update(usersTable).set({
                 active,
-                muridId: muridId, // <-- Sekarang tipenya sudah cocok
+                muridId,
                 ...(password && { passwordHash: await new Argon2id().hash(password) })
             }).where(eq(usersTable.id, userIdToEdit));
 

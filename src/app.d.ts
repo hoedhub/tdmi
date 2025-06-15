@@ -7,7 +7,12 @@ declare global {
 			user: User | null;
 			session: Session | null;
 		}
-		// interface Error {}
+		interface Error {
+			message: string;
+			code?: string; // Tambahkan properti 'code' di sini. Tanda '?' membuatnya opsional.
+			// Anda juga bisa menambahkan properti lain jika perlu
+			// someOtherInfo?: any;
+		}
 		// interface Locals {}
 		// interface PageData {}
 		// interface Platform {}

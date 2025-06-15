@@ -329,10 +329,6 @@
 	<!-- Main table/cards section with card styling -->
 	<div class="card bg-base-100 shadow">
 		<div class="card-body px-0 py-0">
-			<!-- ============================================= -->
-			<!--           STRUKTUR BARU DIMULAI DI SINI         -->
-			<!-- ============================================= -->
-
 			<!-- Tampilkan tabel bahkan jika tidak ada data, agar header tetap terlihat -->
 			<!-- Kita hanya akan menyembunyikan tabel jika sedang loading -->
 			{#if isMobile && mobileView === 'cards'}
@@ -369,7 +365,7 @@
 					</div>
 				{/if}
 			{:else}
-				<!-- Tampilan Desktop (Tabel) - Ini yang kita perbaiki -->
+				<!-- Tampilan Desktop (Tabel) -->
 				<div class="overflow-x-auto">
 					<table class="table table-sm w-full {tableClass}">
 						<!-- HEADER SELALU DIRENDER -->

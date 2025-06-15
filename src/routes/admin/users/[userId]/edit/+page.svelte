@@ -68,7 +68,7 @@
 
 			// Show success toast before redirecting
 			if (result.type === 'redirect') {
-				console.log('Login successful:', result);
+				console.log('User update successful:', result);
 				success('User updated successfully!');
 			}
 
