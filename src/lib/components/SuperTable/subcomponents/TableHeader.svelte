@@ -3,7 +3,6 @@
 	import type { ColumnDef, SortConfig } from '../types';
 	import { createEventDispatcher, onDestroy } from 'svelte';
 	import { ChevronsUpDown, ChevronUp, ChevronDown } from 'lucide-svelte';
-	import debounce from 'lodash.debounce';
 
 	export let columns: ColumnDef[];
 	export let currentSort: SortConfig | null;
@@ -14,19 +13,8 @@
 
 	const dispatch = createEventDispatcher();
 
-	function handleFilterChange(column: ColumnDef, value: any) {
-		// console.log('[TableHeader] Processing filter change:', {
-		// 	column: column.key,
-		// 	value,
-		// 	filterType: column.filterable,
-		// 	currentValues: filterValues
-		// });
-
-		const columnKey = String(column.key);
-		const newFilterValues = { ...filterValues, [columnKey]: value };
-
-		// console.log('[TableHeader] Dispatching filter event');
-		dispatch('filter', { column, value, columnKey });
+	function handleFilterChange(columnKey: string, value: any) {
+		dispatch('filterChange', { key: columnKey, value });
 	}
 
 	function handleSort(column: ColumnDef) {
@@ -53,8 +41,8 @@
 	}
 
 	// Helper function to safely get filter value
-	function getFilterValue(column: ColumnDef): string {
-		return filterValues[String(column.key)] || '';
+	function getFilterValue(columnKey: string): string {
+		return filterValues[columnKey] || '';
 	}
 </script>
 
@@ -124,8 +112,8 @@
 						{#if column.filterOptions}
 							<select
 								class="select select-bordered select-xs w-full max-w-xs"
-								value={getFilterValue(column)}
-								on:change={(e) => handleFilterChange(column, e.currentTarget.value)}
+								value={getFilterValue(String(column.key))}
+								on:change={(e) => handleFilterChange(String(column.key), e.currentTarget.value)}
 								aria-label={`Filter ${column.label}`}
 							>
 								<option value="">All</option>
@@ -141,9 +129,9 @@
 							<input
 								type="search"
 								class="input input-xs input-bordered w-full max-w-xs"
-								value={getFilterValue(column)}
+								value={getFilterValue(String(column.key))}
 								placeholder={`Filter ${column.label.toLowerCase()}...`}
-								on:input={(e) => handleFilterChange(column, e.currentTarget.value)}
+								on:input={(e) => handleFilterChange(String(column.key), e.currentTarget.value)}
 								aria-label={`Filter ${column.label}`}
 							/>
 						{/if}
@@ -153,7 +141,14 @@
 		{/each}
 
 		<!-- Actions column filter space -->
-		<th class="w-auto" />
+		<th class="w-auto px-2 align-bottom">
+			<!-- Tombol Reset hanya muncul jika ada filter aktif -->
+			{#if Object.values(filterValues).some((v) => v && v !== 'All')}
+				<button class="btn btn-ghost btn-xs -mb-1 text-error" on:click={() => dispatch('reset')}>
+					Reset
+				</button>
+			{/if}
+		</th>
 	</tr>
 </thead>
 

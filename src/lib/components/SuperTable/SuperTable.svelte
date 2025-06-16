@@ -2,6 +2,7 @@
 <script lang="ts" generics="T extends Record<string, any>">
 	import type { ColumnDef, SortConfig, FilterState, SuperTableProps } from './types';
 	import { createEventDispatcher, onMount } from 'svelte';
+	import debounce from 'lodash.debounce';
 	import {
 		sortState,
 		filterState,
@@ -16,11 +17,12 @@
 
 	// Components
 	import TableHeader from './subcomponents/TableHeader.svelte';
+	import FilterDrawer from './subcomponents/FilterDrawer.svelte';
 	import TableRowDesktop from './subcomponents/TableRowDesktop.svelte';
 	import TableRowMobileCard from './subcomponents/TableRowMobileCard.svelte';
 	import PaginationControls from './subcomponents/PaginationControls.svelte';
 	import FilterInput from './subcomponents/FilterInput.svelte';
-	import { XCircle, Trash2, Columns } from 'lucide-svelte';
+	import { XCircle, Trash2, Columns, Funnel } from 'lucide-svelte';
 
 	// Props
 	type Props = SuperTableProps<T>;
@@ -65,6 +67,7 @@
 	// State for filtered and sorted data
 	let filteredData: typeof data = [];
 	let hasFilterListener = false;
+	let isFilterDrawerOpen = false;
 
 	// Use explicit serverSide prop for determining filtering mode
 	$: hasFilterListener = serverSide;
@@ -92,8 +95,6 @@
 		paginatedData.length > 0 && paginatedData.every((row) => $selectedIds.has(row[rowKey]));
 	$: someSelected = paginatedData.some((row) => $selectedIds.has(row[rowKey]));
 
-	import { browser } from '$app/environment';
-
 	// Mobile detection
 	let isMobile: boolean = false;
 
@@ -120,6 +121,15 @@
 		dispatch('sort', event.detail);
 	}
 
+	const debouncedFilterDispatch = debounce(() => {
+		dispatch('filter', $filterState);
+	}, 300);
+
+	function handleFilterEvent(event: CustomEvent<{ key: string; value: any }>) {
+		const { key, value } = event.detail;
+		$filterState.columns[key] = value;
+		debouncedFilterDispatch();
+	}
 	function handleFilter(event: CustomEvent<{ column: ColumnDef; value: any; columnKey: string }>) {
 		const { column, value, columnKey } = event.detail;
 		// console.log('[SuperTable] Column filter change:', { column: columnKey, value, serverSide });
@@ -146,6 +156,26 @@
 		}
 
 		debouncedDispatchFilter($filterState);
+	}
+	// Handler untuk filter desktop (live/debounced)
+	function handleLiveFilterChange(event: CustomEvent<{ key: string; value: any }>) {
+		const { key, value } = event.detail;
+		$filterState.columns[key] = value;
+		debouncedFilterDispatch();
+	}
+	// Handler untuk filter dari drawer (saat 'Apply' diklik)
+	function handleApplyDrawerFilters(event: CustomEvent<Record<string, any>>) {
+		// Ganti seluruh objek filter kolom dengan yang dari drawer
+		$filterState.columns = event.detail;
+		// Langsung panggil dispatch tanpa debounce
+		dispatch('filter', $filterState);
+	}
+	function resetColumnFilters() {
+		// Buat objek filter kolom yang baru dan kosong
+		$filterState.columns = {};
+
+		// Panggil dispatch yang sudah di-debounce untuk memuat ulang data
+		debouncedFilterDispatch();
 	}
 
 	function handleSelectAll(event: CustomEvent<{ selected: boolean }>) {
@@ -289,6 +319,28 @@
 							{/each}
 						</ul>
 					</div>
+					{#if isMobile && mobileView === 'cards'}
+						<button
+							class="btn btn-outline btn-sm relative"
+							on:click={() => (isFilterDrawerOpen = !isFilterDrawerOpen)}
+						>
+							<Funnel class="h-4 w-4" />
+							Filters
+							{#if Object.values($filterState.columns).some((v) => v && v !== 'All')}
+								<div class="badge badge-primary badge-xs absolute right-1 top-1 scale-75"></div>
+							{/if}
+						</button>
+
+						<FilterDrawer
+							isOpen={isFilterDrawerOpen}
+							columns={internalColumns}
+							filterValues={$filterState.columns}
+							on:close={() => (isFilterDrawerOpen = false)}
+							on:filterChange={handleFilterEvent}
+							on:reset={resetColumnFilters}
+							on:applyFilters={handleApplyDrawerFilters}
+						/>
+					{/if}
 
 					{#if $selectedIds.size > 0}
 						<div class="flex flex-grow flex-wrap items-center justify-end gap-x-4 gap-y-2">
@@ -334,7 +386,6 @@
 			<!-- Tampilkan tabel bahkan jika tidak ada data, agar header tetap terlihat -->
 			<!-- Kita hanya akan menyembunyikan tabel jika sedang loading -->
 			{#if isMobile && mobileView === 'cards'}
-				<!-- Tampilan Mobile (Logikanya mirip) -->
 				{#if $isLoading}
 					<slot name="loading-state">
 						<div class="flex w-full justify-center p-8">
@@ -378,6 +429,8 @@
 							{someSelected}
 							on:sort={handleSort}
 							on:filter={handleFilter}
+							on:filterChange={handleLiveFilterChange}
+							on:reset={resetColumnFilters}
 							on:selectAll={handleSelectAll}
 						/>
 
