@@ -2,9 +2,9 @@ import { db } from '$lib/drizzle';
 import { usersTable, rolesTable, userRolesTable } from '$lib/drizzle/schema';
 import type { PageServerLoad, Actions } from './$types';
 import { error, fail } from '@sveltejs/kit';
-import { sql, count, eq } from 'drizzle-orm';
+import { count, eq } from 'drizzle-orm';
 
-// --- DIUBAH: Impor dari service database RBAC ---
+// --- Impor dari service database RBAC ---
 import { userHasPermission } from '$lib/server/accessControl'; // File utama pemeriksa izin
 import {
     getAllRoles,
@@ -20,8 +20,6 @@ export const load: PageServerLoad = async ({ locals }) => {
     }
 
     try {
-        // --- Query Manual yang Sudah Diperbaiki ---
-
         // 1. Definisikan query manual dengan JOIN menggunakan NAMA PROPERTI JS
         const usersAndRolesQuery = db
             .select({
@@ -33,9 +31,7 @@ export const load: PageServerLoad = async ({ locals }) => {
                 roleId: rolesTable.id
             })
             .from(usersTable)
-            // --- DIUBAH DI SINI: Gunakan 'userId' bukan 'user_id' ---
             .leftJoin(userRolesTable, eq(usersTable.id, userRolesTable.userId))
-            // --- DIUBAH DI SINI: Gunakan 'roleId' bukan 'role_id' ---
             .leftJoin(rolesTable, eq(userRolesTable.roleId, rolesTable.id))
             .orderBy(usersTable.username);
 
@@ -52,7 +48,7 @@ export const load: PageServerLoad = async ({ locals }) => {
             otherQueries
         ]);
 
-        // 4. Proses hasil query manual (logika ini sudah benar)
+        // 4. Proses hasil query manual
         const usersMap = new Map();
         usersAndRoles.forEach(row => {
             if (!usersMap.has(row.id)) {
@@ -72,7 +68,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 
         const usersForClient = Array.from(usersMap.values());
 
-        // --- DIUBAH DI SINI: Akses properti 'totalCount' dari objek hasil ---
+        // --- Akses properti 'totalCount' dari objek hasil ---
         return {
             users: usersForClient,
             totalItems: countResult[0].totalCount, // <-- Ambil dari countResult
@@ -88,7 +84,6 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 export const actions: Actions = {
     updateUserRoles: async ({ request, locals }) => {
-        // --- DIUBAH: Pengecekan izin yang lebih baik ---
         if (!locals.user) throw error(401, 'Unauthorized');
         // Periksa apakah pengguna memiliki izin untuk mengubah data pengguna.
         const canWriteUsers = await userHasPermission(locals.user.id, 'perm-user-write');
@@ -105,7 +100,6 @@ export const actions: Actions = {
         }
 
         try {
-            // --- DIUBAH: Gunakan fungsi update berbasis database ---
             await updateUserRoles(userId, selectedRoles);
             return { success: true, message: `Peran untuk pengguna ${userId} berhasil diperbarui.` };
         } catch (e) {

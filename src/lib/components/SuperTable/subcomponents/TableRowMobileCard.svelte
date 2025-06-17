@@ -66,10 +66,10 @@
 
 	let showAllFields = true;
 
-	function handleSwipe(event: SwipeEvent) {
-		event.preventDefault();
-		dispatch('swipe', { row, direction: event.detail.direction });
-	}
+	// function handleSwipe(event: SwipeEvent) {
+	// 	event.preventDefault();
+	// 	dispatch('swipe', { row, direction: event.detail.direction });
+	// }
 
 	function handleLongPress(event: Event) {
 		event.preventDefault();
@@ -87,9 +87,9 @@
 	class="card {cardClass} {className} {isSelected ? 'ring-2 ring-primary' : ''}"
 	use:swipe
 	use:longPress
-	on:swipe={handleSwipe}
 	on:longpress={handleLongPress}
 >
+	<!-- on:swipe={handleSwipe} -->
 	<div class="card-body">
 		{#if isSelectable}
 			<div class="absolute right-2 top-2">

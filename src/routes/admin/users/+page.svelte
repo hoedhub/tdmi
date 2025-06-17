@@ -46,7 +46,7 @@
 	$: allRoles = data.allRoles || [];
 	// $: totalItems = data.totalItems || 0;
 
-	// This depends on `allRoles`, which is now reactive, so this pattern is correct.
+	// This depends on `allRoles`, which is now reactive.
 	let columns: ColumnDef[] = [];
 	$: if (allRoles.length > 0) {
 		columns = [
@@ -160,49 +160,49 @@
 	}
 </script>
 
-<div class="card bg-base-100 shadow-xl">
-	<div class="card-body">
-		<div class="mb-6 flex flex-wrap items-center justify-between space-y-2">
-			<h1 class="card-title text-2xl">User Management</h1>
-			<a href="/admin/users/new" class="btn btn-primary btn-sm"> Create New User </a>
-		</div>
-		{#key users}
-			<SuperTable
-				data={users}
-				{columns}
-				rowKey="id"
-				itemsPerPage={pageSize}
-				{totalItems}
-				isLoading={loading}
-				initialSort={currentSort}
-				serverSide={true}
-				on:sort={handleSort}
-				on:filter={handleFilter}
-				on:pageChange={handlePageChange}
-				on:rowClick={({ detail }) => goto(`/admin/users/${detail.id}/edit`)}
-			>
-				<svelte:fragment slot="row-actions" let:row>
-					<div class="flex gap-2">
-						<a
-							href={`/admin/users/${row.id}/edit`}
-							class="btn btn-ghost btn-sm"
-							on:click|stopPropagation={() => {}}
-						>
-							<Pen class="h-4 w-4" />
-						</a>
-						{#if row.id !== data.user?.id}
-							<button
-								class="btn btn-ghost btn-sm text-error"
-								on:click|stopPropagation={() => handleDeleteUser(row.id, row.username)}
-							>
-								<Trash class="h-4 w-4" />
-							</button>
-						{:else}
-							<button class="btn btn-disabled btn-sm"><Trash class="h-4 w-4" /></button>
-						{/if}
-					</div>
-				</svelte:fragment>
-			</SuperTable>
-		{/key}
-	</div>
+<!-- <div class="card bg-base-100 shadow-xl"> -->
+<!-- <div class="card-body"> -->
+<div class="mb-6 flex flex-wrap items-center justify-between space-y-2">
+	<h1 class="card-title text-2xl">User Management</h1>
+	<a href="/admin/users/new" class="btn btn-primary btn-sm"> Create New User </a>
 </div>
+{#key users}
+	<SuperTable
+		data={users}
+		{columns}
+		rowKey="id"
+		itemsPerPage={pageSize}
+		{totalItems}
+		isLoading={loading}
+		initialSort={currentSort}
+		serverSide={true}
+		on:sort={handleSort}
+		on:filter={handleFilter}
+		on:pageChange={handlePageChange}
+		on:rowClick={({ detail }) => goto(`/admin/users/${detail.id}/edit`)}
+	>
+		<svelte:fragment slot="row-actions" let:row>
+			<div class="flex gap-2">
+				<a
+					href={`/admin/users/${row.id}/edit`}
+					class="btn btn-ghost btn-sm"
+					on:click|stopPropagation={() => {}}
+				>
+					<Pen class="h-4 w-4" />
+				</a>
+				{#if row.id !== data.user?.id}
+					<button
+						class="btn btn-ghost btn-sm text-error"
+						on:click|stopPropagation={() => handleDeleteUser(row.id, row.username)}
+					>
+						<Trash class="h-4 w-4" />
+					</button>
+				{:else}
+					<button class="btn btn-disabled btn-sm"><Trash class="h-4 w-4" /></button>
+				{/if}
+			</div>
+		</svelte:fragment>
+	</SuperTable>
+{/key}
+<!-- </div> -->
+<!-- </div> -->
