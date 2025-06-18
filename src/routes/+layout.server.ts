@@ -9,6 +9,7 @@ export const load: LayoutServerLoad = async ({ locals, url }) => { // Add 'url'
     const returnData: {
         user: typeof locals.user;
         canAccessAdmin?: boolean;
+        canAccessPendataan?: boolean; // Add canAccessPendataan
     } = {
         user: locals.user
     };
@@ -21,17 +22,15 @@ export const load: LayoutServerLoad = async ({ locals, url }) => { // Add 'url'
             throw redirect(302, '/login');
         }
     } else {
-        const hasPermission = await userHasPermission(locals.user.id, 'perm-admin-access');
+        const [canAccessAdmin, canAccessPendataan] = await Promise.all([
+            userHasPermission(locals.user.id, 'perm-admin-access'),
+            userHasPermission(locals.user.id, 'perm-pendataan-access') // Check for pendataan access
+        ]);
 
-        // --- TAMBAHKAN LOG DI SINI ---
-        // console.log(`[Layout Load] Permission check for 'perm-admin-access' returned: ${hasPermission}`);
+        returnData.canAccessAdmin = canAccessAdmin;
+        returnData.canAccessPendataan = canAccessPendataan; // Assign pendataan access
 
-        returnData.canAccessAdmin = hasPermission;
-        // Optional: If the user IS logged in and tries to access /login or /signup,
-        // you might want to redirect them to a dashboard or home page.
-        // console.log('[LOAD] User is logged in:', locals.user);
         if (unauthenticatedRoutes.includes(url.pathname) || url.pathname === '/') {
-            // console.log('[LOAD] Redirecting logged-in user to /member');
             throw redirect(303, '/member'); // Or your main authenticated route
         }
     }

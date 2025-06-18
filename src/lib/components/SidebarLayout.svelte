@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
-	import { ChartNoAxesGantt } from 'lucide-svelte';
+	import { ChartNoAxesGantt, User } from 'lucide-svelte'; // Import User icon
 
 	// Import Lucide icons
 	import {
@@ -34,7 +34,7 @@
 
 	const menuItems = [
 		{ href: '/', label: 'Dashboard', icon: Home },
-		{ href: '/member/users', label: 'Users', icon: Users },
+		{ href: '/member/pendataan', label: 'Pendataan', icon: Users },
 		// { href: '/member/profile', label: 'Edit Profile', icon: UserPen },
 		{ href: '/settings', label: 'Settings', icon: Settings }
 	];

@@ -28,7 +28,8 @@
 	aria-label="Pagination"
 >
 	<div class="text-sm text-base-content/70" aria-live="polite">
-		Showing <b>{startItem}-{endItem}</b> of <b>{totalItems}</b> items
+		Showing {#if totalItems >= 1}<b>{startItem}-{endItem}</b> of
+		{/if}<b>{totalItems}</b> items
 	</div>
 
 	<div class="join" role="group" aria-label="Pagination controls">

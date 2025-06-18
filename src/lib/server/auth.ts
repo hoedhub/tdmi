@@ -5,7 +5,7 @@ import { config } from 'dotenv';
 import { drizzle } from "drizzle-orm/libsql";
 import { createClient } from "@libsql/client"; // Or your Turso client setup
 import { DrizzleSQLiteAdapter } from "@lucia-auth/adapter-drizzle";
-import { usersTable, sessionTable, type userRoles } from "../drizzle/schema"; // Adjust path to your schema file
+import { usersTable, sessionTable } from "../drizzle/schema"; // Removed 'type userRoles'
 import * as schema from '../drizzle/schema';
 
 config({ path: '.env' });
@@ -50,22 +50,18 @@ export const lucia = new Lucia(adapter, {
 declare module "lucia" {
     interface Register {
         Lucia: typeof lucia;
-        DatabaseUserAttributes: DatabaseUserAttributes; // Define below
-        DatabaseSessionAttributes: DatabaseSessionAttributes; // Define below
+        DatabaseUserAttributes: DatabaseUserAttributes;
+        DatabaseSessionAttributes: DatabaseSessionAttributes;
     }
 }
 
-// Assuming your usersTable has at least an 'id' column (string)
-// and any other attributes you need.
-interface DatabaseUserAttributes {
-    id: string; // Already defined by Lucia if it's named 'id'
-    // Add other user attributes from your usersTable schema that you want typed
-    // e.g., 
+// Define and export DatabaseUserAttributes
+export interface DatabaseUserAttributes {
+    id: string;
     username: string;
-    role: (typeof userRoles)[number]; // Use the type from your schema
-    active: boolean | null; // Or boolean if not nullable. Based on your schema: integer('active', { mode: 'boolean' }) can be true, false, or null if not .notNull()
+    role: string; // Simplified to string, as it's a role ID
+    active: boolean | null;
     muridId: number;
-    // email: string;
 }
 
 // Your existing sessionTable schema matches Lucia's requirements closely.
