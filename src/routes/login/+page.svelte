@@ -40,7 +40,7 @@
 </script>
 
 <svelte:head>
-	<title>Login | MyApp</title>
+	<title>Login | TDMI</title>
 	<meta name="description" content="Login to your MyApp account" />
 </svelte:head>
 

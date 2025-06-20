@@ -3,437 +3,104 @@
 	import { enhance } from '$app/forms';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
+	import AddMuridForm from '$lib/components/data-entry/AddMuridForm.svelte';
+	import { type FormData as MuridFormDataType } from '$lib/stores/muridForm';
 
 	// Define ActionData explicitly to include all possible fields returned on failure
-	interface ActionData {
+	interface ActionData extends FormData {
 		success?: boolean;
 		message?: string;
-		nama?: string;
-		namaArab?: string | null;
-		gender?: boolean;
-		deskelId?: number | null;
-		alamat?: string | null;
-		nomorTelepon?: string | null;
-		muhrimId?: number | null;
-		mursyidId?: number | null;
-		baiatId?: number | null;
-		wiridId?: number | null;
-		qari?: boolean;
-		marhalah?: 1 | 2 | 3;
-		tglLahir?: string | null;
-		aktif?: boolean;
-		partisipasi?: boolean;
-		nik?: string | null;
-		// foto?: Uint8Array | null; // Add if foto is ever returned
 	}
 
 	export let data: PageData;
 	export let form: ActionData;
+	// 'form' adalah untuk hasil dari form action, biarkan saja.
+	// Anda tidak perlu lagi mereplikasi semua state dari form di sini,
+	// karena AddMuridForm akan mengelolanya secara internal.
+	// export let form: any; // Anda bisa memberi tipe ActionData jika diperlukan.
 
-	let nama: string = '';
-	let namaArab: string = '';
-	let gender: boolean = true; // true for Pria, false for Wanita
-	let selectedPropinsiId: number | null = null;
-	let selectedKokabId: number | null = null;
-	let selectedKecamatanId: number | null = null;
-	let selectedDeskelId: number | null = null;
-	let alamat: string = '';
-	let nomorTelepon: string = '';
-	let muhrimId: number | null = null;
-	let mursyidId: number | null = null;
-	let baiatId: number | null = null;
-	let wiridId: number | null = null;
-	let qari: boolean = true;
-	let marhalah: 1 | 2 | 3 = 1;
-	let tglLahir: string = '';
-	let aktif: boolean = true;
-	let partisipasi: boolean = true;
-	let nik: string = '';
-	// let foto: File | null = null; // For file upload, more complex
+	// 2. Buat state untuk menampung data yang sudah ditransformasi untuk form.
+	//    Inisialisasi sebagai undefined agar kita bisa menunggunya di-render.
+	let initialFormData: MuridFormDataType | undefined = undefined;
 
-	$: filteredKokab = data.kokabList.filter((k) => k.idProp === selectedPropinsiId);
-	$: filteredKecamatan = data.kecamatanList.filter((k) => k.idKokab === selectedKokabId);
-	$: filteredDeskel = data.deskelList.filter((d) => d.idKecamatan === selectedKecamatanId);
-
-	// Reset dependent dropdowns when parent changes
-	$: {
-		if (selectedPropinsiId === null) {
-			selectedKokabId = null;
-			selectedKecamatanId = null;
-			selectedDeskelId = null;
-		}
-	}
-	$: {
-		if (selectedKokabId === null) {
-			selectedKecamatanId = null;
-			selectedDeskelId = null;
-		}
-	}
-	$: {
-		if (selectedKecamatanId === null) {
-			selectedDeskelId = null;
-		}
-	}
-
-	// Handle form submission success/error
-	$: if (form?.success) {
-		alert(form.message);
-		// Optionally redirect after successful update
-		goto('/member/pendataan');
-	} else if (form?.message && !form?.success) {
-		alert(form.message);
-		// Re-populate form fields if there's an error and data is returned
-		nama = form.nama ?? nama;
-		namaArab = form.namaArab ?? namaArab;
-		gender = form.gender ?? gender;
-		selectedDeskelId = form.deskelId ?? selectedDeskelId;
-		alamat = form.alamat ?? alamat;
-		nomorTelepon = form.nomorTelepon ?? nomorTelepon;
-		muhrimId = form.muhrimId ?? muhrimId;
-		mursyidId = form.mursyidId ?? mursyidId;
-		baiatId = form.baiatId ?? baiatId;
-		wiridId = form.wiridId ?? wiridId;
-		qari = form.qari ?? qari;
-		marhalah = form.marhalah ?? marhalah;
-		tglLahir = form.tglLahir ?? tglLahir;
-		aktif = form.aktif ?? aktif;
-		partisipasi = form.partisipasi ?? partisipasi;
-		nik = form.nik ?? nik;
+	// onUpdated akan dipanggil oleh AddMuridForm setelah sukses menyimpan data,
+	// misalnya untuk navigasi atau menampilkan pesan.
+	async function handleFormUpdate() {
+		console.log('Form berhasil di-update dari child component!');
+		// Di sini Anda bisa menambahkan logika seperti navigasi
+		// await goto('/member/pendataan');
 	}
 
 	onMount(() => {
-		// Pre-populate form fields with existing murid data
+		// 3. Lakukan transformasi saat komponen dimuat dan data dari server tersedia.
 		if (data.murid) {
-			nama = data.murid.nama;
-			namaArab = data.murid.namaArab ?? '';
-			gender = data.murid.gender;
-			selectedDeskelId = data.murid.deskelId;
-			alamat = data.murid.alamat ?? '';
-			nomorTelepon = data.murid.nomorTelepon ?? '';
-			muhrimId = data.murid.muhrimId;
-			mursyidId = data.murid.mursyidId;
-			baiatId = data.murid.baiatId;
-			wiridId = data.murid.wiridId;
-			qari = data.murid.qari;
-			marhalah = data.murid.marhalah;
-			tglLahir = data.murid.tglLahir ?? '';
-			aktif = data.murid.aktif;
-			partisipasi = data.murid.partisipasi;
-			nik = data.murid.nik ?? '';
+			console.log('Data dari server (sebelum transformasi):', data.murid);
 
-			// Set initial dropdown selections based on loaded data
-			selectedPropinsiId = data.murid.selectedPropinsiId;
-			selectedKokabId = data.murid.selectedKokabId;
-			selectedKecamatanId = data.murid.selectedKecamatanId;
-			selectedDeskelId = data.murid.selectedDeskelId;
+			// Transformasikan objek `data.murid` ke bentuk `MuridFormDataType`.
+			// Ini adalah langkah kunci untuk memperbaiki error.
+			initialFormData = {
+				// Properti yang tipenya sudah cocok bisa langsung disalin.
+				nama: data.murid.nama,
+				gender: data.murid.gender,
+				qari: data.murid.qari,
+				marhalah: data.murid.marhalah,
+				aktif: data.murid.aktif,
+				partisipasi: data.murid.partisipasi,
+				muhrimId: data.murid.muhrimId ?? undefined,
+				mursyidId: data.murid.mursyidId ?? undefined,
+				baiatId: data.murid.baiatId ?? undefined,
+				wiridId: data.murid.wiridId ?? undefined,
+				deskelId: data.murid.deskelId ?? undefined,
+
+				// --- Transformasi properti yang menyebabkan error ---
+				// Konversi 'string | null' menjadi 'string | undefined'
+				namaArab: data.murid.namaArab ?? undefined,
+				alamat: data.murid.alamat ?? undefined,
+				nomorTelepon: data.murid.nomorTelepon ?? undefined,
+				nik: data.murid.nik ?? undefined,
+				tglLahir: data.murid.tglLahir ?? '', // Pastikan string tidak null, beri default string kosong jika perlu
+
+				// Handle 'foto'. Asumsikan AddMuridForm menerima string (URL) atau undefined.
+				// Tipe 'unknown' dari server perlu di-cast atau diperiksa.
+				// Jika foto adalah URL, ini cara yang aman:
+				foto: typeof data.murid.foto === 'string' ? data.murid.foto : undefined,
+
+				// Properti opsional lain yang mungkin tidak ada di `data.murid`
+				// tapi ada di `MuridFormDataType`.
+				muhrimData: undefined,
+				mursyidData: undefined,
+				baiatData: undefined,
+				wiridData: undefined,
+				previewFoto:
+					typeof data.murid.foto === 'string' && data.murid.foto ? data.murid.foto : undefined
+			};
+
+			console.log('Data untuk form (setelah transformasi):', initialFormData);
 		}
 	});
 </script>
 
 <div class="card bg-base-100 shadow-xl">
 	<div class="card-body">
-		<h1 class="card-title text-2xl">Edit Data Murid: {nama}</h1>
+		<!-- Tampilkan nama dari data server yang asli -->
+		<h1 class="card-title text-2xl">Edit Data Murid: {data.murid?.nama ?? 'Memuat...'}</h1>
 
 		{#if data.canWriteMurid}
-			<form method="POST" use:enhance>
-				<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-					<!-- Nama -->
-					<label class="form-control w-full">
-						<div class="label">
-							<span class="label-text">Nama Lengkap <span class="text-error">*</span></span>
-						</div>
-						<input
-							type="text"
-							placeholder="Nama Lengkap"
-							class="input input-bordered w-full"
-							name="nama"
-							bind:value={nama}
-							required
-						/>
-					</label>
-
-					<!-- Nama Arab -->
-					<label class="form-control w-full">
-						<div class="label">
-							<span class="label-text">Nama Arab</span>
-						</div>
-						<input
-							type="text"
-							placeholder="Nama Arab"
-							class="input input-bordered w-full"
-							name="namaArab"
-							bind:value={namaArab}
-						/>
-					</label>
-
-					<!-- Gender -->
-					<label class="form-control w-full">
-						<div class="label">
-							<span class="label-text">Gender</span>
-						</div>
-						<select class="select select-bordered w-full" name="gender" bind:value={gender}>
-							<option value={true}>Pria</option>
-							<option value={false}>Wanita</option>
-						</select>
-					</label>
-
-					<!-- Tanggal Lahir -->
-					<label class="form-control w-full">
-						<div class="label">
-							<span class="label-text">Tanggal Lahir</span>
-						</div>
-						<input
-							type="date"
-							class="input input-bordered w-full"
-							name="tglLahir"
-							bind:value={tglLahir}
-						/>
-					</label>
-
-					<!-- Nomor Telepon -->
-					<label class="form-control w-full">
-						<div class="label">
-							<span class="label-text">Nomor Telepon</span>
-						</div>
-						<input
-							type="text"
-							placeholder="e.g., 081234567890"
-							class="input input-bordered w-full"
-							name="nomorTelepon"
-							bind:value={nomorTelepon}
-						/>
-					</label>
-
-					<!-- NIK -->
-					<label class="form-control w-full">
-						<div class="label">
-							<span class="label-text">NIK (Nomor Induk Kependudukan)</span>
-						</div>
-						<input
-							type="text"
-							placeholder="16 digit NIK"
-							class="input input-bordered w-full"
-							name="nik"
-							bind:value={nik}
-							maxlength="16"
-						/>
-						{#if form?.nik && form?.message?.includes('NIK sudah terdaftar')}
-							<div class="label">
-								<span class="label-text-alt text-error">{form.message}</span>
-							</div>
-						{/if}
-					</label>
-
-					<!-- Propinsi -->
-					<label class="form-control w-full">
-						<div class="label">
-							<span class="label-text">Propinsi <span class="text-error">*</span></span>
-						</div>
-						<select
-							class="select select-bordered w-full"
-							bind:value={selectedPropinsiId}
-							on:change={() => {
-								selectedKokabId = null;
-								selectedKecamatanId = null;
-								selectedDeskelId = null;
-							}}
-							required
-						>
-							<option value={null} disabled>Pilih Propinsi</option>
-							{#each data.propinsiList as prop}
-								<option value={prop.id}>{prop.propinsi}</option>
-							{/each}
-						</select>
-					</label>
-
-					<!-- Kokab -->
-					<label class="form-control w-full">
-						<div class="label">
-							<span class="label-text">Kota/Kabupaten <span class="text-error">*</span></span>
-						</div>
-						<select
-							class="select select-bordered w-full"
-							bind:value={selectedKokabId}
-							on:change={() => {
-								selectedKecamatanId = null;
-								selectedDeskelId = null;
-							}}
-							disabled={!selectedPropinsiId}
-							required
-						>
-							<option value={null} disabled>Pilih Kota/Kabupaten</option>
-							{#each filteredKokab as kokab}
-								<option value={kokab.id}>{kokab.kokab}</option>
-							{/each}
-						</select>
-					</label>
-
-					<!-- Kecamatan -->
-					<label class="form-control w-full">
-						<div class="label">
-							<span class="label-text">Kecamatan <span class="text-error">*</span></span>
-						</div>
-						<select
-							class="select select-bordered w-full"
-							bind:value={selectedKecamatanId}
-							on:change={() => {
-								selectedDeskelId = null;
-							}}
-							disabled={!selectedKokabId}
-							required
-						>
-							<option value={null} disabled>Pilih Kecamatan</option>
-							{#each filteredKecamatan as kecamatan}
-								<option value={kecamatan.id}>{kecamatan.kecamatan}</option>
-							{/each}
-						</select>
-					</label>
-
-					<!-- Desa/Kelurahan -->
-					<label class="form-control w-full">
-						<div class="label">
-							<span class="label-text">Desa/Kelurahan <span class="text-error">*</span></span>
-						</div>
-						<select
-							class="select select-bordered w-full"
-							name="deskelId"
-							bind:value={selectedDeskelId}
-							disabled={!selectedKecamatanId}
-							required
-						>
-							<option value={null} disabled>Pilih Desa/Kelurahan</option>
-							{#each filteredDeskel as deskel}
-								<option value={deskel.id}>{deskel.deskel}</option>
-							{/each}
-						</select>
-					</label>
-
-					<!-- Alamat -->
-					<label class="form-control w-full">
-						<div class="label">
-							<span class="label-text">Alamat Lengkap</span>
-						</div>
-						<textarea
-							class="textarea textarea-bordered h-24"
-							placeholder="Alamat Lengkap"
-							name="alamat"
-							bind:value={alamat}
-						></textarea>
-					</label>
-
-					<!-- Marhalah -->
-					<label class="form-control w-full">
-						<div class="label">
-							<span class="label-text">Marhalah</span>
-						</div>
-						<select class="select select-bordered w-full" name="marhalah" bind:value={marhalah}>
-							<option value={1}>1</option>
-							<option value={2}>2</option>
-							<option value={3}>3</option>
-						</select>
-					</label>
-
-					<!-- Qari -->
-					<label class="form-control w-full">
-						<div class="label">
-							<span class="label-text">Qari</span>
-						</div>
-						<select class="select select-bordered w-full" name="qari" bind:value={qari}>
-							<option value={true}>Ya</option>
-							<option value={false}>Tidak</option>
-						</select>
-					</label>
-
-					<!-- Aktif -->
-					<label class="form-control w-full">
-						<div class="label">
-							<span class="label-text">Status Aktif</span>
-						</div>
-						<select class="select select-bordered w-full" name="aktif" bind:value={aktif}>
-							<option value={true}>Aktif</option>
-							<option value={false}>Tidak Aktif</option>
-						</select>
-					</label>
-
-					<!-- Partisipasi -->
-					<label class="form-control w-full">
-						<div class="label">
-							<span class="label-text">Status Partisipasi</span>
-						</div>
-						<select
-							class="select select-bordered w-full"
-							name="partisipasi"
-							bind:value={partisipasi}
-						>
-							<option value={true}>Berpartisipasi</option>
-							<option value={false}>Tidak Berpartisipasi</option>
-						</select>
-					</label>
-
-					<!-- Muhrim ID -->
-					<label class="form-control w-full">
-						<div class="label">
-							<span class="label-text">Muhrim ID</span>
-						</div>
-						<input
-							type="number"
-							placeholder="ID Murid Muhrim"
-							class="input input-bordered w-full"
-							name="muhrimId"
-							bind:value={muhrimId}
-						/>
-					</label>
-
-					<!-- Mursyid ID -->
-					<label class="form-control w-full">
-						<div class="label">
-							<span class="label-text">Mursyid ID</span>
-						</div>
-						<input
-							type="number"
-							placeholder="ID Murid Mursyid"
-							class="input input-bordered w-full"
-							name="mursyidId"
-							bind:value={mursyidId}
-						/>
-					</label>
-
-					<!-- Baiat ID -->
-					<label class="form-control w-full">
-						<div class="label">
-							<span class="label-text">Baiat ID</span>
-						</div>
-						<input
-							type="number"
-							placeholder="ID Murid Baiat"
-							class="input input-bordered w-full"
-							name="baiatId"
-							bind:value={baiatId}
-						/>
-					</label>
-
-					<!-- Wirid ID -->
-					<label class="form-control w-full">
-						<div class="label">
-							<span class="label-text">Wirid ID</span>
-						</div>
-						<input
-							type="number"
-							placeholder="ID Murid Wirid"
-							class="input input-bordered w-full"
-							name="wiridId"
-							bind:value={wiridId}
-						/>
-					</label>
+			<!-- 4. Render AddMuridForm hanya jika `initialFormData` sudah siap. -->
+			{#if initialFormData}
+				<!--
+          Catatan:
+          - Komponen 'AddMuridForm' sekarang akan menerima data dengan tipe yang benar.
+          - Komponen ini juga akan mengelola state-nya sendiri, menyederhanakan halaman ini.
+          - Kita teruskan `onUpdated` sebagai cara bagi child untuk berkomunikasi kembali.
+        -->
+				<AddMuridForm onUpdated={handleFormUpdate} formData={initialFormData} />
+			{:else}
+				<div class="flex items-center justify-center p-8">
+					<span class="loading loading-spinner loading-lg"></span>
+					<p class="ml-4">Mempersiapkan form...</p>
 				</div>
-
-				<div class="mt-6 flex justify-end gap-2">
-					<button type="button" class="btn btn-ghost" on:click={() => goto('/member/pendataan')}
-						>Batal</button
-					>
-					<button type="submit" class="btn btn-primary">Simpan Perubahan</button>
-				</div>
-			</form>
+			{/if}
 		{:else}
 			<p class="text-warning">Anda tidak memiliki izin untuk mengubah data murid ini.</p>
 		{/if}

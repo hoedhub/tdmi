@@ -55,12 +55,12 @@ export const actions: Actions = {
         const qari = formData.get('qari')?.toString() === 'true';
         const marhalah = parseInt(formData.get('marhalah')?.toString() || '1') as (1 | 2 | 3);
         const tglLahir = formData.get('tglLahir')?.toString() || null;
-        const aktif = formData.get('aktif')?.toString() === 'true';
-        const partisipasi = formData.get('partisipasi')?.toString() === 'true';
+        const aktif = formData.get('aktif')?.toString() === 'on';
+        const partisipasi = formData.get('partisipasi')?.toString() === 'on';
         const nik = formData.get('nik')?.toString() || null;
         // foto handling is complex, will omit for now or assume base64 string
         const foto = null; // Placeholder for foto
-
+        console.log('formData', formData);
         if (!nama || !deskelId) {
             return fail(400, { message: 'Nama dan Desa/Kelurahan wajib diisi.', nama, deskelId });
         }

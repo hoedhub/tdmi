@@ -3,6 +3,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { ChartNoAxesGantt, User } from 'lucide-svelte'; // Import User icon
+	import logo from '$lib/assets/TDMI-Logo-0002.jpg'; // Import your logo if needed
 
 	// Import Lucide icons
 	import {
@@ -123,7 +124,7 @@
 				</label>
 			</div>
 			<div class="flex-1">
-				<a href="/" class="btn btn-ghost text-xl normal-case">MyApp</a>
+				<a href="/" class="btn btn-ghost text-xl normal-case">TDMI</a>
 			</div>
 		</div>
 
@@ -148,26 +149,12 @@
 		<div class="flex h-full w-64 flex-col bg-base-200 p-4 text-base-content md:w-72">
 			<!-- 1. Logo/Header -->
 			<div class="mb-4 mt-2 flex items-center justify-center">
-				<a href="/" class="btn btn-ghost text-2xl font-semibold normal-case">
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						width="28"
-						height="28"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						class="lucide lucide-box mr-2 text-primary"
-					>
-						<path
-							d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"
-						/>
-						<polyline points="3.27 6.96 12 12.01 20.73 6.96" />
-						<line x1="12" y1="22.08" x2="12" y2="12" />
-					</svg>
-					MyApp
+				<a href="/" class="block transition-transform duration-300 hover:scale-[1.25]">
+					<img
+						alt="The project logo"
+						class="h-[5rem] w-[5rem] rounded-full border-2 border-white"
+						src={logo}
+					/>
 				</a>
 			</div>
 			<div class="divider my-0"></div>
