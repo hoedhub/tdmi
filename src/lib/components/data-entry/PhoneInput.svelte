@@ -150,23 +150,31 @@
 	});
 </script>
 
-<div class="flex items-center gap-2 {className}">
+<div class="flex flex-wrap items-center gap-2 {className}">
 	<!-- Country Code Dropdown with Tooltip -->
 	<div class="dropdown">
 		<div class="tooltip" data-tip={selectedCountry?.country || 'Select country code'}>
-			<label tabindex="0" class="btn btn-outline w-[7rem] justify-between font-normal">
+			<button
+				type="button"
+				tabindex="0"
+				class="select select-bordered w-[7rem] justify-between py-2 font-normal"
+			>
 				<span>{countryId.toUpperCase()}</span>
 				<span>{countryCode}</span>
-			</label>
+			</button>
 		</div>
 
 		<!-- Dropdown Content -->
-		<div tabindex="0" class="dropdown-content z-[1] mt-2 w-64 rounded-box bg-base-100 p-2 shadow">
+		<div
+			role="menu"
+			tabindex="0"
+			class="dropdown-content z-[1] mt-2 w-64 rounded-box bg-base-100 p-2 shadow"
+		>
 			<input
 				type="text"
 				bind:value={searchTerm}
 				placeholder="Search country or code..."
-				class="input input-sm input-bordered sticky top-0"
+				class="input input-sm input-bordered sticky top-0 w-full"
 			/>
 			<ul class="menu menu-sm mt-2 max-h-60 flex-nowrap overflow-y-auto">
 				{#if filteredCountryCodes.length === 0}
@@ -212,6 +220,6 @@
 		inputmode="numeric"
 		on:input={debouncedHandleInput}
 		on:keypress={handleKeyPress}
-		class="input input-bordered w-full flex-1"
+		class="input input-bordered w-48 min-w-full max-w-full flex-1 md:min-w-12"
 	/>
 </div>

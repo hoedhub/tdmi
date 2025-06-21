@@ -147,9 +147,10 @@
 
 <div class="flex items-center gap-2 {className}">
 	<div class="dropdown w-full">
-		<label
+		<button
+			type="button"
 			tabindex="0"
-			class={'btn btn-outline w-full justify-between font-normal normal-case' +
+			class={'select select-bordered w-full justify-between py-2 font-normal normal-case' +
 				(!selectedMurid ? ' text-base-content/60' : '')}
 			class:btn-disabled={disabled}
 		>
@@ -162,9 +163,13 @@
 			{:else}
 				{placeholder}
 			{/if}
-		</label>
+		</button>
 
-		<div tabindex="0" class="dropdown-content z-[1] mt-2 w-full rounded-box bg-base-100 p-2 shadow">
+		<div
+			role="menu"
+			tabindex="0"
+			class="dropdown-content z-[1] mt-2 w-full rounded-box bg-base-100 p-2 shadow"
+		>
 			<input
 				type="text"
 				placeholder="Cari murid..."

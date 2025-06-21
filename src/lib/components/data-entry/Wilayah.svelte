@@ -1,13 +1,12 @@
+<!-- src/lib/components/data-entry/Wilayah.svelte -->
 <script lang="ts">
 	import { tick } from 'svelte';
-	import { onMount, onDestroy } from 'svelte';
-	import { get } from 'svelte/store';
+	import { onMount } from 'svelte';
 	import { createEventDispatcher } from 'svelte';
 	import type { propTable, kokabTable, kecamatanTable, deskelTable } from '$lib/drizzle/schema';
 	import { type InferSelectModel } from 'drizzle-orm';
-	import { muridFormStore, type MuridFormData } from '$lib/stores/muridForm';
 
-	// Types
+	// --- TYPES ---
 	type Propinsi = InferSelectModel<typeof propTable>;
 	type Kokab = InferSelectModel<typeof kokabTable>;
 	type Kecamatan = InferSelectModel<typeof kecamatanTable>;
@@ -15,24 +14,25 @@
 
 	const dispatch = createEventDispatcher();
 
-	// Props
+	// --- PROPS ---
 	export let selectedPropinsi: Propinsi | null = null;
 	export let selectedKokab: Kokab | null = null;
 	export let selectedKecamatan: Kecamatan | null = null;
 	export let deskelId: number | undefined = undefined;
 	export let alamat: string = '';
 
-	// State
+	// --- INTERNAL STATE ---
 	let propinsiList: Propinsi[] = [];
 	let kokabList: Kokab[] = [];
 	let kecamatanList: Kecamatan[] = [];
 	let deskelList: Deskel[] = [];
 
+	// Loading indicators for user feedback
 	let loadingPropinsi = false;
 	let loadingKokab = false;
 	let loadingKecamatan = false;
 	let loadingDeskel = false;
-	let mounted = false;
+	let initialLoading = false; // For the initial load in edit mode
 
 	// Search state for each dropdown
 	let propinsiSearchTerm = '';
@@ -40,49 +40,55 @@
 	let kecamatanSearchTerm = '';
 	let deskelSearchTerm = '';
 
-	// --- Core Logic (largely unchanged, adapted for daisyUI) ---
+	// --- DATA FETCHING & LOGIC ---
 
-	const unsubscribe = muridFormStore.subscribe((store: MuridFormData) => {
-		// ... subscription logic remains the same ...
-		if (!mounted) return;
-		if (store.propinsiList.length > 0) propinsiList = store.propinsiList;
-		if (store.kokabList.length > 0) kokabList = store.kokabList;
-		if (store.kecamatanList.length > 0) kecamatanList = store.kecamatanList;
-		if (store.deskelList.length > 0) deskelList = store.deskelList;
-		if (store.formData.alamat !== alamat) alamat = store.formData.alamat || '';
-		if (
-			store.selectedPropinsi &&
-			(!selectedPropinsi || selectedPropinsi.id !== store.selectedPropinsi.id)
-		) {
-			selectedPropinsi = store.selectedPropinsi;
-			loadKokab();
+	// New function to handle pre-filling the form in "Edit" mode
+	async function loadWilayahByDeskel(id: number) {
+		initialLoading = true;
+		try {
+			const response = await fetch(`/api/wilayah-by-deskel?deskelId=${id}`);
+			if (!response.ok) {
+				throw new Error(`Gagal memuat data wilayah: ${response.statusText}`);
+			}
+			const data = await response.json();
+
+			// Populate all the state variables from the API response
+			selectedPropinsi = data.selectedPropinsi;
+			selectedKokab = data.selectedKokab;
+			selectedKecamatan = data.selectedKecamatan;
+
+			kokabList = data.kokabList;
+			kecamatanList = data.kecamatanList;
+			deskelList = data.deskelList;
+
+			await tick(); // Wait for Svelte to update the component state
+			notifyChange(); // Inform the parent component of the changes
+		} catch (error) {
+			console.error('Error loading wilayah by deskelId:', error);
+			// Optionally, show a toast notification to the user
+		} finally {
+			initialLoading = false;
 		}
-		if (store.selectedKokab && (!selectedKokab || selectedKokab.id !== store.selectedKokab.id)) {
-			selectedKokab = store.selectedKokab;
-			loadKecamatan();
+	}
+
+	// --- Svelte Lifecycle Hook ---
+	onMount(async () => {
+		// Always load the list of provinces first
+		await loadPropinsi();
+
+		if (deskelId) {
+			// If deskelId is provided (Edit Mode), fetch the full hierarchy
+			await loadWilayahByDeskel(deskelId);
 		}
-		if (
-			store.selectedKecamatan &&
-			(!selectedKecamatan || selectedKecamatan.id !== store.selectedKecamatan.id)
-		) {
-			selectedKecamatan = store.selectedKecamatan;
-			loadDeskel();
-		}
+		// If no deskelId (New Mode), the component is ready for user input.
 	});
 
-	onDestroy(() => {
-		mounted = false;
-		unsubscribe();
-	});
-
-	// Data loading functions (loadPropinsi, loadKokab, etc.)
 	async function loadPropinsi() {
 		if (propinsiList.length > 0) return;
 		loadingPropinsi = true;
 		try {
 			const response = await fetch('/api/propinsi');
 			propinsiList = await response.json();
-			muridFormStore.updateLists({ propinsiList });
 		} catch (error) {
 			console.error('Error loading propinsi:', error);
 		} finally {
@@ -93,10 +99,10 @@
 	async function loadKokab() {
 		if (!selectedPropinsi) return;
 		loadingKokab = true;
+		kokabList = []; // Clear previous list
 		try {
 			const response = await fetch(`/api/kokab?propinsiId=${selectedPropinsi.id}`);
 			kokabList = await response.json();
-			muridFormStore.updateLists({ kokabList });
 		} catch (error) {
 			console.error('Error loading kokab:', error);
 		} finally {
@@ -107,10 +113,10 @@
 	async function loadKecamatan() {
 		if (!selectedKokab) return;
 		loadingKecamatan = true;
+		kecamatanList = []; // Clear previous list
 		try {
 			const response = await fetch(`/api/kecamatan?kokabId=${selectedKokab.id}`);
 			kecamatanList = await response.json();
-			muridFormStore.updateLists({ kecamatanList });
 		} catch (error) {
 			console.error('Error loading kecamatan:', error);
 		} finally {
@@ -121,10 +127,10 @@
 	async function loadDeskel() {
 		if (!selectedKecamatan) return;
 		loadingDeskel = true;
+		deskelList = []; // Clear previous list
 		try {
 			const response = await fetch(`/api/deskel?kecamatanId=${selectedKecamatan.id}`);
 			deskelList = await response.json();
-			muridFormStore.updateLists({ deskelList });
 		} catch (error) {
 			console.error('Error loading deskel:', error);
 		} finally {
@@ -132,60 +138,18 @@
 		}
 	}
 
-	// clearLowerSelections remains the same
-	function clearLowerSelections(level: 'propinsi' | 'kokab' | 'kecamatan' | 'deskel') {
-		switch (level) {
-			case 'propinsi':
-				selectedKokab = null;
-				selectedKecamatan = null;
-				deskelId = undefined;
-				kokabList = [];
-				kecamatanList = [];
-				deskelList = [];
-				muridFormStore.update((store: MuridFormData) => ({
-					...store,
-					selectedKokab: null,
-					selectedKecamatan: null,
-					kokabList: [],
-					kecamatanList: [],
-					deskelList: [],
-					formData: {
-						...store.formData,
-						kokabId: undefined,
-						kecamatanId: undefined,
-						deskelId: undefined
-					}
-				}));
-				break;
-			case 'kokab':
-				selectedKecamatan = null;
-				deskelId = undefined;
-				kecamatanList = [];
-				deskelList = [];
-				muridFormStore.update((store: MuridFormData) => ({
-					...store,
-					selectedKecamatan: null,
-					kecamatanList: [],
-					deskelList: [],
-					formData: {
-						...store.formData,
-						kecamatanId: undefined,
-						deskelId: undefined
-					}
-				}));
-				break;
-			case 'kecamatan':
-				deskelId = undefined;
-				deskelList = [];
-				muridFormStore.update((store: MuridFormData) => ({
-					...store,
-					deskelList: [],
-					formData: {
-						...store.formData,
-						deskelId: undefined
-					}
-				}));
-				break;
+	function clearLowerSelections(level: 'propinsi' | 'kokab' | 'kecamatan') {
+		if (level === 'propinsi') {
+			selectedKokab = null;
+			kokabList = [];
+		}
+		if (level === 'propinsi' || level === 'kokab') {
+			selectedKecamatan = null;
+			kecamatanList = [];
+		}
+		if (level === 'propinsi' || level === 'kokab' || level === 'kecamatan') {
+			deskelId = undefined;
+			deskelList = [];
 		}
 	}
 
@@ -196,40 +160,46 @@
 	}
 
 	async function handlePropinsiSelect(propinsi: Propinsi) {
-		if (selectedPropinsi?.id === propinsi.id) return;
+		if (selectedPropinsi?.id === propinsi.id) {
+			closeDropdown();
+			return;
+		}
 		clearLowerSelections('propinsi');
 		selectedPropinsi = propinsi;
-		muridFormStore.updateSelections({ selectedPropinsi });
 		closeDropdown();
 		await loadKokab();
-		await tick();
 		notifyChange();
 	}
 
 	async function handleKokabSelect(kokab: Kokab) {
-		if (selectedKokab?.id === kokab.id) return;
+		if (selectedKokab?.id === kokab.id) {
+			closeDropdown();
+			return;
+		}
 		clearLowerSelections('kokab');
 		selectedKokab = kokab;
-		muridFormStore.updateSelections({ selectedKokab });
 		closeDropdown();
 		await loadKecamatan();
-		await tick();
 		notifyChange();
 	}
 
 	async function handleKecamatanSelect(kecamatan: Kecamatan) {
-		if (selectedKecamatan?.id === kecamatan.id) return;
+		if (selectedKecamatan?.id === kecamatan.id) {
+			closeDropdown();
+			return;
+		}
 		clearLowerSelections('kecamatan');
 		selectedKecamatan = kecamatan;
-		muridFormStore.updateSelections({ selectedKecamatan });
 		closeDropdown();
 		await loadDeskel();
-		await tick();
 		notifyChange();
 	}
 
-	async function handleDeskelSelect(deskel: Deskel) {
-		if (deskelId === deskel.id) return;
+	function handleDeskelSelect(deskel: Deskel) {
+		if (deskelId === deskel.id) {
+			closeDropdown();
+			return;
+		}
 		deskelId = deskel.id;
 		closeDropdown();
 		notifyChange();
@@ -238,7 +208,6 @@
 	function handleAlamatChange(event: Event) {
 		const target = event.target as HTMLTextAreaElement;
 		alamat = target.value;
-		muridFormStore.updateFormData({ alamat });
 		notifyChange();
 	}
 
@@ -252,28 +221,7 @@
 		});
 	}
 
-	onMount(async () => {
-		// ... onMount logic remains the same ...
-		mounted = true;
-		const store: MuridFormData = get(muridFormStore);
-		if (store.formData.alamat) alamat = store.formData.alamat;
-		if (!store.propinsiList.length) await loadPropinsi();
-		else propinsiList = store.propinsiList;
-		if (store.selectedPropinsi) {
-			selectedPropinsi = store.selectedPropinsi;
-			await loadKokab();
-		}
-		if (store.selectedKokab) {
-			selectedKokab = store.selectedKokab;
-			await loadKecamatan();
-		}
-		if (store.selectedKecamatan) {
-			selectedKecamatan = store.selectedKecamatan;
-			await loadDeskel();
-		}
-	});
-
-	// Filtered lists for search
+	// --- REACTIVE STATEMENTS FOR FILTERING ---
 	$: filteredPropinsiList = propinsiSearchTerm
 		? propinsiList.filter((p) =>
 				p.propinsi.toLowerCase().includes(propinsiSearchTerm.toLowerCase())
@@ -300,18 +248,22 @@
 	<div>
 		<label for="propinsi" class="mb-1 block text-sm font-medium">Propinsi:</label>
 		<div class="dropdown w-full">
-			<label
+			<button
+				type="button"
 				tabindex="0"
-				class={'btn btn-outline w-full justify-between font-normal normal-case' +
-					(!selectedPropinsi ? ' text-base-content/60' : '')}
+				class="select select-bordered w-full justify-between py-2 font-normal normal-case {!selectedPropinsi
+					? 'text-base-content/60'
+					: ''}"
 			>
-				{#if loadingPropinsi}
+				{#if initialLoading || loadingPropinsi}
 					<span class="loading loading-spinner loading-xs" />
+					<span class="ml-2">Memuat...</span>
 				{:else}
 					{selectedPropinsi?.propinsi || 'Pilih propinsi...'}
 				{/if}
-			</label>
+			</button>
 			<div
+				role="menu"
 				tabindex="0"
 				class="dropdown-content z-[1] mt-2 w-full rounded-box bg-base-100 p-2 shadow"
 			>
@@ -337,7 +289,7 @@
 									width="1em"
 									height="1em"
 									viewBox="0 0 24 24"
-									class="ml-auto h-4 w-4"
+									class="ml-auto h-4 w-4 shrink-0"
 								>
 									<path
 										fill="currentColor"
@@ -356,19 +308,22 @@
 	<div>
 		<label for="kokab" class="mb-1 block text-sm font-medium">Kota/Kabupaten:</label>
 		<div class="dropdown w-full">
-			<label
+			<button
+				type="button"
 				tabindex="0"
-				class={'btn btn-outline w-full justify-between font-normal normal-case' +
-					(!selectedPropinsi ? ' text-base-content/60' : '')}
-				class:btn-disabled={!selectedPropinsi}
+				disabled={!selectedPropinsi || initialLoading}
+				class="select select-bordered w-full justify-between py-2 font-normal normal-case {!selectedKokab
+					? 'text-base-content/60'
+					: ''}"
 			>
 				{#if loadingKokab}
 					<span class="loading loading-spinner loading-xs" />
 				{:else}
 					{selectedKokab?.kokab || 'Pilih kota/kabupaten...'}
 				{/if}
-			</label>
+			</button>
 			<div
+				role="menu"
 				tabindex="0"
 				class="dropdown-content z-[1] mt-2 w-full rounded-box bg-base-100 p-2 shadow"
 			>
@@ -381,6 +336,8 @@
 				<ul class="menu menu-sm mt-2 max-h-60 flex-nowrap overflow-y-auto">
 					{#if loadingKokab}
 						<li class="menu-title">Memuat...</li>
+					{:else if !selectedPropinsi}
+						<li class="menu-title">Pilih propinsi dahulu.</li>
 					{:else if filteredKokabList.length === 0}
 						<li class="menu-title">Tidak ditemukan.</li>
 					{/if}
@@ -394,7 +351,7 @@
 									width="1em"
 									height="1em"
 									viewBox="0 0 24 24"
-									class="ml-auto h-4 w-4"
+									class="ml-auto h-4 w-4 shrink-0"
 								>
 									<path
 										fill="currentColor"
@@ -413,19 +370,22 @@
 	<div>
 		<label for="kecamatan" class="mb-1 block text-sm font-medium">Kecamatan:</label>
 		<div class="dropdown w-full">
-			<label
+			<button
+				type="button"
 				tabindex="0"
-				class={'btn btn-outline w-full justify-between font-normal normal-case' +
-					(!selectedKokab ? ' text-base-content/60' : '')}
-				class:btn-disabled={!selectedKokab}
+				disabled={!selectedKokab || initialLoading}
+				class="select select-bordered w-full justify-between py-2 font-normal normal-case {!selectedKecamatan
+					? 'text-base-content/60'
+					: ''}"
 			>
 				{#if loadingKecamatan}
 					<span class="loading loading-spinner loading-xs" />
 				{:else}
 					{selectedKecamatan?.kecamatan || 'Pilih kecamatan...'}
 				{/if}
-			</label>
+			</button>
 			<div
+				role="menu"
 				tabindex="0"
 				class="dropdown-content z-[1] mt-2 w-full rounded-box bg-base-100 p-2 shadow"
 			>
@@ -438,6 +398,8 @@
 				<ul class="menu menu-sm mt-2 max-h-60 flex-nowrap overflow-y-auto">
 					{#if loadingKecamatan}
 						<li class="menu-title">Memuat...</li>
+					{:else if !selectedKokab}
+						<li class="menu-title">Pilih kota/kabupaten dahulu.</li>
 					{:else if filteredKecamatanList.length === 0}
 						<li class="menu-title">Tidak ditemukan.</li>
 					{/if}
@@ -451,7 +413,7 @@
 									width="1em"
 									height="1em"
 									viewBox="0 0 24 24"
-									class="ml-auto h-4 w-4"
+									class="ml-auto h-4 w-4 shrink-0"
 								>
 									<path
 										fill="currentColor"
@@ -470,19 +432,22 @@
 	<div>
 		<label for="deskel" class="mb-1 block text-sm font-medium">Desa/Kelurahan:</label>
 		<div class="dropdown w-full">
-			<label
+			<button
+				type="button"
 				tabindex="0"
-				class={'btn btn-outline w-full justify-between font-normal normal-case' +
-					(!selectedKecamatan ? ' text-base-content/60' : '')}
-				class:btn-disabled={!selectedKecamatan}
+				disabled={!selectedKecamatan || initialLoading}
+				class="select select-bordered w-full justify-between py-2 font-normal normal-case {!deskelId
+					? 'text-base-content/60'
+					: ''}"
 			>
 				{#if loadingDeskel}
 					<span class="loading loading-spinner loading-xs" />
 				{:else}
 					{deskelList.find((d) => d.id === deskelId)?.deskel || 'Pilih desa/kelurahan...'}
 				{/if}
-			</label>
+			</button>
 			<div
+				role="menu"
 				tabindex="0"
 				class="dropdown-content z-[1] mt-2 w-full rounded-box bg-base-100 p-2 shadow"
 			>
@@ -495,6 +460,8 @@
 				<ul class="menu menu-sm mt-2 max-h-60 flex-nowrap overflow-y-auto">
 					{#if loadingDeskel}
 						<li class="menu-title">Memuat...</li>
+					{:else if !selectedKecamatan}
+						<li class="menu-title">Pilih kecamatan dahulu.</li>
 					{:else if filteredDeskelList.length === 0}
 						<li class="menu-title">Tidak ditemukan.</li>
 					{/if}
@@ -508,7 +475,7 @@
 									width="1em"
 									height="1em"
 									viewBox="0 0 24 24"
-									class="ml-auto h-4 w-4"
+									class="ml-auto h-4 w-4 shrink-0"
 								>
 									<path
 										fill="currentColor"
