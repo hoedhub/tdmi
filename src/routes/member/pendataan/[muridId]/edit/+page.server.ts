@@ -3,6 +3,7 @@ import type { PageServerLoad, Actions } from './$types';
 import { db } from '$lib/drizzle';
 import { muridTable, deskelTable, kecamatanTable, kokabTable, propTable } from '$lib/drizzle/schema';
 import { userHasPermission } from '$lib/server/accessControl';
+import fotoBuffer from '$lib/utilities/fotoBuffer';
 import { eq } from 'drizzle-orm';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
@@ -115,7 +116,7 @@ export const actions: Actions = {
         const aktif = formData.get('aktif')?.toString() === 'on';
         const partisipasi = formData.get('partisipasi')?.toString() === 'on';
         const nik = formData.get('nik')?.toString() || null;
-        const foto = null; // Placeholder for foto
+        const foto = await fotoBuffer(formData.get('foto'));
 
         if (!nama || !deskelId) {
             return fail(400, { message: 'Nama dan Desa/Kelurahan wajib diisi.', nama, deskelId });

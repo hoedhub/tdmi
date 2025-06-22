@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { PageData, ActionData } from './$types';
-	import { enhance } from '$app/forms';
+	// import { enhance } from '$app/forms';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import AddMuridForm from '$lib/components/data-entry/AddMuridForm.svelte';
@@ -13,7 +13,7 @@
 	}
 
 	export let data: PageData;
-	export let form: ActionData;
+	// export let form: ActionData;
 	// 'form' adalah untuk hasil dari form action, biarkan saja.
 	// Anda tidak perlu lagi mereplikasi semua state dari form di sini,
 	// karena AddMuridForm akan mengelolanya secara internal.
@@ -26,15 +26,15 @@
 	// onUpdated akan dipanggil oleh AddMuridForm setelah sukses menyimpan data,
 	// misalnya untuk navigasi atau menampilkan pesan.
 	async function handleFormUpdate() {
-		console.log('Form berhasil di-update dari child component!');
+		// console.log('Form berhasil di-update dari child component!');
 		// Di sini Anda bisa menambahkan logika seperti navigasi
-		// await goto('/member/pendataan');
+		await goto('/member/pendataan');
 	}
 
 	onMount(() => {
 		// 3. Lakukan transformasi saat komponen dimuat dan data dari server tersedia.
 		if (data.murid) {
-			console.log('Data dari server (sebelum transformasi):', data.murid);
+			// console.log('Data dari server (sebelum transformasi):', data.murid);
 
 			// Transformasikan objek `data.murid` ke bentuk `MuridFormDataType`.
 			// Ini adalah langkah kunci untuk memperbaiki error.
@@ -75,7 +75,7 @@
 					typeof data.murid.foto === 'string' && data.murid.foto ? data.murid.foto : undefined
 			};
 
-			console.log('Data untuk form (setelah transformasi):', initialFormData);
+			// console.log('Data untuk form (setelah transformasi):', initialFormData);
 		}
 	});
 </script>

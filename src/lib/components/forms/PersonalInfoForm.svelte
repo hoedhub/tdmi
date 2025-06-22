@@ -94,9 +94,9 @@
 
 	<!-- Refactored Radio Group using daisyUI -->
 	<div class="form-control">
-		<label class="label">
+		<div class="label">
 			<span class="label-text">Jenis Kelamin:</span>
-		</label>
+		</div>
 		<div class="flex items-center gap-6 pt-1">
 			<div class="flex items-center gap-2">
 				<input

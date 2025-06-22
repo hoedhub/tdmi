@@ -48,6 +48,7 @@
 		"drizzle-orm": "^0.43.1",
 		"lodash.debounce": "^4.0.8",
 		"lucide-svelte": "^0.510.0",
-		"oslo": "^1.2.1"
+		"oslo": "^1.2.1",
+		"sharp": "^0.34.2"
 	}
 }

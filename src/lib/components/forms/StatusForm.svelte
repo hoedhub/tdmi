@@ -1,7 +1,7 @@
 <script lang="ts">
-	import type { MuridFormData } from '$lib/stores/muridForm';
+	import type { FormData } from '$lib/stores/muridForm';
 
-	export let formData: MuridFormData['formData'];
+	export let formData: FormData;
 	export let handleInput: () => void;
 </script>
 
@@ -10,9 +10,9 @@
 
 	<!-- Refactored Radio Group -->
 	<div class="form-control">
-		<label class="label">
+		<div class="label">
 			<span class="label-text">Status Baca al-Qur'an:</span>
-		</label>
+		</div>
 		<div class="flex items-center gap-6 pt-1">
 			<!-- Qari Option with Tooltip -->
 			<div class="tooltip" data-tip="Bisa baca al-Qur'an">

@@ -19,7 +19,6 @@
 	type Kecamatan = InferSelectModel<typeof kecamatanTable>;
 
 	// --- PROPS ---
-	// Menerima data awal dari parent untuk mode "Edit". Opsional.
 	export let formData: FormData | undefined = undefined;
 	export let onUpdated = async () => {};
 
@@ -28,7 +27,6 @@
 	let countryCode: string;
 	let phoneNumber: string;
 
-	// 'defaultFormData' adalah kerangka kosong untuk reset atau mode 'Tambah'
 	const defaultFormData: FormData = {
 		nama: '',
 		namaArab: '',
@@ -53,68 +51,87 @@
 		foto: undefined
 	};
 
-	// 'internalFormData' adalah state AKTIF dari form ini.
-	// Kita inisialisasi dengan kerangka default, akan di-update di onMount.
-	let internalFormData: FormData = { ...defaultFormData };
+	// --- PERBAIKAN: Buat state untuk menyimpan data asli ---
+	// 'originalFormData' akan menyimpan snapshot data saat pertama kali dimuat.
+	let originalFormData: FormData;
+	// Snapshot terpisah untuk state wilayah
+	let originalSelectedPropinsi: Propinsi | null = null;
+	let originalSelectedKokab: Kokab | null = null;
+	let originalSelectedKecamatan: Kecamatan | null = null;
 
+	// State aktif form
+	let internalFormData: FormData = { ...defaultFormData };
 	let selectedPropinsi: Propinsi | null = null;
 	let selectedKokab: Kokab | null = null;
 	let selectedKecamatan: Kecamatan | null = null;
+
 	let isFormModified = false;
 	let isSubmitting = false;
 	let mounted = false;
 
 	// --- SIKLUS HIDUP (LIFECYCLE) ---
 	onMount(() => {
-		// INI BAGIAN UTAMA PERBAIKAN
 		if (formData) {
-			// **MODE EDIT**: Jika 'formData' (prop) ada, gunakan itu sebagai data awal.
+			// **MODE EDIT**:
+			// Simpan data dari prop ke state internal dan juga ke snapshot data asli.
 			internalFormData = { ...formData };
-			// Catatan: Jika Anda perlu memuat 'selectedPropinsi' dll. berdasarkan 'deskelId',
-			// logikanya harus ditambahkan di sini.
+			originalFormData = { ...formData }; // Simpan snapshot
 		} else {
-			// **MODE TAMBAH BARU**: Jika tidak ada prop, gunakan data dari store (jika ada)
-			// untuk mempertahankan state saat navigasi, atau gunakan default.
+			// **MODE TAMBAH BARU**:
+			// Gunakan data dari store atau default. Data aslinya adalah form kosong.
 			internalFormData = $muridFormStore.isModified
 				? $muridFormStore.formData
 				: { ...defaultFormData };
+			originalFormData = { ...defaultFormData }; // Snapshotnya adalah form kosong
+
+			// Inisialisasi state wilayah dari store juga
 			selectedPropinsi = $muridFormStore.selectedPropinsi;
 			selectedKokab = $muridFormStore.selectedKokab;
 			selectedKecamatan = $muridFormStore.selectedKecamatan;
 		}
+
+		// Simpan snapshot untuk state wilayah setelah inisialisasi
+		originalSelectedPropinsi = selectedPropinsi;
+		originalSelectedKokab = selectedKokab;
+		originalSelectedKecamatan = selectedKecamatan;
+
 		mounted = true;
-		handleInput(); // Cek status 'modified' di awal
+		// Panggil handleInput di akhir untuk set isFormModified ke false pada awalnya.
+		handleInput();
 	});
 
 	// --- FUNGSI-FUNGSI ---
-	function handleArabicInput(event: Event) {
-		const input = event.target as HTMLInputElement;
-		const arabicPattern =
-			/^[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF0-9 .,!?»«()]+$/;
-
-		if (!arabicPattern.test(input.value)) {
-			const newValue = input.value.replace(
-				/[^\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF0-9 .,!?»«()]/g,
-				''
-			);
-			input.value = newValue;
-			internalFormData.namaArab = newValue; // Perbaiki: Gunakan internalFormData
-			handleInput();
-		}
-	}
-
 	function handleInput() {
-		// Bandingkan dengan 'defaultFormData' BUKAN 'formData' prop
-		const formChanged = Object.keys(internalFormData).some((key) => {
-			const formKey = key as keyof FormData;
-			return JSON.stringify(internalFormData[formKey]) !== JSON.stringify(defaultFormData[formKey]);
-		});
-		const wilayahChanged =
-			selectedPropinsi !== null || selectedKokab !== null || selectedKecamatan !== null;
-		isFormModified = formChanged || wilayahChanged;
-		if (mounted) {
+		setTimeout(() => {
+			// 1. Bandingkan data form
+			if (!mounted) return; // Pastikan ini hanya berjalan setelah komponen dimount
+			const formChanged = Object.keys(internalFormData).some((key) => {
+				const formKey = key as keyof FormData;
+
+				const internalValue = JSON.stringify(internalFormData[formKey]);
+				const originalValue = JSON.stringify(originalFormData[formKey]);
+
+				// LOGGING: Cek nilai spesifik yang berubah
+				console.log(`  - Internal: ${internalValue}`);
+				console.log(`  - Original: ${originalValue}`);
+				if (internalValue !== originalValue) {
+					console.log(`CHANGE DETECTED in key '${formKey}':`);
+				}
+				return (
+					JSON.stringify(internalFormData[formKey]) !== JSON.stringify(originalFormData[formKey])
+				);
+			});
+
+			// 2. Bandingkan data wilayah secara terpisah
+			const wilayahChanged =
+				selectedPropinsi?.id !== originalSelectedPropinsi?.id ||
+				selectedKokab?.id !== originalSelectedKokab?.id ||
+				selectedKecamatan?.id !== originalSelectedKecamatan?.id;
+
+			isFormModified = formChanged || wilayahChanged;
+
 			$muridFormStore.isModified = isFormModified;
-		}
+		}, 0);
 	}
 
 	function handleWilayahChange(
@@ -136,8 +153,18 @@
 		selectedPropinsi = newPropinsi;
 		selectedKokab = newKokab;
 		selectedKecamatan = newKecamatan;
-		internalFormData.deskelId = deskelId; // Perbaiki: Gunakan internalFormData
-		internalFormData.alamat = alamat; // Perbaiki: Gunakan internalFormData
+		internalFormData.deskelId = deskelId;
+		internalFormData.alamat = alamat;
+
+		// --- LOGIKA PERBAIKAN ---
+		// Jika snapshot wilayah masih kosong, berarti ini adalah bagian dari
+		// inisialisasi awal di mode EDIT. Jadi, kita update snapshot juga!
+		if (originalSelectedPropinsi === null && newPropinsi !== null) {
+			// console.log('SNAPSHOT WILAYAH DIUPDATE! Ini adalah inisialisasi mode edit.');
+			originalSelectedPropinsi = newPropinsi;
+			originalSelectedKokab = newKokab;
+			originalSelectedKecamatan = newKecamatan;
+		}
 		handleInput();
 	}
 
@@ -145,15 +172,29 @@
 		if (doConfirm && !confirm('Are you sure you want to reset the form? All changes will be lost.'))
 			return;
 
-		internalFormData = { ...defaultFormData }; // Perbaiki: Gunakan internalFormData
-		selectedPropinsi = null;
-		selectedKokab = null;
-		selectedKecamatan = null;
+		// LOGGING: Lihat state sebelum reset
+		console.log('--- RESETTING FORM ---');
+		console.log('Original Data to restore:', JSON.stringify(originalFormData, null, 2));
+		console.log('Current (wrong) Internal Data:', JSON.stringify(internalFormData, null, 2));
+
+		// INI ADALAH SUMBER BUG-NYA!
+		// Seharusnya me-reset ke 'originalFormData', bukan 'defaultFormData'
+		// internalFormData = { ...defaultFormData }; // <--- BUG DI SINI
+
+		// Saat reset, kembalikan ke data asli yang disimpan di snapshot
+		internalFormData = { ...originalFormData };
+		// LOGGING: Lihat state setelah reset
+		console.log('Internal Data AFTER reset:', JSON.stringify(internalFormData, null, 2));
+		selectedPropinsi = originalSelectedPropinsi;
+		selectedKokab = originalSelectedKokab;
+		selectedKecamatan = originalSelectedKecamatan;
+
+		// Reset state lain yang tidak di-snapshot jika perlu
 		countryId = 'id';
 		countryCode = '+62';
 		phoneNumber = '';
-		isFormModified = false;
-		muridFormStore.reset();
+
+		// Panggil handleInput untuk mengkalkulasi ulang isFormModified (akan jadi false)
 		setTimeout(() => {
 			handleInput();
 		}, 100);
@@ -167,7 +208,13 @@
 			if (result.type === 'success') {
 				success('Data murid berhasil disimpan');
 				await onUpdated();
-				resetForm(false);
+				// Setelah sukses, update snapshot ke data yang baru saja disimpan
+				if (result.data?.murid) {
+					originalFormData = { ...result.data.murid };
+					// Update juga snapshot wilayah jika data wilayah ada di result.data
+					// originalSelectedPropinsi = result.data.selectedPropinsi; (contoh)
+				}
+				isFormModified = false;
 			} else if (result.type === 'failure') {
 				error(
 					result.data?.message
@@ -178,8 +225,24 @@
 		};
 	}
 
+	// handleArabicInput tidak berubah
+	function handleArabicInput(event: Event) {
+		const input = event.target as HTMLInputElement;
+		const arabicPattern =
+			/^[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF0-9 .,!?»«()]+$/;
+
+		if (!arabicPattern.test(input.value)) {
+			const newValue = input.value.replace(
+				/[^\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF0-9 .,!?»«()]/g,
+				''
+			);
+			input.value = newValue;
+			internalFormData.namaArab = newValue;
+			handleInput();
+		}
+	}
+
 	// --- BLOK REAKTIF ---
-	// Sinkronkan state internal ke store untuk persistensi antar navigasi
 	$: if (mounted) {
 		$muridFormStore.formData = internalFormData;
 		$muridFormStore.selectedPropinsi = selectedPropinsi;
@@ -188,13 +251,9 @@
 	}
 
 	// Untuk debugging, opsional
-	$: console.log('add murid internalFormData', internalFormData);
+	// $: console.log('add murid internalFormData', internalFormData);
 </script>
 
-<!--
-  Ganti semua referensi ke 'formData' dengan 'internalFormData' di template.
-  Ini memastikan template selalu menggunakan state internal yang aktif dari komponen ini.
--->
 <form
 	method="POST"
 	enctype="multipart/form-data"
