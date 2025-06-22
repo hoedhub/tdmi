@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { scale } from 'svelte/transition';
 	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
+	import { enhance } from '$app/forms';
+	import type { ActionResult } from '@sveltejs/kit';
 	import { muridFormStore, type FormData } from '$lib/stores/muridForm';
 	import type { propTable, kokabTable, kecamatanTable } from '$lib/drizzle/schema';
 	import { type InferSelectModel } from 'drizzle-orm';
-	import { enhance } from '$app/forms';
-	import type { ActionResult } from '@sveltejs/kit';
 	import { success, error } from '$lib/components/toast';
 
 	// Form Components
@@ -51,7 +52,7 @@
 		foto: undefined
 	};
 
-	// --- PERBAIKAN: Buat state untuk menyimpan data asli ---
+	// --- Buat state untuk menyimpan data asli ---
 	// 'originalFormData' akan menyimpan snapshot data saat pertama kali dimuat.
 	let originalFormData: FormData;
 	// Snapshot terpisah untuk state wilayah
@@ -68,6 +69,8 @@
 	let isFormModified = false;
 	let isSubmitting = false;
 	let mounted = false;
+
+	let personalInfoFormComponent: PersonalInfoForm;
 
 	// --- SIKLUS HIDUP (LIFECYCLE) ---
 	onMount(() => {
@@ -112,11 +115,11 @@
 				const originalValue = JSON.stringify(originalFormData[formKey]);
 
 				// LOGGING: Cek nilai spesifik yang berubah
-				console.log(`  - Internal: ${internalValue}`);
-				console.log(`  - Original: ${originalValue}`);
-				if (internalValue !== originalValue) {
-					console.log(`CHANGE DETECTED in key '${formKey}':`);
-				}
+				// console.log(`  - Internal: ${internalValue}`);
+				// console.log(`  - Original: ${originalValue}`);
+				// if (internalValue !== originalValue) {
+				// 	console.log(`CHANGE DETECTED in key '${formKey}':`);
+				// }
 				return (
 					JSON.stringify(internalFormData[formKey]) !== JSON.stringify(originalFormData[formKey])
 				);
@@ -156,7 +159,6 @@
 		internalFormData.deskelId = deskelId;
 		internalFormData.alamat = alamat;
 
-		// --- LOGIKA PERBAIKAN ---
 		// Jika snapshot wilayah masih kosong, berarti ini adalah bagian dari
 		// inisialisasi awal di mode EDIT. Jadi, kita update snapshot juga!
 		if (originalSelectedPropinsi === null && newPropinsi !== null) {
@@ -173,21 +175,21 @@
 			return;
 
 		// LOGGING: Lihat state sebelum reset
-		console.log('--- RESETTING FORM ---');
-		console.log('Original Data to restore:', JSON.stringify(originalFormData, null, 2));
-		console.log('Current (wrong) Internal Data:', JSON.stringify(internalFormData, null, 2));
-
-		// INI ADALAH SUMBER BUG-NYA!
-		// Seharusnya me-reset ke 'originalFormData', bukan 'defaultFormData'
-		// internalFormData = { ...defaultFormData }; // <--- BUG DI SINI
+		// console.log('--- RESETTING FORM ---');
+		// console.log('Original Data to restore:', JSON.stringify(originalFormData, null, 2));
+		// console.log('Current (wrong) Internal Data:', JSON.stringify(internalFormData, null, 2));
 
 		// Saat reset, kembalikan ke data asli yang disimpan di snapshot
 		internalFormData = { ...originalFormData };
 		// LOGGING: Lihat state setelah reset
-		console.log('Internal Data AFTER reset:', JSON.stringify(internalFormData, null, 2));
+		// console.log('Internal Data AFTER reset:', JSON.stringify(internalFormData, null, 2));
 		selectedPropinsi = originalSelectedPropinsi;
 		selectedKokab = originalSelectedKokab;
 		selectedKecamatan = originalSelectedKecamatan;
+
+		if (personalInfoFormComponent) {
+			personalInfoFormComponent.reset();
+		}
 
 		// Reset state lain yang tidak di-snapshot jika perlu
 		countryId = 'id';
@@ -198,6 +200,14 @@
 		setTimeout(() => {
 			handleInput();
 		}, 100);
+	}
+
+	function handleBatal() {
+		if (isFormModified && !confirm('Ada perubahan yang belum disimpan. Yakin ingin batal?')) {
+			return;
+		}
+		resetForm(false);
+		goto('/member/pendataan');
 	}
 
 	function handleEnhanceSubmit() {
@@ -225,7 +235,6 @@
 		};
 	}
 
-	// handleArabicInput tidak berubah
 	function handleArabicInput(event: Event) {
 		const input = event.target as HTMLInputElement;
 		const arabicPattern =
@@ -260,7 +269,12 @@
 	use:enhance={handleEnhanceSubmit}
 	class="space-y-6"
 >
-	<PersonalInfoForm formData={internalFormData} {handleInput} {handleArabicInput} />
+	<PersonalInfoForm
+		bind:this={personalInfoFormComponent}
+		formData={internalFormData}
+		{handleInput}
+		{handleArabicInput}
+	/>
 
 	<ContactForm
 		formData={internalFormData}
@@ -302,6 +316,14 @@
 				Reset
 			</button>
 		{/if}
+		<button
+			type="button"
+			disabled={isSubmitting}
+			on:click={handleBatal}
+			class="btn btn-warning grow rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
+		>
+			Batal
+		</button>
 		<button
 			type="submit"
 			disabled={isSubmitting}

@@ -33,7 +33,8 @@ export interface FormData {
 	aktif: boolean;
 	partisipasi: boolean;
 	nik?: string;
-	foto?: string | File | null;
+	foto?: File | undefined; // Ini untuk file yang baru diunggah
+	fotoUrl?: string | null; // Tambahkan ini untuk URL dari database
 	previewFoto?: string;
 }
 export type MuridFormData = {

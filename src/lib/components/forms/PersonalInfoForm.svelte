@@ -1,18 +1,24 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
 	import { scale } from 'svelte/transition';
-	import type { MuridFormData } from '$lib/stores/muridForm';
+	import type { FormData } from '$lib/stores/muridForm';
 	import Compressor from 'compressorjs';
+	import { UserCircle } from 'lucide-svelte';
 
 	// Props
-	export let formData: MuridFormData['formData'];
+	export let formData: FormData;
 	export let handleInput: () => void;
 	export let handleArabicInput: (event: Event) => void;
 
 	// State
 	let compressedFile: File | null = null;
-	let previewUrl = '';
+	let previewUrl = ''; // Untuk pratinjau file baru yang dipilih
 	let compressionError = '';
+	let photoRemoved = false; // Flag untuk menandai foto dihapus
+
+	// Variabel reaktif untuk menentukan URL gambar yang akan ditampilkan
+	// Prioritas: Pratinjau baru > Foto yang ada > Fallback (null)
+	$: displayUrl = previewUrl || (formData.fotoUrl && !photoRemoved ? formData.fotoUrl : null);
 
 	async function handleFileUpload(originalFile: File) {
 		return new Promise<File | null>((resolve) => {
@@ -32,22 +38,46 @@
 							: result;
 
 					if (finalFile.size > 200000) {
-						compressionError = 'Image still too large. Please try a smaller image.';
+						compressionError = 'Ukuran gambar masih terlalu besar. Coba gambar yang lebih kecil.';
 						resolve(null);
 						return;
 					}
 
 					compressedFile = finalFile;
+					// Buat URL Object untuk pratinjau
+					if (previewUrl) URL.revokeObjectURL(previewUrl); // Hapus pratinjau lama
 					previewUrl = URL.createObjectURL(finalFile);
+					photoRemoved = false; // Jika user memilih file baru, batalkan status 'dihapus'
 					resolve(finalFile);
 				},
 				error(err) {
 					console.error('Compression error:', err);
-					compressionError = 'There was an error compressing the image.';
+					compressionError = 'Terjadi kesalahan saat mengompres gambar.';
 					resolve(null);
 				}
 			});
 		});
+	}
+
+	export function reset() {
+		// Reset state internal komponen ini ke kondisi awal
+		photoRemoved = false;
+		if (previewUrl) {
+			URL.revokeObjectURL(previewUrl);
+			previewUrl = '';
+		}
+		compressionError = '';
+	}
+
+	function handleRemovePhoto() {
+		photoRemoved = true;
+		if (previewUrl) {
+			URL.revokeObjectURL(previewUrl);
+			previewUrl = '';
+		}
+		formData.foto = undefined;
+		formData.fotoUrl = null;
+		handleInput();
 	}
 
 	onDestroy(() => {
@@ -92,7 +122,6 @@
 		/>
 	</div>
 
-	<!-- Refactored Radio Group using daisyUI -->
 	<div class="form-control">
 		<div class="label">
 			<span class="label-text">Jenis Kelamin:</span>
@@ -142,38 +171,71 @@
 	</div>
 
 	{#if formData.gender === true}
-		<div transition:scale={{ duration: 300 }}>
-			<label for="foto" class="label">
+		<div transition:scale={{ duration: 300 }} class="space-y-2">
+			<div class="label">
 				<span class="label-text">Foto:</span>
-			</label>
-			<input
-				id="foto"
-				name="foto"
-				type="file"
-				accept="image/*"
-				class="file-input file-input-bordered w-full"
-				on:change={async (e) => {
-					const file = e.currentTarget.files?.[0];
-					if (!file) return;
-					const result = await handleFileUpload(file);
-					if (result) {
-						formData.foto = result;
-						handleInput();
-					}
-				}}
-			/>
+			</div>
+
+			<div class="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+				<!-- 
+                    Tampilan Foto / Fallback 
+                    - Tambahkan `flex-shrink-0` agar gambar tidak gepeng saat ruang terbatas.
+                -->
+				<div
+					class="flex h-32 w-32 flex-shrink-0 items-center justify-center rounded-lg bg-base-200 shadow-sm"
+				>
+					{#if displayUrl}
+						<img
+							src={displayUrl}
+							alt="Pratinjau Foto Murid"
+							class="h-full w-full rounded-lg object-cover"
+						/>
+					{:else}
+						<!-- Fallback Icon -->
+						<UserCircle class="h-16 w-16 text-base-content/30" />
+					{/if}
+				</div>
+
+				<!-- 
+                    Kontainer Tombol 
+                    - `w-full`: Ambil lebar penuh di layout mobile (kolom).
+                    - `sm:grow`: Biarkan ia 'tumbuh' mengisi sisa ruang di layout desktop (baris).
+                -->
+				<div class="flex w-full flex-col gap-2 sm:grow">
+					<input
+						id="foto"
+						name="foto"
+						type="file"
+						accept="image/*"
+						class="file-input file-input-bordered w-full"
+						on:change={async (e) => {
+							const file = e.currentTarget.files?.[0];
+							if (!file) return;
+							const result = await handleFileUpload(file);
+							if (result) {
+								formData.foto = result;
+								handleInput();
+							}
+						}}
+					/>
+					{#if displayUrl}
+						<button
+							type="button"
+							on:click={handleRemovePhoto}
+							class="btn btn-outline btn-error btn-sm"
+						>
+							Hapus Foto
+						</button>
+					{/if}
+				</div>
+			</div>
+
 			{#if compressionError}
 				<div class="label-text-alt pt-2 text-error">{compressionError}</div>
 			{/if}
 
-			{#if previewUrl}
-				<img
-					src={previewUrl}
-					alt="Preview"
-					class="m-1 mt-2 block h-32 w-32 rounded-lg object-cover shadow-sm"
-					on:error={() => (previewUrl = '')}
-				/>
-			{/if}
+			<!-- Hidden input untuk memberi tahu server jika foto dihapus -->
+			<input type="hidden" name="removeFoto" value={photoRemoved} />
 		</div>
 	{/if}
 

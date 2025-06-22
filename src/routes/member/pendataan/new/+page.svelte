@@ -52,6 +52,11 @@
 	let nik: string = '';
 	// let foto: File | null = null; // For file upload, more complex
 
+	// onUpdated akan dipanggil oleh AddMuridForm setelah sukses menyimpan data.
+	async function handleFormUpdate() {
+		await goto('/member/pendataan');
+	}
+
 	$: filteredKokab = data.kokabList.filter((k) => k.idProp === selectedPropinsiId);
 	$: filteredKecamatan = data.kecamatanList.filter((k) => k.idKokab === selectedKokabId);
 	$: filteredDeskel = data.deskelList.filter((d) => d.idKecamatan === selectedKecamatanId);
@@ -132,6 +137,6 @@
 	<div class="card-body">
 		<h1 class="card-title text-2xl">Tambah Murid Baru</h1>
 
-		<AddMuridForm />
+		<AddMuridForm onUpdated={handleFormUpdate} />
 	</div>
 </div>

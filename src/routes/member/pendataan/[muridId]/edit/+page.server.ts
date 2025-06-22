@@ -2,9 +2,23 @@ import { error, fail, redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 import { db } from '$lib/drizzle';
 import { muridTable, deskelTable, kecamatanTable, kokabTable, propTable } from '$lib/drizzle/schema';
+import { eq, type InferSelectModel } from 'drizzle-orm';
 import { userHasPermission } from '$lib/server/accessControl';
 import fotoBuffer from '$lib/utilities/fotoBuffer';
-import { eq } from 'drizzle-orm';
+
+// --- DEFINISIKAN DAN EKSPOR TIPE DATA UNTUK HALAMAN ---
+// Ini akan menjadi "kontrak" tipe antara server dan klien.
+export type MuridPageData = Omit<InferSelectModel<typeof muridTable>, 'foto'> & {
+    fotoUrl: string | null;
+    deskelName: string | null;
+    kecamatanName: string | null;
+    kokabName: string | null;
+    propinsiName: string | null;
+    selectedPropinsiId: number | null;
+    selectedKokabId: number | null;
+    selectedKecamatanId: number | null;
+    selectedDeskelId: number | null;
+};
 
 export const load: PageServerLoad = async ({ params, locals }) => {
     if (!locals.user) {
@@ -51,24 +65,38 @@ export const load: PageServerLoad = async ({ params, locals }) => {
             throw error(403, 'Akses Ditolak. Anda tidak memiliki izin untuk melihat data murid di wilayah ini.');
         }
 
+        let fotoUrl = null;
+        if (muridData.murid.foto) {
+            // Memberi fallback jika data di DB korup dan tidak bisa di-parse
+            try {
+                const buffer = Buffer.from(muridData.murid.foto as Uint8Array);
+                fotoUrl = `data:image/jpeg;base64,${buffer.toString('base64')}`;
+            } catch (parseError) {
+                console.error(`Gagal mem-parse buffer foto untuk murid ID ${muridId}. Data mungkin korup.`, parseError);
+                fotoUrl = null; // Fallback jika parsing gagal
+            }
+        }
+
         // Flatten the joined data for easier access in the Svelte component
-        const formattedMurid = {
+        const formattedMurid: Omit<MuridPageData, 'foto'> = {
             ...muridData.murid,
+            fotoUrl: fotoUrl,
             deskelName: muridData.deskel?.deskel || null,
             kecamatanName: muridData.kecamatan?.kecamatan || null,
             kokabName: muridData.kokab?.kokab || null,
             propinsiName: muridData.prop?.propinsi || null,
-            // Add IDs for dropdown re-selection
             selectedPropinsiId: muridData.prop?.id || null,
             selectedKokabId: muridData.kokab?.id || null,
             selectedKecamatanId: muridData.kecamatan?.id || null,
-            selectedDeskelId: muridData.deskel?.id || null,
+            selectedDeskelId: muridData.deskel?.id || null
         };
 
         const propinsiList = await db.select().from(propTable).all();
         const kokabList = await db.select().from(kokabTable).all();
         const kecamatanList = await db.select().from(kecamatanTable).all();
         const deskelList = await db.select().from(deskelTable).all();
+
+        delete (formattedMurid as any).foto;
 
         return {
             murid: formattedMurid,
@@ -116,7 +144,9 @@ export const actions: Actions = {
         const aktif = formData.get('aktif')?.toString() === 'on';
         const partisipasi = formData.get('partisipasi')?.toString() === 'on';
         const nik = formData.get('nik')?.toString() || null;
-        const foto = await fotoBuffer(formData.get('foto'));
+
+        const fotoFile = formData.get('foto') as File | null;
+        const removeFoto = formData.get('removeFoto')?.toString() === 'true';
 
         if (!nama || !deskelId) {
             return fail(400, { message: 'Nama dan Desa/Kelurahan wajib diisi.', nama, deskelId });
@@ -134,7 +164,7 @@ export const actions: Actions = {
         }
 
         try {
-            const updatedMurid = {
+            const updatedMuridData: { [key: string]: any } = {
                 updaterId: locals.user.id, // Assuming updaterId is the current user's ID
                 nama,
                 namaArab,
@@ -151,12 +181,24 @@ export const actions: Actions = {
                 tglLahir,
                 aktif,
                 partisipasi,
-                nik,
-                foto
+                nik
             };
 
-            const result = await db.update(muridTable)
-                .set(updatedMurid)
+            // Logika untuk menangani update foto
+            if (removeFoto) {
+                // Jika ada flag untuk menghapus foto
+                updatedMuridData.foto = null;
+            } else if (fotoFile && fotoFile.size > 0) {
+                // Jika ada file baru yang diunggah
+                const buffer = await fotoBuffer(fotoFile);
+                updatedMuridData.foto = buffer;
+            }
+            // Jika tidak ada kondisi di atas, properti `foto` tidak ditambahkan ke `updatedMuridData`,
+            // sehingga Drizzle tidak akan mengubahnya di database.
+
+            const result = await db
+                .update(muridTable)
+                .set(updatedMuridData)
                 .where(eq(muridTable.id, muridId))
                 .run();
 

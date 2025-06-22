@@ -1,43 +1,25 @@
 <script lang="ts">
-	import type { PageData, ActionData } from './$types';
-	// import { enhance } from '$app/forms';
+	import type { PageData } from './$types';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import AddMuridForm from '$lib/components/data-entry/AddMuridForm.svelte';
 	import { type FormData as MuridFormDataType } from '$lib/stores/muridForm';
 
-	// Define ActionData explicitly to include all possible fields returned on failure
-	interface ActionData extends FormData {
-		success?: boolean;
-		message?: string;
-	}
-
 	export let data: PageData;
-	// export let form: ActionData;
-	// 'form' adalah untuk hasil dari form action, biarkan saja.
-	// Anda tidak perlu lagi mereplikasi semua state dari form di sini,
-	// karena AddMuridForm akan mengelolanya secara internal.
-	// export let form: any; // Anda bisa memberi tipe ActionData jika diperlukan.
 
-	// 2. Buat state untuk menampung data yang sudah ditransformasi untuk form.
-	//    Inisialisasi sebagai undefined agar kita bisa menunggunya di-render.
+	// State untuk menampung data yang sudah ditransformasi untuk form.
 	let initialFormData: MuridFormDataType | undefined = undefined;
 
-	// onUpdated akan dipanggil oleh AddMuridForm setelah sukses menyimpan data,
-	// misalnya untuk navigasi atau menampilkan pesan.
+	// onUpdated akan dipanggil oleh AddMuridForm setelah sukses menyimpan data.
 	async function handleFormUpdate() {
-		// console.log('Form berhasil di-update dari child component!');
-		// Di sini Anda bisa menambahkan logika seperti navigasi
 		await goto('/member/pendataan');
 	}
 
 	onMount(() => {
-		// 3. Lakukan transformasi saat komponen dimuat dan data dari server tersedia.
+		// Lakukan transformasi saat komponen dimuat dan data dari server tersedia.
 		if (data.murid) {
-			// console.log('Data dari server (sebelum transformasi):', data.murid);
-
-			// Transformasikan objek `data.murid` ke bentuk `MuridFormDataType`.
-			// Ini adalah langkah kunci untuk memperbaiki error.
+			// Transformasikan objek `data.murid` dari server ke bentuk `MuridFormDataType`
+			// yang diharapkan oleh komponen AddMuridForm.
 			initialFormData = {
 				// Properti yang tipenya sudah cocok bisa langsung disalin.
 				nama: data.murid.nama,
@@ -52,47 +34,47 @@
 				wiridId: data.murid.wiridId ?? undefined,
 				deskelId: data.murid.deskelId ?? undefined,
 
-				// --- Transformasi properti yang menyebabkan error ---
-				// Konversi 'string | null' menjadi 'string | undefined'
+				// Konversi 'string | null' dari server menjadi 'string | undefined' atau ''
 				namaArab: data.murid.namaArab ?? undefined,
 				alamat: data.murid.alamat ?? undefined,
 				nomorTelepon: data.murid.nomorTelepon ?? undefined,
 				nik: data.murid.nik ?? undefined,
-				tglLahir: data.murid.tglLahir ?? '', // Pastikan string tidak null, beri default string kosong jika perlu
+				tglLahir: data.murid.tglLahir ?? '',
 
-				// Handle 'foto'. Asumsikan AddMuridForm menerima string (URL) atau undefined.
-				// Tipe 'unknown' dari server perlu di-cast atau diperiksa.
-				// Jika foto adalah URL, ini cara yang aman:
-				foto: typeof data.murid.foto === 'string' ? data.murid.foto : undefined,
+				// --- PERBAIKAN UTAMA DI SINI ---
+				// `foto` harus `undefined` pada awalnya karena belum ada file baru yang dipilih.
+				// Tipe `File` hanya digunakan untuk file yang diunggah dari <input type="file">.
+				foto: undefined,
 
-				// Properti opsional lain yang mungkin tidak ada di `data.murid`
-				// tapi ada di `MuridFormDataType`.
+				// `fotoUrl` adalah tempat untuk menyimpan URL (string Base64) dari gambar yang ada.
+				// Ini akan digunakan oleh AddMuridForm untuk menampilkan gambar yang sudah ada.
+				fotoUrl: data.murid.fotoUrl,
+
+				// Properti lain yang tidak diinisialisasi dari data server.
 				muhrimData: undefined,
 				mursyidData: undefined,
 				baiatData: undefined,
-				wiridData: undefined,
-				previewFoto:
-					typeof data.murid.foto === 'string' && data.murid.foto ? data.murid.foto : undefined
-			};
+				wiridData: undefined
 
-			// console.log('Data untuk form (setelah transformasi):', initialFormData);
+				// Properti `previewFoto` tidak lagi diperlukan karena logikanya sudah
+				// ditangani di dalam AddMuridForm dengan `displayUrl`.
+			};
 		}
 	});
 </script>
 
 <div class="card bg-base-100 shadow-xl">
 	<div class="card-body">
-		<!-- Tampilkan nama dari data server yang asli -->
 		<h1 class="card-title text-2xl">Edit Data Murid: {data.murid?.nama ?? 'Memuat...'}</h1>
 
 		{#if data.canWriteMurid}
-			<!-- 4. Render AddMuridForm hanya jika `initialFormData` sudah siap. -->
+			<!-- Render AddMuridForm hanya jika `initialFormData` sudah siap. -->
 			{#if initialFormData}
 				<!--
-          Catatan:
-          - Komponen 'AddMuridForm' sekarang akan menerima data dengan tipe yang benar.
-          - Komponen ini juga akan mengelola state-nya sendiri, menyederhanakan halaman ini.
-          - Kita teruskan `onUpdated` sebagai cara bagi child untuk berkomunikasi kembali.
+          Sekarang `initialFormData` memiliki tipe yang benar:
+          - `foto` bertipe `undefined`
+          - `fotoUrl` berisi string URL gambar (atau null)
+          Ini akan cocok dengan prop yang diharapkan oleh AddMuridForm.
         -->
 				<AddMuridForm onUpdated={handleFormUpdate} formData={initialFormData} />
 			{:else}

@@ -3,7 +3,8 @@ import type { PageServerLoad, Actions } from './$types';
 import { db } from '$lib/drizzle';
 import { muridTable, deskelTable, kecamatanTable, kokabTable, propTable } from '$lib/drizzle/schema';
 import { userHasPermission } from '$lib/server/accessControl';
-import { eq } from 'drizzle-orm';
+import fotoBuffer from '$lib/utilities/fotoBuffer';
+import { type InferInsertModel } from 'drizzle-orm';
 
 export const load: PageServerLoad = async ({ locals }) => {
     if (!locals.user) {
@@ -58,9 +59,11 @@ export const actions: Actions = {
         const aktif = formData.get('aktif')?.toString() === 'on';
         const partisipasi = formData.get('partisipasi')?.toString() === 'on';
         const nik = formData.get('nik')?.toString() || null;
-        // foto handling is complex, will omit for now or assume base64 string
-        const foto = null; // Placeholder for foto
-        console.log('formData', formData);
+
+        const fotoFile = formData.get('foto') as File | null;
+        // const removeFoto = formData.get('removeFoto')?.toString() === 'true';
+
+        // console.log('formData', formData);
         if (!nama || !deskelId) {
             return fail(400, { message: 'Nama dan Desa/Kelurahan wajib diisi.', nama, deskelId });
         }
@@ -77,7 +80,7 @@ export const actions: Actions = {
         }
 
         try {
-            const newMurid = {
+            const newMurid: InferInsertModel<typeof muridTable> = {
                 updaterId: locals.user.id, // Assuming updaterId is the current user's ID
                 nama,
                 namaArab,
@@ -94,9 +97,14 @@ export const actions: Actions = {
                 tglLahir,
                 aktif,
                 partisipasi,
-                nik,
-                foto
+                nik
             };
+
+            // Logika untuk menangani simpan foto
+            if (fotoFile && fotoFile.size > 0) {
+                const buffer = await fotoBuffer(fotoFile);
+                newMurid.foto = buffer;
+            }
 
             await db.insert(muridTable).values(newMurid).run();
 
