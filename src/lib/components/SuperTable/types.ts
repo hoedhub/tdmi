@@ -100,6 +100,7 @@ export interface SuperTableProps<T = any> {
     rowClass?: string | ((row: T) => string);
     serverSide?: boolean;  // Whether filtering/sorting/pagination is handled by the server
     maxVisibleColumns?: number; // Max columns to show initially in mobile card view
+    dbError?: boolean; // Flag to indicate if there was a DB error
 }
 
 export interface SuperTableEvents<T = any> {
@@ -112,6 +113,17 @@ export interface SuperTableEvents<T = any> {
 // This class defines the component's public contract for TypeScript.
 export class SuperTableComponent<T extends Record<string, any>> extends SvelteComponent<
     SuperTableProps<T>,
-    { [key: string]: any },
-    { 'row-actions': { row: T } } // Align this with the slot name you are using!
+    { [key: string]: any }, // Events (bisa dispesifikkan jika perlu)
+    {
+        // Slot definitions:
+        'row-actions': { row: T };
+        'error-state': Record<string, never>; // Slot ada, tanpa props
+        'loading-state': Record<string, never>; // Slot ada, tanpa props
+        'empty-state': Record<string, never>; // Slot ada, tanpa props
+        'bulk-actions': { selectedIds: Array<T[keyof T]> };
+        'global-filter': {
+            searchTerm: string | undefined;
+            updateSearchTerm: (value: string) => void;
+        };
+    }
 > { }

@@ -4,7 +4,7 @@ import { db } from '$lib/drizzle';
 import { muridTable, deskelTable, kecamatanTable, kokabTable, propTable } from '$lib/drizzle/schema';
 import { eq, type InferSelectModel } from 'drizzle-orm';
 import { userHasPermission } from '$lib/server/accessControl';
-import fotoBuffer from '$lib/utilities/fotoBuffer';
+import fotoBuffer from '$lib/utils/fotoBuffer';
 
 // --- DEFINISIKAN DAN EKSPOR TIPE DATA UNTUK HALAMAN ---
 // Ini akan menjadi "kontrak" tipe antara server dan klien.

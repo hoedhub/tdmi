@@ -1,9 +1,6 @@
 import { error, redirect } from '@sveltejs/kit';
 import { userHasPermission } from '$lib/server/accessControl';
 import type { PageServerLoad } from './$types';
-import { db } from '$lib/drizzle'; // Import db client
-import { muridTable } from '$lib/drizzle/schema'; // Import muridTable
-import { count } from 'drizzle-orm'; // Import count for total items
 
 export const load: PageServerLoad = async ({ locals }) => {
     if (!locals.user) {
@@ -26,20 +23,14 @@ export const load: PageServerLoad = async ({ locals }) => {
         throw error(403, 'Akses Ditolak. Anda tidak memiliki izin untuk melihat data murid.');
     }
 
-    // Initial load of murid data will be handled by the +server.ts endpoint
-    // This load function primarily handles access control and passes permission flags.
-    // The actual data will be fetched by the client-side SuperTable component.
-
-    // We can still get the total count for initial pagination setup
-    const [totalMuridCountResult] = await Promise.all([
-        db.select({ totalCount: count() }).from(muridTable)
-    ]);
-
+    // Data fetching is now handled on the client-side.
+    // This function now only handles access control and passes permissions.
     return {
-        user: locals.user, // Pass user data to client
+        user: locals.user,
         canReadMurid,
         canWriteMurid,
-        totalItems: totalMuridCountResult[0].totalCount,
-        // No 'murid' data here, it will be fetched by the client via /table endpoint
+        // totalItems is no longer fetched here to prevent timeout
+        totalItems: 0, // Start with 0, client will fetch the real count
+        dbError: false // Initial state, client will handle DB errors
     };
 };

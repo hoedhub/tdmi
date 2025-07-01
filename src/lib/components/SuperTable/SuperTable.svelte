@@ -1,8 +1,6 @@
-<!-- SuperTable.svelte -->
 <script lang="ts" generics="T extends Record<string, any>">
 	import type { ColumnDef, SortConfig, FilterState, SuperTableProps } from './types';
 	import { createEventDispatcher, onMount } from 'svelte';
-	import debounce from 'lodash.debounce';
 	import {
 		sortState,
 		filterState,
@@ -39,168 +37,135 @@
 	export let rowClass: Props['rowClass'] = '';
 	export let isSelectable: boolean = true;
 	export let serverSide = false;
-	export let maxVisibleColumns: SuperTableProps['maxVisibleColumns'] = undefined;
+	export let dbError: Props['dbError'] = false;
+	export let maxVisibleColumns: Props['maxVisibleColumns'] = 5;
 
 	const dispatch = createEventDispatcher();
 
-	// Initialize stores only once on mount
-	// Initialize stores
+	// --- State Management ---
+	let internalColumns: ColumnDef<T>[] = [];
+	let filteredData: T[] = [];
+	let isFilterDrawerOpen = false;
+	let filterTimeout: NodeJS.Timeout;
+	const FILTER_DEBOUNCE_MS = 300;
+
+	// --- Lifecycle & Reactivity ---
 	onMount(() => {
 		$sortState = initialSort ?? null;
 		$itemsPerPage = itemsPerPageProp ?? 10;
 		$isLoading = false;
+
+		// Initialize internal state
+		internalColumns = columns.map((col) => ({ ...col }));
+		if (!serverSide) {
+			filteredData = filterData(data, $filterState, internalColumns);
+		} else {
+			filteredData = data;
+		}
+
+		onResize();
+		window.addEventListener('resize', onResize);
+
+		return () => {
+			if (filterTimeout) clearTimeout(filterTimeout);
+			window.removeEventListener('resize', onResize);
+		};
 	});
 
-	// Keep loading state in sync with prop, ensuring we always have a boolean
+	// Sync loading state with prop
 	$: $isLoading = Boolean(isLoadingProp);
 
-	// Internal state for column visibility
-	let internalColumns: ColumnDef[] = [];
-	$: internalColumns = columns.map((col) => ({ ...col })); // Deep copy to allow modification
+	// Update internal columns when prop changes
+	$: internalColumns = columns.map((col) => ({ ...col }));
 
-	function toggleColumnVisibility(key: string) {
-		internalColumns = internalColumns.map((col) =>
-			col.key === key ? { ...col, hidden: !col.hidden } : col
-		);
-	}
-
-	// State for filtered and sorted data
-	let filteredData: typeof data = [];
-	let hasFilterListener = false;
-	let isFilterDrawerOpen = false;
-
-	// Use explicit serverSide prop for determining filtering mode
-	$: hasFilterListener = serverSide;
-
-	// Reactive data processing
-	$: {
-		// console.log('[SuperTable] Data update received:', {
-		// 	serverSide,
-		// 	dataLength: data.length,
-		// 	filterState: $filterState,
-		// 	loading: $isLoading
-		// });
-
-		// Simply use the data as-is - filtering will be handled appropriately by event handlers
+	// When data changes (especially in server-side mode), update filteredData
+	$: if (serverSide) {
 		filteredData = data;
 	}
-	$: sortedData = sortData(filteredData, $sortState, internalColumns); // Use internalColumns
-	$: totalItems = totalItemsProp ?? sortedData.length;
+
+	// --- Computed Properties ---
+	$: sortedData = sortData(filteredData, $sortState, internalColumns);
+	$: totalItems = serverSide ? totalItemsProp ?? 0 : sortedData.length;
 	$: totalPageCount = calculateTotalPages(totalItems, $itemsPerPage);
-	$: paginatedData = paginateData(sortedData, $currentPage, $itemsPerPage);
-	$: totalFilteredAndSortedItems = sortedData.length;
-
-	// Selection state
+	$: displayData = serverSide ? sortedData : paginateData(sortedData, $currentPage, $itemsPerPage);
 	$: allSelected =
-		paginatedData.length > 0 && paginatedData.every((row) => $selectedIds.has(row[rowKey]));
-	$: someSelected = paginatedData.some((row) => $selectedIds.has(row[rowKey]));
+		displayData.length > 0 && displayData.every((row) => $selectedIds.has(row[rowKey]));
+	$: someSelected = displayData.some((row) => $selectedIds.has(row[rowKey]));
 
-	// Mobile detection
+	// --- Mobile Detection ---
 	let isMobile: boolean = false;
-
 	function onResize() {
 		if (typeof window !== 'undefined') {
 			isMobile = window.innerWidth < 768;
 		}
 	}
 
-	onMount(() => {
-		onResize();
-		if (typeof window !== 'undefined') {
-			window.addEventListener('resize', onResize);
-			return () => {
-				if (filterTimeout) clearTimeout(filterTimeout);
-				window.removeEventListener('resize', onResize);
-			};
-		}
-	});
+	// --- Event Handlers ---
 
-	// Event handlers
+	// Central debounced function for all filter updates
+	function debouncedDispatchFilter(state: FilterState) {
+		if (filterTimeout) clearTimeout(filterTimeout);
+
+		// For client-side, immediately apply filtering to the UI
+		if (!serverSide) {
+			filteredData = filterData(data, state, internalColumns);
+		}
+
+		// Debounce the event dispatch to the parent (for server-side calls)
+		filterTimeout = setTimeout(() => {
+			if (serverSide) $isLoading = true;
+			dispatch('filter', state);
+		}, FILTER_DEBOUNCE_MS);
+	}
+
 	function handleSort(event: CustomEvent<SortConfig | null>) {
 		$sortState = event.detail;
 		dispatch('sort', event.detail);
 	}
 
-	const debouncedFilterDispatch = debounce(() => {
-		dispatch('filter', $filterState);
-	}, 300);
-
-	function handleFilterEvent(event: CustomEvent<{ key: string; value: any }>) {
-		const { key, value } = event.detail;
-		$filterState.columns[key] = value;
-		debouncedFilterDispatch();
-	}
-	function handleFilter(event: CustomEvent<{ column: ColumnDef; value: any; columnKey: string }>) {
-		const { column, value, columnKey } = event.detail;
-		// console.log('[SuperTable] Column filter change:', { column: columnKey, value, serverSide });
-
-		// Update filter state
-		$filterState.columns = { ...$filterState.columns, [columnKey]: value };
-
-		if (!serverSide) {
-			// Only apply client-side filtering if we're not in server-side mode
-			filteredData = filterData(data, $filterState, internalColumns);
-		}
-
-		debouncedDispatchFilter($filterState);
-	}
-
 	function handleGlobalFilter(value: string) {
-		console.log('[SuperTable] Global filter change:', { value, serverSide });
-		// Update filter state
 		$filterState.global = value;
-
-		if (!serverSide) {
-			// Only apply client-side filtering if we're not in server-side mode
-			filteredData = filterData(data, $filterState, internalColumns);
-		}
-
 		debouncedDispatchFilter($filterState);
 	}
-	// Handler untuk filter desktop (live/debounced)
+
 	function handleLiveFilterChange(event: CustomEvent<{ key: string; value: any }>) {
 		const { key, value } = event.detail;
-		$filterState.columns[key] = value;
-		debouncedFilterDispatch();
+		// Create a new object to ensure Svelte reactivity
+		$filterState.columns = { ...$filterState.columns, [key]: value };
+		debouncedDispatchFilter($filterState);
 	}
-	// Handler untuk filter dari drawer (saat 'Apply' diklik)
+
 	function handleApplyDrawerFilters(event: CustomEvent<Record<string, any>>) {
-		// Ganti seluruh objek filter kolom dengan yang dari drawer
 		$filterState.columns = event.detail;
-		// Langsung panggil dispatch tanpa debounce
+		// Dispatch immediately without debounce for drawer's "Apply" button
+		if (serverSide) $isLoading = true;
 		dispatch('filter', $filterState);
 	}
-	function resetColumnFilters() {
-		// Buat objek filter kolom yang baru dan kosong
-		$filterState.columns = {};
 
-		// Panggil dispatch yang sudah di-debounce untuk memuat ulang data
-		debouncedFilterDispatch();
+	function resetColumnFilters() {
+		$filterState.columns = {};
+		debouncedDispatchFilter($filterState);
 	}
 
 	function handleSelectAll(event: CustomEvent<{ selected: boolean }>) {
 		const newSelectedIds = new Set($selectedIds);
-
 		if (event.detail.selected) {
-			paginatedData.forEach((row) => newSelectedIds.add(row[rowKey]));
+			displayData.forEach((row) => newSelectedIds.add(row[rowKey]));
 		} else {
-			paginatedData.forEach((row) => newSelectedIds.delete(row[rowKey]));
+			displayData.forEach((row) => newSelectedIds.delete(row[rowKey]));
 		}
-
 		$selectedIds = newSelectedIds;
 		dispatch('selectionChange', Array.from(newSelectedIds));
 	}
 
-	function handleSelect(event: CustomEvent<{ row: any; selected: boolean }>) {
+	function handleSelect(event: CustomEvent<{ row: T; selected: boolean }>) {
 		const { row, selected } = event.detail;
 		const newSelectedIds = new Set($selectedIds);
-
 		if (selected) {
 			newSelectedIds.add(row[rowKey]);
 		} else {
 			newSelectedIds.delete(row[rowKey]);
 		}
-
 		$selectedIds = newSelectedIds;
 		dispatch('selectionChange', Array.from(newSelectedIds));
 	}
@@ -212,10 +177,11 @@
 
 	function handleItemsPerPageChange(event: CustomEvent<number>) {
 		$itemsPerPage = event.detail;
-		$currentPage = 1;
+		$currentPage = 1; // Reset to first page
+		dispatch('itemsPerPageChange', event.detail);
 	}
 
-	function handleSwipe(event: CustomEvent<{ row: any; direction: 'left' | 'right' }>) {
+	function handleSwipe(event: CustomEvent<{ row: T; direction: 'left' | 'right' }>) {
 		dispatch('swipe', event.detail);
 	}
 
@@ -224,9 +190,9 @@
 		dispatch('selectionChange', []);
 	}
 
-	function selectAllFilteredAndSorted() {
+	function selectAllOnPage() {
 		const newSelectedIds = new Set($selectedIds);
-		sortedData.forEach((row) => newSelectedIds.add(row[rowKey]));
+		displayData.forEach((row) => newSelectedIds.add(row[rowKey]));
 		$selectedIds = newSelectedIds;
 		dispatch('selectionChange', Array.from(newSelectedIds));
 	}
@@ -235,42 +201,21 @@
 		dispatch('deleteSelected', Array.from($selectedIds));
 	}
 
-	// Debouncing configuration
-	let filterTimeout: NodeJS.Timeout;
-	const FILTER_DEBOUNCE_MS = 300; // 300ms debounce - more responsive while still preventing excess calls
-
-	// Create a debounced function for filter updates
-	function debouncedDispatchFilter(filterState: FilterState) {
-		if (filterTimeout) clearTimeout(filterTimeout);
-		// console.log('[SuperTable] Setting up filter dispatch with state:', {
-		// 	globalFilter: filterState.global,
-		// 	columnFilters: filterState.columns,
-		// 	debounceDelay: FILTER_DEBOUNCE_MS,
-		// 	serverSide
-		// });
-
-		if (!serverSide) {
-			// Only update internal state for client-side filtering
-			filteredData = filterData(data, filterState, internalColumns);
-		}
-
-		// Debounce the event dispatch to parent
-		filterTimeout = setTimeout(() => {
-			// console.log('[SuperTable] Dispatching debounced filter event to parent');
-			if (serverSide) $isLoading = true; // Show loading state for server-side filtering
-			dispatch('filter', filterState);
-		}, FILTER_DEBOUNCE_MS);
+	function toggleColumnVisibility(key: string) {
+		internalColumns = internalColumns.map((col) =>
+			col.key === key ? { ...col, hidden: !col.hidden } : col
+		);
 	}
 </script>
 
 <svelte:window on:resize={onResize} />
 
 <div class="w-full space-y-1">
-	<!-- Bulk actions and global filter section with card styling -->
+	<!-- Bulk actions and global filter section -->
 	<div class="card mb-4 bg-base-100 shadow">
 		<div class="card-body p-4">
 			<div class="flex flex-col gap-4">
-				<!-- First row: Filter input box -->
+				<!-- Global Filter -->
 				<div class="w-full">
 					<slot
 						name="global-filter"
@@ -284,8 +229,9 @@
 					</slot>
 				</div>
 
-				<!-- Second row: Rest of the elements -->
+				<!-- Toolbar -->
 				<div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+					<!-- Column Visibility -->
 					<div class="dropdown">
 						<div tabindex="0" role="button" class="btn btn-sm">
 							<Columns class="h-4 w-4" />
@@ -319,6 +265,8 @@
 							{/each}
 						</ul>
 					</div>
+
+					<!-- Mobile Filter Drawer Button -->
 					{#if isMobile && mobileView === 'cards'}
 						<button
 							class="btn btn-outline btn-sm relative"
@@ -330,18 +278,17 @@
 								<div class="badge badge-primary badge-xs absolute right-1 top-1 scale-75"></div>
 							{/if}
 						</button>
-
 						<FilterDrawer
 							isOpen={isFilterDrawerOpen}
 							columns={internalColumns}
 							filterValues={$filterState.columns}
 							on:close={() => (isFilterDrawerOpen = false)}
-							on:filterChange={handleFilterEvent}
-							on:reset={resetColumnFilters}
 							on:applyFilters={handleApplyDrawerFilters}
+							on:reset={resetColumnFilters}
 						/>
 					{/if}
 
+					<!-- Bulk Selection Actions -->
 					{#if $selectedIds.size > 0}
 						<div class="flex flex-grow flex-wrap items-center justify-end gap-x-4 gap-y-2">
 							<div class="flex items-center gap-1">
@@ -356,22 +303,19 @@
 									</button>
 								</div>
 							</div>
-
 							{#if someSelected && !allSelected}
-								<button class="btn btn-link btn-sm" on:click={selectAllFilteredAndSorted}>
-									Select all ({totalFilteredAndSortedItems})
+								<button class="btn btn-link btn-sm" on:click={selectAllOnPage}>
+									Select all ({displayData.length})
 								</button>
 							{:else if allSelected}
 								<button class="btn btn-link btn-sm" on:click={clearSelection}>
 									Deselect all
 								</button>
 							{/if}
-
 							<button class="btn btn-error btn-sm" on:click={handleDeleteSelected}>
 								<Trash2 class="h-4 w-4" />
 								Delete Selected
 							</button>
-
 							<slot name="bulk-actions" selectedIds={Array.from($selectedIds)} />
 						</div>
 					{/if}
@@ -380,24 +324,21 @@
 		</div>
 	</div>
 
-	<!-- Main table/cards section with card styling -->
+	<!-- Main table/cards section -->
 	<div class="card bg-base-100 shadow">
 		<div class="card-body px-0 py-0">
-			<!-- Tampilkan tabel bahkan jika tidak ada data, agar header tetap terlihat -->
-			<!-- Kita hanya akan menyembunyikan tabel jika sedang loading -->
 			{#if isMobile && mobileView === 'cards'}
+				<!-- Mobile Card View -->
 				{#if $isLoading}
 					<slot name="loading-state">
-						<div class="flex w-full justify-center p-8">
-							<span class="loading loading-spinner" />
-						</div>
+						<div class="flex w-full justify-center p-8"><span class="loading loading-spinner" /></div>
 					</slot>
 				{:else if data.length === 0}
 					<slot name="empty-state">
 						<div class="p-8 text-center text-base-content/70">No data available</div>
 					</slot>
 				{:else}
-					{#each paginatedData as row (String(row[rowKey]))}
+					{#each displayData as row (String(row[rowKey]))}
 						<TableRowMobileCard
 							{row}
 							columns={internalColumns}
@@ -416,10 +357,9 @@
 					{/each}
 				{/if}
 			{:else}
-				<!-- Tampilan Desktop (Tabel) -->
+				<!-- Desktop Table View -->
 				<div class="overflow-x-auto">
 					<table class="table table-sm w-full {tableClass}">
-						<!-- HEADER SELALU DIRENDER -->
 						<TableHeader
 							columns={internalColumns}
 							currentSort={$sortState}
@@ -428,21 +368,23 @@
 							{allSelected}
 							{someSelected}
 							on:sort={handleSort}
-							on:filter={handleFilter}
 							on:filterChange={handleLiveFilterChange}
 							on:reset={resetColumnFilters}
 							on:selectAll={handleSelectAll}
 						/>
-
-						<!-- BODY BERUBAH BERDASARKAN STATE -->
 						<tbody>
-							{#if $isLoading}
+							{#if dbError}
+								<slot name="error-state">
+									<tr>
+										<td colspan={internalColumns.filter((c) => !c.hidden).length + 2} class="p-8 text-center text-error">
+											Gagal memuat data. Silakan coba lagi.
+										</td>
+									</tr>
+								</slot>
+							{:else if $isLoading}
 								<slot name="loading-state">
 									<tr>
-										<td
-											colspan={internalColumns.length + (isSelectable ? 1 : 0) + 1}
-											class="p-8 text-center"
-										>
+										<td colspan={internalColumns.filter((c) => !c.hidden).length + 2} class="p-8 text-center">
 											<span class="loading loading-spinner" />
 										</td>
 									</tr>
@@ -450,16 +392,13 @@
 							{:else if data.length === 0}
 								<slot name="empty-state">
 									<tr>
-										<td
-											colspan={internalColumns.length + (isSelectable ? 1 : 0) + 1}
-											class="p-8 text-center text-base-content/70"
-										>
+										<td colspan={internalColumns.filter((c) => !c.hidden).length + 2} class="p-8 text-center text-base-content/70">
 											No data available
 										</td>
 									</tr>
 								</slot>
 							{:else}
-								{#each paginatedData as row (String(row[rowKey]))}
+								{#each displayData as row (String(row[rowKey]))}
 									<TableRowDesktop
 										{row}
 										columns={internalColumns}
@@ -482,17 +421,19 @@
 		</div>
 	</div>
 
-	<!-- Pagination section with card styling -->
+	<!-- Pagination -->
 	<div class="borer card mx-0 bg-base-100 shadow">
 		<div class="card-body px-4 py-2">
-			<PaginationControls
-				currentPage={$currentPage}
-				totalPages={totalPageCount}
-				itemsPerPage={$itemsPerPage}
-				{totalItems}
-				on:pageChange={handlePageChange}
-				on:itemsPerPageChange={handleItemsPerPageChange}
-			/>
+			{#if !$isLoading && totalItems > 0}
+				<PaginationControls
+					currentPage={$currentPage}
+					totalPages={totalPageCount}
+					itemsPerPage={$itemsPerPage}
+					{totalItems}
+					on:pageChange={handlePageChange}
+					on:itemsPerPageChange={handleItemsPerPageChange}
+				/>
+			{/if}
 		</div>
 	</div>
 </div>

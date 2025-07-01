@@ -21,7 +21,7 @@
 
 	// --- PROPS ---
 	export let formData: FormData | undefined = undefined;
-	export let onUpdated = async () => {};
+	export let propinsiList: Propinsi[] = [];
 
 	// --- STATE ---
 	let countryId: string;
@@ -174,18 +174,21 @@
 		if (doConfirm && !confirm('Are you sure you want to reset the form? All changes will be lost.'))
 			return;
 
-		// LOGGING: Lihat state sebelum reset
-		// console.log('--- RESETTING FORM ---');
-		// console.log('Original Data to restore:', JSON.stringify(originalFormData, null, 2));
-		// console.log('Current (wrong) Internal Data:', JSON.stringify(internalFormData, null, 2));
-
 		// Saat reset, kembalikan ke data asli yang disimpan di snapshot
 		internalFormData = { ...originalFormData };
-		// LOGGING: Lihat state setelah reset
-		// console.log('Internal Data AFTER reset:', JSON.stringify(internalFormData, null, 2));
-		selectedPropinsi = originalSelectedPropinsi;
-		selectedKokab = originalSelectedKokab;
-		selectedKecamatan = originalSelectedKecamatan;
+
+		// Jika dalam mode 'Tambah Baru' (prop formData tidak ada), selalu reset wilayah ke null.
+		// Ini memastikan 'Simpan & Tambah Lagi' dan tombol 'Reset' membersihkan form sepenuhnya.
+		// Jika dalam mode 'Edit', reset ke snapshot wilayah asli yang diambil saat mount.
+		if (!formData) {
+			selectedPropinsi = null;
+			selectedKokab = null;
+			selectedKecamatan = null;
+		} else {
+			selectedPropinsi = originalSelectedPropinsi;
+			selectedKokab = originalSelectedKokab;
+			selectedKecamatan = originalSelectedKecamatan;
+		}
 
 		if (personalInfoFormComponent) {
 			personalInfoFormComponent.reset();
@@ -199,6 +202,7 @@
 		// Panggil handleInput untuk mengkalkulasi ulang isFormModified (akan jadi false)
 		setTimeout(() => {
 			handleInput();
+			isFormModified = false;
 		}, 100);
 	}
 
@@ -216,21 +220,20 @@
 			isSubmitting = false;
 
 			if (result.type === 'success') {
-				success('Data murid berhasil disimpan');
-				await onUpdated();
-				// Setelah sukses, update snapshot ke data yang baru saja disimpan
-				if (result.data?.murid) {
-					originalFormData = { ...result.data.murid };
-					// Update juga snapshot wilayah jika data wilayah ada di result.data
-					// originalSelectedPropinsi = result.data.selectedPropinsi; (contoh)
+				const successMessage = result.data?.message || 'Data berhasil disimpan.';
+				success(successMessage);
+				resetForm(false); // Reset form tanpa konfirmasi
+
+				if (result.data?.redirect) {
+					goto(result.data.redirect);
+				} else {
+					// Setelah sukses, update snapshot ke data yang baru saja disimpan
+					if (result.data?.murid) {
+						originalFormData = { ...result.data.murid };
+					}
 				}
-				isFormModified = false;
 			} else if (result.type === 'failure') {
-				error(
-					result.data?.message
-						? `${result.data.message}: ${result.data.error}`
-						: 'Gagal menyimpan data murid'
-				);
+				error(result.data?.message ? `${result.data.message}` : 'Gagal menyimpan data murid');
 			}
 		};
 	}
@@ -277,6 +280,7 @@
 	/>
 
 	<ContactForm
+		{propinsiList}
 		formData={internalFormData}
 		{selectedPropinsi}
 		{selectedKokab}
@@ -326,10 +330,21 @@
 		</button>
 		<button
 			type="submit"
+			name="action"
+			value="save-and-close"
 			disabled={isSubmitting}
 			class="btn btn-primary grow rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
 		>
-			{isSubmitting ? 'Menyimpan...' : 'Simpan'}
+			{isSubmitting ? 'Menyimpan...' : 'Simpan & Tutup'}
+		</button>
+		<button
+			type="submit"
+			name="action"
+			value="save-and-add"
+			disabled={isSubmitting}
+			class="btn btn-secondary grow rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
+		>
+			{isSubmitting ? 'Menyimpan...' : 'Simpan & Tambah Lagi'}
 		</button>
 	</div>
 </form>

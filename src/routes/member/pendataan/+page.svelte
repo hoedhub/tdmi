@@ -47,6 +47,8 @@
 	export let data: ExtendedPageData;
 	export let form: { success?: boolean; message?: string } | null;
 
+	let hasDbError = data.dbError;
+
 	let muridData: Murid[] = [];
 	let totalItems = data.totalItems;
 	let loading = false;
@@ -118,19 +120,42 @@
 		}
 	];
 
+	let retryAttempt = 0;
+	let maxRetries = 5;
+
 	// --- Functions ---
+	async function fetchWithRetry(url: string, options: RequestInit, attempt = 1): Promise<Response> {
+		retryAttempt = attempt;
+		try {
+			const response = await fetch(url, options);
+			if (response.status >= 500 && attempt < maxRetries) {
+				throw new Error(`Server error: ${response.status}`); // Trigger retry
+			}
+			return response;
+		} catch (error) {
+			if (attempt < maxRetries) {
+				await new Promise((resolve) => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+				return fetchWithRetry(url, options, attempt + 1);
+			} else {
+				throw error; // Final attempt failed
+			}
+		}
+	}
+
 	async function fetchTableData(
 		sort?: SortConfig | null,
 		filters?: Record<string, any>,
 		page: number = 1
 	) {
+		hasDbError = false; // Reset error state on new attempt
 		loading = true;
 		try {
-			const response = await fetch('/member/pendataan/table', {
+			const response = await fetchWithRetry('/member/pendataan/table', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ sort, filters, page, pageSize })
 			});
+
 			if (!response.ok) throw new Error('Failed to fetch murid data');
 
 			const result = await response.json();
@@ -138,8 +163,10 @@
 			muridData = result.murid;
 			totalItems = result.totalItems;
 			currentPage = result.currentPage;
+			retryAttempt = 0; // Reset on success
 		} catch (error) {
 			console.error('Error fetching table data:', error);
+			hasDbError = true; // Set error state if fetch fails
 		} finally {
 			loading = false;
 		}
@@ -151,7 +178,9 @@
 	}
 
 	async function handleFilter(event: CustomEvent<FilterState>) {
-		currentFilters = { ...event.detail.columns, global: event.detail.global };
+		// BENAR: Teruskan objek event.detail apa adanya.
+		// Strukturnya adalah { global: string, columns: { ... } }
+		currentFilters = event.detail;
 		await fetchTableData(currentSort, currentFilters, 1); // Reset ke halaman 1 saat filter
 	}
 
@@ -206,11 +235,12 @@
 
 {#key muridData}
 	<SuperTable
+		dbError={hasDbError}
 		data={muridData}
 		{columns}
 		rowKey="id"
 		itemsPerPage={pageSize}
-		{totalItems}
+		totalItemsProp={totalItems}
 		isLoading={loading}
 		initialSort={currentSort}
 		serverSide={true}
@@ -219,6 +249,30 @@
 		on:pageChange={handlePageChange}
 		on:rowClick={({ detail }) => goto(`/member/pendataan/${detail.id}/edit`)}
 	>
+		<svelte:fragment slot="loading-state">
+			<div class="p-8 text-center">
+				<span class="loading loading-spinner mb-4"></span>
+				<p class="text-lg font-semibold">Memuat data...</p>
+				{#if retryAttempt > 1}
+					<p class="text-sm text-warning">
+						Koneksi bermasalah. Mencoba lagi... (Percobaan {retryAttempt} dari {maxRetries})
+					</p>
+				{:else}
+					<p class="text-sm text-base-content/70">Harap tunggu sebentar.</p>
+				{/if}
+			</div>
+		</svelte:fragment>
+		<svelte:fragment slot="error-state">
+			<div class="p-8 text-center text-error">
+				<p>Tidak dapat terhubung ke database.</p>
+				<button
+					class="btn btn-outline btn-sm mt-4"
+					on:click={() => fetchTableData(currentSort, currentFilters, currentPage)}
+				>
+					Coba Lagi
+				</button>
+			</div>
+		</svelte:fragment>
 		<svelte:fragment slot="row-actions" let:row>
 			{#if canWriteMurid}
 				<div class="flex gap-2">

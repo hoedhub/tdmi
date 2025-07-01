@@ -17,7 +17,7 @@ export async function GET({ url }: { url: URL }) {
 		// console.log('Fetched desa/kelurahan:', deskel);
 		return json(deskel);
 	} catch (error) {
-		console.error('Error fetching desa/kelurahan:', error);
+		console.error(`Error fetching deskel for kecamatanId: ${kecamatanId}`, error);
 		return json(
 			{
 				error: 'Failed to fetch desa/kelurahan',

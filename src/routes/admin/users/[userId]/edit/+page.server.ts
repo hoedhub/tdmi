@@ -44,63 +44,91 @@ export const load: PageServerLoad = async ({ locals, params, url }) => {
 };
 
 export const actions: Actions = {
-    default: async ({ request, locals, params }) => {
-        if (!locals.user) throw error(401, 'Unauthorized');
-        const canWriteUsers = await userHasPermission(locals.user.id, 'perm-user-write');
-        if (!canWriteUsers) {
-            return fail(403, { message: 'Akses Ditolak' });
-        }
+	default: async ({ request, locals, params }) => {
+		if (!locals.user) throw error(401, 'Unauthorized');
+		const canWriteUsers = await userHasPermission(locals.user.id, 'perm-user-write');
+		if (!canWriteUsers) {
+			return fail(403, { message: 'Akses Ditolak' });
+		}
 
-        const userIdToEdit = params.userId;
-        const formData = await request.formData();
+		const userIdToEdit = params.userId;
+		const formData = await request.formData();
 
-        const password = formData.get('password') as string;
-        const active = formData.has('active');
-        const muridIdStr = formData.get('muridId') as string;
-        const selectedRoles = formData.getAll('roles').map(String);
+		const password = formData.get('password') as string;
+		const active = formData.has('active');
+		const muridIdStr = formData.get('muridId') as string;
+		const selectedRoles = formData.getAll('roles').map(String);
 
-        let formState = { selectedRoles, active, muridIdStr, message: '', userId: userIdToEdit };
-        if (!userIdToEdit) throw error(404, { ...formState, message: "User ID tidak ditemukan." });
+		// Initialize form state to return on failure
+		const formState = {
+			selectedRoles,
+			active,
+			muridIdStr,
+			message: '',
+			userId: userIdToEdit
+		};
 
-        if (password && password.length < 6) {
-            return fail(400, { ...formState, message: 'Password baru minimal 6 karakter.' });
-        }
+		if (!userIdToEdit) {
+			// This should ideally not happen due to routing, but as a safeguard:
+			throw error(404, 'User ID tidak ditemukan.');
+		}
 
-        if (userIdToEdit === locals.user.id) {
-            const myRoles = await getUserRoles(locals.user.id);
-            if (myRoles.includes('role-admin') && !selectedRoles.includes('role-admin')) {
-                return fail(400, { ...formState, message: "Admin tidak bisa menghapus peran 'admin' dari akunnya sendiri." });
-            }
-            if (!active) {
-                return fail(400, { ...formState, message: "Admin tidak bisa menonaktifkan akunnya sendiri." });
-            }
-        }
+		// --- Validation ---
+		if (password && password.length < 6) {
+			return fail(400, { ...formState, message: 'Password baru minimal 6 karakter.' });
+		}
 
-        let muridId: number | null = null;
-        if (muridIdStr) {
-            const parsedId = parseInt(muridIdStr, 10);
-            if (isNaN(parsedId)) {
-                return fail(400, { ...formState, message: 'Murid ID tidak valid.' });
-            }
-            muridId = parsedId;
-        }
+		// --- Self-edit Guards ---
+		if (userIdToEdit === locals.user.id) {
+			const myRoles = await getUserRoles(locals.user.id);
+			if (myRoles.includes('role-admin') && !selectedRoles.includes('role-admin')) {
+				return fail(400, {
+					...formState,
+					message: "Admin tidak bisa menghapus peran 'admin' dari akunnya sendiri."
+				});
+			}
+			if (!active) {
+				return fail(400, { ...formState, message: "Admin tidak bisa menonaktifkan akunnya sendiri." });
+			}
+		}
 
-        try {
-            const updateUserTablePromise = db.update(usersTable).set({
-                active,
-                muridId,
-                ...(password && { passwordHash: await new Argon2id().hash(password) })
-            }).where(eq(usersTable.id, userIdToEdit));
+		let muridId: number | null = null;
+		if (muridIdStr) {
+			const parsedId = parseInt(muridIdStr, 10);
+			if (isNaN(parsedId)) {
+				return fail(400, { ...formState, message: 'Murid ID tidak valid.' });
+			}
+			muridId = parsedId;
+		}
 
-            const updateUserRolesPromise = updateUserRoles(userIdToEdit, selectedRoles);
+		try {
+			// --- Database Operations ---
+			const updateData: { active: boolean; muridId: number | null; passwordHash?: string } = {
+				active,
+				muridId
+			};
 
-            await Promise.all([updateUserTablePromise, updateUserRolesPromise]);
+			if (password) {
+				updateData.passwordHash = await new Argon2id().hash(password);
+			}
 
-        } catch (e: any) {
-            console.error("Error updating user:", e);
-            return fail(500, { message: e.message || 'Gagal memperbarui pengguna karena kesalahan server.' });
-        }
+			const updateUserTablePromise = db
+				.update(usersTable)
+				.set(updateData)
+				.where(eq(usersTable.id, userIdToEdit));
+			const updateUserRolesPromise = updateUserRoles(userIdToEdit, selectedRoles);
 
-        throw redirect(303, '/admin/users');
-    }
+			await Promise.all([updateUserTablePromise, updateUserRolesPromise]);
+		} catch (e: any) {
+			console.error('Error updating user:', e);
+			// FIX: Return formState along with the error message
+			return fail(500, {
+				...formState,
+				message: e.message || 'Gagal memperbarui pengguna karena kesalahan server.'
+			});
+		}
+
+		// --- Success ---
+		throw redirect(303, '/admin/users');
+	}
 };

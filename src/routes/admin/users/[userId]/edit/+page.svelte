@@ -18,7 +18,6 @@
 		childRoleId: string;
 	}
 
-	// (Anda mungkin sudah memiliki interface ini, pastikan mereka ada)
 	interface UserToEdit {
 		id: string;
 		username: string;
@@ -26,6 +25,7 @@
 		muridId: number | null;
 		assignedRoles: string[];
 	}
+
 	interface RoleOption {
 		id: string;
 		name: string;
@@ -36,7 +36,6 @@
 		nama: string;
 	}
 
-	// Tipe PageData lengkap yang cocok dengan return dari server
 	interface PageData extends SvelteKitPageData {
 		userToEdit: UserToEdit;
 		allAvailableRoles: RoleOption[];
@@ -62,7 +61,7 @@
 			if (result.type === 'error') {
 				isLoading = false;
 				// Display error toast
-				error(result.error?.msg || 'An unknown error occurred during login.', { duration: 5000 });
+				error(result.error?.msg || 'An unknown error occurred while saving.', { duration: 5000 });
 				return;
 			}
 

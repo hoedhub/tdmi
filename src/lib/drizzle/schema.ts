@@ -123,30 +123,52 @@ export const permissionsTable = sqliteTable('permissions', {
 export const userRolesTable = sqliteTable('user_roles', {
 	userId: text('user_id').notNull().references(() => usersTable.id, { onDelete: 'cascade' }),
 	roleId: text('role_id').notNull().references(() => rolesTable.id, { onDelete: 'cascade' }),
-}, (table) => ({
-	pk: primaryKey({ columns: [table.userId, table.roleId] })
-}));
+}, (table) => ([
+	index('user_idx').on(table.userId),
+	index('role_idx').on(table.roleId)
+])
+);
 
 export const rolePermissionsTable = sqliteTable('role_permissions', {
 	roleId: text('role_id').notNull().references(() => rolesTable.id, { onDelete: 'cascade' }),
 	permissionId: text('permission_id').notNull().references(() => permissionsTable.id, { onDelete: 'cascade' }),
-}, (table) => ({
-	pk: primaryKey({ columns: [table.roleId, table.permissionId] })
-}));
+}, (table) => ([index('role_permission_idx').on(table.roleId, table.permissionId)]));
 
 export const roleHierarchyTable = sqliteTable('role_hierarchy', {
 	parentRoleId: text('parent_role_id').notNull().references(() => rolesTable.id, { onDelete: 'cascade' }),
 	childRoleId: text('child_role_id').notNull().references(() => rolesTable.id, { onDelete: 'cascade' }),
-}, (table) => ({
-	pk: primaryKey({ columns: [table.parentRoleId, table.childRoleId] })
-}));
+}, (table) => ([index('role_hierarchy_idx').on(table.parentRoleId, table.childRoleId)])
+);
 
 
 // ==================================================================
-// BAGIAN 4: RELATIONS (DEFINISIKAN SEMUA DI AKHIR)
+// BAGIAN 4: TABEL NASYATH (KEGIATAN)
+// ==================================================================
+export const nasyathTable = sqliteTable('nasyath', {
+	id: integer('id').primaryKey({ autoIncrement: true }),
+	muridId: integer('murid_id').notNull().references(() => muridTable.id, { onDelete: 'cascade' }),
+	kegiatan: text('kegiatan').notNull(),
+	tanggalMulai: text('tanggal_mulai'),
+	tanggalSelesai: text('tanggal_selesai'),
+	durasi: text('durasi'),
+	tempat: text('tempat'),
+	jarak: text('jarak'),
+	keterangan: text('keterangan'),
+	namaKontak: text('nama_kontak'),
+	teleponKontak: text('telepon_kontak'),
+	createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
+	updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
+	updaterId: text('updater_id').notNull().references(() => usersTable.id, { onDelete: 'no action' })
+}, (table) => ([index('nasyath_murid_idx').on(table.muridId),
+index('nasyath_kegiatan_idx').on(table.kegiatan)]
+));
+
+
+// ==================================================================
+// BAGIAN 5: RELATIONS (DEFINISIKAN SEMUA DI AKHIR)
 // ==================================================================
 
-// 4.1 Relasi untuk Tabel PENGHUBUNG (One-to-Many)
+// 5.1 Relasi untuk Tabel PENGHUBUNG (One-to-Many)
 export const userRolesRelations = relations(userRolesTable, ({ one }) => ({
 	user: one(usersTable, { fields: [userRolesTable.userId], references: [usersTable.id] }),
 	role: one(rolesTable, { fields: [userRolesTable.roleId], references: [rolesTable.id] })
@@ -162,10 +184,14 @@ export const roleHierarchyRelations = relations(roleHierarchyTable, ({ one }) =>
 	child: one(rolesTable, { fields: [roleHierarchyTable.childRoleId], references: [rolesTable.id], relationName: 'childRoles' })
 }));
 
-// 4.2 Relasi untuk Tabel UTAMA (Many-to-Many & Lainnya)
-export const usersRelations = relations(usersTable, ({ many }) => ({
+// 5.2 Relasi untuk Tabel UTAMA (Many-to-Many & Lainnya)
+export const usersRelations = relations(usersTable, ({ many, one }) => ({
 	roles: many(rolesTable),
-	sessions: many(sessionTable)
+	sessions: many(sessionTable),
+	murid: one(muridTable, {
+		fields: [usersTable.muridId],
+		references: [muridTable.id]
+	})
 }));
 
 export const permissionsRelations = relations(permissionsTable, ({ many }) => ({
@@ -177,4 +203,21 @@ export const rolesRelations = relations(rolesTable, ({ many }) => ({
 	permissions: many(permissionsTable),
 	children: many(roleHierarchyTable, { relationName: 'parentRoles' }),
 	parents: many(roleHierarchyTable, { relationName: 'childRoles' })
+}));
+
+// 5.3 Relasi untuk Tabel Nasyath
+export const nasyathRelations = relations(nasyathTable, ({ one }) => ({
+	murid: one(muridTable, {
+		fields: [nasyathTable.muridId],
+		references: [muridTable.id]
+	}),
+	updater: one(usersTable, {
+		fields: [nasyathTable.updaterId],
+		references: [usersTable.id]
+	})
+}));
+
+// 5.4 Relasi untuk Tabel Murid
+export const muridRelations = relations(muridTable, ({ many }) => ({
+	nasyath: many(nasyathTable)
 }));

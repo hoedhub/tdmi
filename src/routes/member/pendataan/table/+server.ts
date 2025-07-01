@@ -82,20 +82,33 @@ export const POST: RequestHandler = async ({ request, locals }) => {
                 for (const key in filters.columns) {
                     const value = filters.columns[key];
                     if (value) {
-                        if (key === 'aktif' || key === 'qari' || key === 'gender' || key === 'partisipasi') {
-                            conditions.push(eq((muridTable as any)[key], value === 'Aktif' || value === 'Ya' || value === true));
+                        // Handle boolean and specific value filters
+                        if (key === 'aktif' || key === 'qari' || key === 'partisipasi') {
+                            const boolValue = value === 'Aktif' || value === 'Ya' || value === true;
+                            conditions.push(eq((muridTable as any)[key], boolValue));
+                        } else if (key === 'gender') {
+                            const boolValue = value === 'Pria' || value === true;
+                            conditions.push(eq(muridTable.gender, boolValue));
                         } else if (key === 'marhalah') {
                             conditions.push(eq(muridTable.marhalah, parseInt(value) as (1 | 2 | 3)));
-                        } else if (key === 'deskelId') {
-                            conditions.push(eq(muridTable.deskelId, parseInt(value)));
-                        } else if (key === 'propinsiName') { // Use propinsiName for filter key
-                            conditions.push(eq(propTable.propinsi, value));
-                        } else if (key === 'kokabName') { // Use kokabName for filter key
-                            conditions.push(eq(kokabTable.kokab, value));
-                        } else if (key === 'kecamatanName') { // Use kecamatanName for filter key
-                            conditions.push(eq(kecamatanTable.kecamatan, value));
-                        } else {
+                        } 
+                        // Handle territory name filters
+                        else if (key === 'propinsiName') {
+                            conditions.push(like(propTable.propinsi, `%${value}%`));
+                        } else if (key === 'kokabName') {
+                            conditions.push(like(kokabTable.kokab, `%${value}%`));
+                        } else if (key === 'kecamatanName') {
+                            conditions.push(like(kecamatanTable.kecamatan, `%${value}%`));
+                        } else if (key === 'deskelName') {
+                            conditions.push(like(deskelTable.deskel, `%${value}%`));
+                        }
+                        // Handle general text search on specific muridTable columns
+                        else if (key === 'nama' || key === 'namaArab' || key === 'nomorTelepon' || key === 'nik') {
                             conditions.push(like((muridTable as any)[key], `%${value}%`));
+                        }
+                        // Fallback for any other direct column name that might be passed
+                        else if (key in muridTable) {
+                             conditions.push(like((muridTable as any)[key], `%${value}%`));
                         }
                     }
                 }
@@ -108,15 +121,17 @@ export const POST: RequestHandler = async ({ request, locals }) => {
         }
 
         // Apply conditions to the main query
-        let queryWithConditions = conditions.length > 0
-            ? baseSelectQuery.where(sql.join(conditions, sql` AND `))
-            : baseSelectQuery;
+        let query = baseSelectQuery.$dynamic();
+        let countQuery = baseCountQuery.$dynamic();
+
+        if (conditions.length > 0) {
+            const whereClause = sql.join(conditions, sql` AND `);
+            query = query.where(whereClause);
+            countQuery = countQuery.where(whereClause);
+        }
 
         // Get total count before pagination
-        const totalItemsResult = await (conditions.length > 0
-            ? baseCountQuery.where(sql.join(conditions, sql` AND `))
-            : baseCountQuery
-        ).get();
+        const totalItemsResult = await countQuery.get();
         const totalItems = totalItemsResult?.count || 0;
 
         // Apply sorting
@@ -141,13 +156,11 @@ export const POST: RequestHandler = async ({ request, locals }) => {
         if (orderByClauses.length === 0) {
             orderByClauses.push(asc(muridTable.id));
         }
+        
+        query = query.orderBy(...orderByClauses).limit(pageSize).offset(offset);
 
         // Apply sorting and pagination in a single chain
-        const murid = await queryWithConditions
-            .orderBy(...orderByClauses)
-            .limit(pageSize)
-            .offset(offset)
-            .all();
+        const murid = await query.all();
 
         // Apply pagination
         // const murid = await finalQuery.limit(pageSize).offset(offset).all();

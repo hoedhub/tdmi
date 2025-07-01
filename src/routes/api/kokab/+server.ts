@@ -17,7 +17,7 @@ export async function GET({ url }: { url: URL }) {
 		// console.log('Fetched kokab:', kokab);
 		return json(kokab);
 	} catch (error) {
-		console.error('Error fetching kokab:', error);
+		console.error(`Error fetching kokab for propinsiId: ${propinsiId}`, error);
 		return json(
 			{
 				error: 'Failed to fetch kota/kabupaten',

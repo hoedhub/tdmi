@@ -19,11 +19,13 @@
 	export let countryId: string;
 	export let countryCode: string;
 	export let phoneNumber: string;
+	export let propinsiList: Propinsi[] = [];
 </script>
 
 <fieldset class="space-y-4 rounded-lg border border-base-300 p-4">
 	<legend class="px-2 font-semibold">Kontak dan Alamat</legend>
 	<Wilayah
+		{propinsiList}
 		{selectedPropinsi}
 		{selectedKokab}
 		{selectedKecamatan}

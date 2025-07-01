@@ -30,3 +30,5 @@ export const totalPages = derived(
         set(1);
     }
 );
+
+export const dbError = writable(false)

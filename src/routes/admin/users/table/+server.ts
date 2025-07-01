@@ -3,6 +3,7 @@ import type { RequestHandler } from './$types';
 import { db } from '$lib/drizzle';
 import { usersTable, userRolesTable, rolesTable } from '$lib/drizzle/schema';
 import { userHasPermission } from '$lib/server/accessControl';
+import { getAllRoles } from '$lib/server/accessControlDB';
 import { countDistinct, asc, desc, like, eq, and, or, sql } from 'drizzle-orm';
 import type { SQL } from 'drizzle-orm';
 
@@ -38,16 +39,6 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
         const finalWhereClause = conditions.length > 0 ? and(...conditions.filter(c => c !== undefined)) : undefined;
 
-        const totalItemsQuery = db
-            .select({ value: countDistinct(usersTable.id) })
-            .from(usersTable)
-            .leftJoin(userRolesTable, eq(usersTable.id, userRolesTable.userId))
-            .leftJoin(rolesTable, eq(userRolesTable.roleId, rolesTable.id))
-            .where(finalWhereClause);
-
-        const totalItemsResult = await totalItemsQuery.get();
-        const totalItems = totalItemsResult?.value ?? 0;
-
         const orderByClauses = [];
         if (sort && sort.key) {
             const direction = sort.direction === 'asc' ? asc : desc;
@@ -67,7 +58,14 @@ export const POST: RequestHandler = async ({ request, locals }) => {
             orderByClauses.push(desc(usersTable.createdAt));
         }
 
-        const usersData = await db
+        const totalItemsQuery = db
+            .select({ value: countDistinct(usersTable.id) })
+            .from(usersTable)
+            .leftJoin(userRolesTable, eq(usersTable.id, userRolesTable.userId))
+            .leftJoin(rolesTable, eq(userRolesTable.roleId, rolesTable.id))
+            .where(finalWhereClause);
+
+        const usersQuery = db
             .select({
                 id: usersTable.id,
                 username: usersTable.username,
@@ -83,8 +81,15 @@ export const POST: RequestHandler = async ({ request, locals }) => {
             .groupBy(usersTable.id)
             .orderBy(...orderByClauses)
             .limit(pageSize)
-            .offset(offset)
-            .all();
+            .offset(offset);
+
+        const [totalItemsResult, usersData, allRoles] = await Promise.all([
+            totalItemsQuery.get(),
+            usersQuery.all(),
+            getAllRoles()
+        ]);
+
+        const totalItems = totalItemsResult?.value ?? 0;
 
         const processedUsers = usersData.map((user) => ({
             ...user,
@@ -94,7 +99,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
         return json({
             users: processedUsers,
             totalItems: totalItems,
-            currentPage: page
+            currentPage: page,
+            allRoles: allRoles
         });
     } catch (e) {
         console.error('Error fetching user table data:', e);

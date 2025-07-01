@@ -19,67 +19,16 @@ export const load: PageServerLoad = async ({ locals }) => {
         throw error(403, 'Akses Ditolak. Anda tidak memiliki izin untuk melihat data pengguna.');
     }
 
-    try {
-        // 1. Definisikan query manual dengan JOIN menggunakan NAMA PROPERTI JS
-        const usersAndRolesQuery = db
-            .select({
-                id: usersTable.id,
-                username: usersTable.username,
-                active: usersTable.active,
-                muridId: usersTable.muridId,
-                createdAt: usersTable.createdAt,
-                roleId: rolesTable.id
-            })
-            .from(usersTable)
-            .leftJoin(userRolesTable, eq(usersTable.id, userRolesTable.userId))
-            .leftJoin(rolesTable, eq(userRolesTable.roleId, rolesTable.id))
-            .orderBy(usersTable.username);
-
-        // 2. Definisikan query lainnya
-        const otherQueries = Promise.all([
-            db.select({ totalCount: count() }).from(usersTable),
-            getAllRoles(),
-            getRoleHierarchy()
-        ]);
-
-        // 3. Jalankan semua query secara bersamaan
-        const [usersAndRoles, [countResult, allRoles, roleHierarchy]] = await Promise.all([
-            usersAndRolesQuery,
-            otherQueries
-        ]);
-
-        // 4. Proses hasil query manual
-        const usersMap = new Map();
-        usersAndRoles.forEach(row => {
-            if (!usersMap.has(row.id)) {
-                usersMap.set(row.id, {
-                    id: row.id,
-                    username: row.username,
-                    active: row.active,
-                    muridId: row.muridId,
-                    createdAt: row.createdAt,
-                    assignedRoles: []
-                });
-            }
-            if (row.roleId) {
-                usersMap.get(row.id).assignedRoles.push(row.roleId);
-            }
-        });
-
-        const usersForClient = Array.from(usersMap.values());
-
-        // --- Akses properti 'totalCount' dari objek hasil ---
-        return {
-            users: usersForClient,
-            totalItems: countResult[0].totalCount, // <-- Ambil dari countResult
-            allRoles,
-            roleHierarchy
-        };
-
-    } catch (e) {
-        console.error("Error fetching users:", e);
-        throw error(500, "Gagal memuat pengguna karena kesalahan server.");
-    }
+    // Data fetching is moved to the client-side to improve resilience.
+    return {
+        // Pass the current user for potential client-side checks (e.g., cannot delete self)
+        user: locals.user,
+        // Initial empty state, client will fetch the real data.
+        users: [],
+        totalItems: 0,
+        allRoles: [],
+        roleHierarchy: []
+    };
 };
 
 export const actions: Actions = {

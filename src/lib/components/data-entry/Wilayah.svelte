@@ -22,7 +22,7 @@
 	export let alamat: string = '';
 
 	// --- INTERNAL STATE ---
-	let propinsiList: Propinsi[] = [];
+	export let propinsiList: Propinsi[] = [];
 	let kokabList: Kokab[] = [];
 	let kecamatanList: Kecamatan[] = [];
 	let deskelList: Deskel[] = [];
@@ -33,6 +33,11 @@
 	let loadingKecamatan = false;
 	let loadingDeskel = false;
 	let initialLoading = false; // For the initial load in edit mode
+
+	// Error state variables
+	let kokabError = false;
+	let kecamatanError = false;
+	let deskelError = false;
 
 	// Search state for each dropdown
 	let propinsiSearchTerm = '';
@@ -73,9 +78,6 @@
 
 	// --- Svelte Lifecycle Hook ---
 	onMount(async () => {
-		// Always load the list of provinces first
-		await loadPropinsi();
-
 		if (deskelId) {
 			// If deskelId is provided (Edit Mode), fetch the full hierarchy
 			await loadWilayahByDeskel(deskelId);
@@ -83,28 +85,21 @@
 		// If no deskelId (New Mode), the component is ready for user input.
 	});
 
-	async function loadPropinsi() {
-		if (propinsiList.length > 0) return;
-		loadingPropinsi = true;
-		try {
-			const response = await fetch('/api/propinsi');
-			propinsiList = await response.json();
-		} catch (error) {
-			console.error('Error loading propinsi:', error);
-		} finally {
-			loadingPropinsi = false;
-		}
-	}
-
 	async function loadKokab() {
 		if (!selectedPropinsi) return;
 		loadingKokab = true;
+		kokabError = false; // Reset error state on new attempt
 		kokabList = []; // Clear previous list
 		try {
 			const response = await fetch(`/api/kokab?propinsiId=${selectedPropinsi.id}`);
+			if (!response.ok) {
+				throw new Error(`HTTP error! status: ${response.status}`);
+			}
 			kokabList = await response.json();
 		} catch (error) {
 			console.error('Error loading kokab:', error);
+			kokabList = []; // Ensure list is an empty array on error
+			kokabError = true; // Set error state
 		} finally {
 			loadingKokab = false;
 		}
@@ -113,12 +108,19 @@
 	async function loadKecamatan() {
 		if (!selectedKokab) return;
 		loadingKecamatan = true;
+		kecamatanError = false; // Reset
 		kecamatanList = []; // Clear previous list
 		try {
 			const response = await fetch(`/api/kecamatan?kokabId=${selectedKokab.id}`);
+			if (!response.ok) {
+				// Check response status
+				throw new Error(`HTTP error! status: ${response.status}`);
+			}
 			kecamatanList = await response.json();
 		} catch (error) {
 			console.error('Error loading kecamatan:', error);
+			kecamatanError = true; // Set error
+			kecamatanList = []; // Ensure empty
 		} finally {
 			loadingKecamatan = false;
 		}
@@ -127,12 +129,19 @@
 	async function loadDeskel() {
 		if (!selectedKecamatan) return;
 		loadingDeskel = true;
+		deskelError = false; // Reset
 		deskelList = []; // Clear previous list
 		try {
 			const response = await fetch(`/api/deskel?kecamatanId=${selectedKecamatan.id}`);
+			if (!response.ok) {
+				// Check response status
+				throw new Error(`HTTP error! status: ${response.status}`);
+			}
 			deskelList = await response.json();
 		} catch (error) {
 			console.error('Error loading deskel:', error);
+			deskelError = true; // Set error
+			deskelList = []; // Ensure empty
 		} finally {
 			loadingDeskel = false;
 		}
@@ -142,14 +151,17 @@
 		if (level === 'propinsi') {
 			selectedKokab = null;
 			kokabList = [];
+			kokabError = false;
 		}
 		if (level === 'propinsi' || level === 'kokab') {
 			selectedKecamatan = null;
 			kecamatanList = [];
+			kecamatanError = false;
 		}
 		if (level === 'propinsi' || level === 'kokab' || level === 'kecamatan') {
 			deskelId = undefined;
 			deskelList = [];
+			deskelError = false;
 		}
 	}
 
@@ -336,6 +348,11 @@
 				<ul class="menu menu-sm mt-2 max-h-60 flex-nowrap overflow-y-auto">
 					{#if loadingKokab}
 						<li class="menu-title">Memuat...</li>
+					{:else if kokabError}
+						<li class="menu-title text-error">Gagal memuat data.</li>
+						<li>
+							<button type="button" on:click={loadKokab}>Coba Lagi</button>
+						</li>
 					{:else if !selectedPropinsi}
 						<li class="menu-title">Pilih propinsi dahulu.</li>
 					{:else if filteredKokabList.length === 0}
@@ -398,6 +415,11 @@
 				<ul class="menu menu-sm mt-2 max-h-60 flex-nowrap overflow-y-auto">
 					{#if loadingKecamatan}
 						<li class="menu-title">Memuat...</li>
+					{:else if kecamatanError}
+						<li class="menu-title text-error">Gagal memuat data.</li>
+						<li>
+							<button type="button" on:click={loadKecamatan}>Coba Lagi</button>
+						</li>
 					{:else if !selectedKokab}
 						<li class="menu-title">Pilih kota/kabupaten dahulu.</li>
 					{:else if filteredKecamatanList.length === 0}
@@ -460,6 +482,11 @@
 				<ul class="menu menu-sm mt-2 max-h-60 flex-nowrap overflow-y-auto">
 					{#if loadingDeskel}
 						<li class="menu-title">Memuat...</li>
+					{:else if deskelError}
+						<li class="menu-title text-error">Gagal memuat data.</li>
+						<li>
+							<button type="button" on:click={loadDeskel}>Coba Lagi</button>
+						</li>
 					{:else if !selectedKecamatan}
 						<li class="menu-title">Pilih kecamatan dahulu.</li>
 					{:else if filteredDeskelList.length === 0}

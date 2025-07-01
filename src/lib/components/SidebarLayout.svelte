@@ -36,6 +36,7 @@
 	const menuItems = [
 		{ href: '/', label: 'Dashboard', icon: Home },
 		{ href: '/member/pendataan', label: 'Pendataan', icon: Users },
+		{ href: '/member/nasyath_mun', label: 'Nasyath MUN', icon: ChartNoAxesGantt },
 		// { href: '/member/profile', label: 'Edit Profile', icon: UserPen },
 		{ href: '/settings', label: 'Settings', icon: Settings }
 	];
