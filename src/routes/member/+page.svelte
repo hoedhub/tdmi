@@ -89,10 +89,10 @@
 	// ... etc.
 </script>
 
-<h1>Welcome to SvelteKit</h1>
-<p>Visit <a href="https://kit.svelte.dev">kit.svelte.dev</a> to read the documentation</p>
+<h1>Selamat Datang</h1>
+<!-- <p>Visit <a href="https://kit.svelte.dev">kit.svelte.dev</a> to read the documentation</p>
 <h1 class="text-3xl font-bold text-blue-600 underline">Hello world!</h1>
 
 <button class="btn btn-primary mt-4" on:click={showRandomTimestampToast}>
 	Show Random Timestamp Toast
-</button>
+</button> -->
