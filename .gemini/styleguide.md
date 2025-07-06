@@ -15,6 +15,8 @@ _Foundational rules for consistency, stability, and alignment._
    - Avoid computationally expensive operations in loops/APIs.  
    - Prevent N+1 queries via eager loading/batching.  
    - Use `async/await`; never block the main thread.  
+6. **Never Make Assumption**
+   - If you don't understand or not sure of what the user means, ask for clarification.
 
 ---
 

@@ -56,7 +56,7 @@
 </script>
 
 <div class="container mx-auto max-w-2xl p-4">
-	<h1 class="text-2xl font-bold mb-6">Edit Kegiatan Nasyath</h1>
+	<h1 class="text-2xl font-bold mb-6">تحرير النشاط الدعوي</h1>
 
 	{#if form?.message && !isLoading}
 		<div class="alert alert-error mb-4">
@@ -66,50 +66,50 @@
 
 	<form method="POST" class="space-y-4" use:enhance={handleSubmit}>
 		<div class="form-control">
-			<label for="kegiatan" class="label"><span class="label-text">Nama Kegiatan</span></label>
+			<label for="kegiatan" class="label"><span class="label-text">اسم النشاط</span></label>
 			<input type="text" id="kegiatan" name="kegiatan" class="input input-bordered w-full" required bind:value={kegiatan} />
 		</div>
 
 		<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 			<div class="form-control">
-				<label for="tanggalMulai" class="label"><span class="label-text">Tanggal Mulai</span></label>
+				<label for="tanggalMulai" class="label"><span class="label-text">تاريخ البدء</span></label>
 				<input type="date" id="tanggalMulai" name="tanggalMulai" class="input input-bordered w-full" bind:value={tanggalMulai} />
 			</div>
 			<div class="form-control">
-				<label for="tanggalSelesai" class="label"><span class="label-text">Tanggal Selesai</span></label>
+				<label for="tanggalSelesai" class="label"><span class="label-text">تاريخ الانتهاء</span></label>
 				<input type="date" id="tanggalSelesai" name="tanggalSelesai" class="input input-bordered w-full" bind:value={tanggalSelesai} />
 			</div>
 		</div>
 
 		<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 			<div class="form-control">
-				<label for="durasi" class="label"><span class="label-text">Durasi</span></label>
+				<label for="durasi" class="label"><span class="label-text">المدة</span></label>
 				<input type="text" id="durasi" name="durasi" class="input input-bordered w-full" placeholder="Contoh: 3 jam" bind:value={durasi} />
 			</div>
 			<div class="form-control">
-				<label for="jarak" class="label"><span class="label-text">Jarak</span></label>
+				<label for="jarak" class="label"><span class="label-text">المسافة</span></label>
 				<input type="text" id="jarak" name="jarak" class="input input-bordered w-full" placeholder="Contoh: 10 km" bind:value={jarak} />
 			</div>
 		</div>
 
 		<div class="form-control">
-			<label for="tempat" class="label"><span class="label-text">Tempat Pelaksanaan</span></label>
+			<label for="tempat" class="label"><span class="label-text">مكان التنفيذ</span></label>
 			<input type="text" id="tempat" name="tempat" class="input input-bordered w-full" bind:value={tempat} />
 		</div>
 
 		<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 			<div class="form-control">
-				<label for="namaKontak" class="label"><span class="label-text">Nama Kontak</span></label>
+				<label for="namaKontak" class="label"><span class="label-text">اسم جهة الاتصال</span></label>
 				<input type="text" id="namaKontak" name="namaKontak" class="input input-bordered w-full" bind:value={namaKontak} />
 			</div>
 			<div class="form-control">
-				<label for="teleponKontak" class="label"><span class="label-text">Telepon Kontak</span></label>
+				<label for="teleponKontak" class="label"><span class="label-text">هاتف جهة الاتصال</span></label>
 				<input type="tel" id="teleponKontak" name="teleponKontak" class="input input-bordered w-full" bind:value={teleponKontak} />
 			</div>
 		</div>
 
 		<div class="form-control">
-			<label for="keterangan" class="label"><span class="label-text">Keterangan</span></label>
+			<label for="keterangan" class="label"><span class="label-text">ملاحظات</span></label>
 			<textarea id="keterangan" name="keterangan" class="textarea textarea-bordered w-full" rows="3" bind:value={keterangan}></textarea>
 		</div>
 

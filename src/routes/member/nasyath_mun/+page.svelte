@@ -23,21 +23,21 @@
 
 	// --- Definisi Kolom ---
 	const columns: ColumnDef[] = [
-		{ key: 'kegiatan', label: 'Kegiatan', sortable: true, filterable: 'text' },
+		{ key: 'kegiatan', label: 'النشاط', sortable: true, filterable: 'text' },
 		{
 			key: 'tanggalMulai',
-			label: 'Tgl Mulai',
+			label: 'تاريخ البدء',
 			sortable: true,
 			formatter: (value) => (value ? new Date(value).toLocaleDateString('id-ID') : '-')
 		},
 		{
 			key: 'tanggalSelesai',
-			label: 'Tgl Selesai',
+			label: 'تاريخ الانتهاء',
 			sortable: true,
 			formatter: (value) => (value ? new Date(value).toLocaleDateString('id-ID') : '-')
 		},
-		{ key: 'durasi', label: 'Durasi', sortable: true, filterable: 'text' },
-		{ key: 'tempat', label: 'Tempat', sortable: true, filterable: 'text' }
+		{ key: 'durasi', label: 'المدة', sortable: true, filterable: 'text' },
+		{ key: 'tempat', label: 'المكان', sortable: true, filterable: 'text' }
 	];
 
 	// --- Fungsi Pengambilan Data ---
@@ -112,7 +112,7 @@
 
 <div class="container mx-auto p-4">
 	<div class="flex justify-between items-center mb-4">
-		<h1 class="text-2xl font-bold">Daftar Kegiatan Nasyath Saya</h1>
+		<h1 class="text-2xl font-bold">قائمة أنشطتي الدعوية</h1>
 		<a href="/member/nasyath_mun/new" class="btn btn-primary btn-sm">
 			<PlusCircle class="h-4 w-4" /> Tambah Baru
 		</a>

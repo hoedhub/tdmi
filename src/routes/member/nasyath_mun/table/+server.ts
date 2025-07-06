@@ -2,7 +2,7 @@ import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { db } from '$lib/drizzle';
 import { nasyathTable, usersTable } from '$lib/drizzle/schema';
-import { canUserAccessNasyath } from '$lib/server/nasyath';
+import { userHasPermission } from '$lib/server/accessControl'; // Import the permission checker
 import { count, eq, and, like, sql, asc, desc } from 'drizzle-orm';
 
 export const POST: RequestHandler = async ({ request, locals }) => {
@@ -10,30 +10,30 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		throw error(401, 'Unauthorized');
 	}
 
-	// Dapatkan muridId yang terhubung dengan pengguna
-	const user = await db.query.usersTable.findFirst({
-		where: eq(usersTable.id, locals.user.id),
-		columns: { muridId: true }
-	});
-
-	if (!user || !user.muridId) {
-		// Jika pengguna tidak terhubung ke murid, kembalikan data kosong.
-		return json({
-			data: [],
-			totalItems: 0,
-			currentPage: 1,
-			pageSize: 10
-		});
-	}
-
 	const { sort, filters, page, pageSize } = await request.json();
 	const offset = (page - 1) * pageSize;
 
 	try {
+		// --- RBAC Check: Determine if user can see all data ---
+		const canReadAll = await userHasPermission(locals.user.id, 'perm-nasyath-read');
+
 		// --- Buat Kondisi Filter ---
-		// Kondisi dasar: selalu filter berdasarkan muridId milik pengguna
-		const baseCondition = eq(nasyathTable.muridId, user.muridId);
-		const conditions = [baseCondition];
+		const conditions = [];
+
+		// If the user CANNOT read all, enforce ownership constraint.
+		if (!canReadAll) {
+			const user = await db.query.usersTable.findFirst({
+				where: eq(usersTable.id, locals.user.id),
+				columns: { muridId: true }
+			});
+
+			// If not an admin and not linked to a murid, they see nothing.
+			if (!user || !user.muridId) {
+				return json({ data: [], totalItems: 0, currentPage: 1, pageSize });
+			}
+			conditions.push(eq(nasyathTable.muridId, user.muridId));
+		}
+		// If canReadAll is true, the conditions array remains empty, so no muridId filter is applied.
 
 		if (filters) {
 			// Filter Global
@@ -54,7 +54,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			}
 		}
 
-		const whereClause = and(...conditions);
+		const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
 		// --- Query untuk Menghitung Total Item ---
 		const totalItemsResult = await db

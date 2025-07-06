@@ -43,7 +43,7 @@
 </script>
 
 <div class="container mx-auto max-w-2xl p-4">
-	<h1 class="text-2xl font-bold mb-6">Tambah Kegiatan Nasyath Baru</h1>
+	<h1 class="text-2xl font-bold mb-6">إضافة نشاط دعوي جديد</h1>
 
 	{#if form?.message && !isLoading}
 		<div class="alert alert-error mb-4">
@@ -55,7 +55,7 @@
 		<!-- Baris 1: Kegiatan -->
 		<div class="form-control">
 			<label for="kegiatan" class="label">
-				<span class="label-text">Nama Kegiatan</span>
+				<span class="label-text">اسم النشاط</span>
 			</label>
 			<input
 				type="text"
@@ -71,7 +71,7 @@
 		<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 			<div class="form-control">
 				<label for="tanggalMulai" class="label">
-					<span class="label-text">Tanggal Mulai</span>
+					<span class="label-text">تاريخ البدء</span>
 				</label>
 				<input
 					type="date"
@@ -83,7 +83,7 @@
 			</div>
 			<div class="form-control">
 				<label for="tanggalSelesai" class="label">
-					<span class="label-text">Tanggal Selesai</span>
+					<span class="label-text">تاريخ الانتهاء</span>
 				</label>
 				<input
 					type="date"
@@ -99,7 +99,7 @@
 		<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 			<div class="form-control">
 				<label for="durasi" class="label">
-					<span class="label-text">Durasi (e.g., 3 jam, 2 hari)</span>
+					<span class="label-text">المدة (مثال: 3 ساعات, يومان)</span>
 				</label>
 				<input
 					type="text"
@@ -112,7 +112,7 @@
 			</div>
 			<div class="form-control">
 				<label for="jarak" class="label">
-					<span class="label-text">Jarak (e.g., 10 km)</span>
+					<span class="label-text">المسافة (مثال: 10 كم)</span>
 				</label>
 				<input
 					type="text"
@@ -128,7 +128,7 @@
 		<!-- Baris 4: Tempat -->
 		<div class="form-control">
 			<label for="tempat" class="label">
-				<span class="label-text">Tempat Pelaksanaan</span>
+				<span class="label-text">مكان التنفيذ</span>
 			</label>
 			<input
 				type="text"
@@ -143,7 +143,7 @@
 		<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 			<div class="form-control">
 				<label for="namaKontak" class="label">
-					<span class="label-text">Nama Kontak Person</span>
+					<span class="label-text">اسم جهة الاتصال</span>
 				</label>
 				<input
 					type="text"
@@ -155,7 +155,7 @@
 			</div>
 			<div class="form-control">
 				<label for="teleponKontak" class="label">
-					<span class="label-text">Telepon Kontak Person</span>
+					<span class="label-text">هاتف جهة الاتصال</span>
 				</label>
 				<input
 					type="tel"
@@ -170,7 +170,7 @@
 		<!-- Baris 6: Keterangan -->
 		<div class="form-control">
 			<label for="keterangan" class="label">
-				<span class="label-text">Keterangan Tambahan</span>
+				<span class="label-text">ملاحظات إضافية</span>
 			</label>
 			<textarea
 				id="keterangan"

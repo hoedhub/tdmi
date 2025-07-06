@@ -26,6 +26,13 @@
 		>
 	</li>
 	<li>
+		<a
+			href="/admin/rbac"
+			class={$page.url.pathname.startsWith('/admin/rbac') ? 'active' : ''}
+			on:click={handleNavigation}>RBAC Management</a
+		>
+	</li>
+	<li>
 		<a href="/" on:click={handleNavigation}>Exit</a>
 	</li>
 </ul>
