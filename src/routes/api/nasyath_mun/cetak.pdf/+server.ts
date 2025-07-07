@@ -1,5 +1,5 @@
 import { PDFDocument, rgb } from 'pdf-lib';
-import fontkit from 'fontkit';
+import * as fontkit from 'fontkit';
 import { processArabic } from '$lib/utils/arabic-shaper.js';
 import { readFileSync } from 'fs';
 import path from 'path';
