@@ -17,15 +17,15 @@
 	}
 
 	// Inisialisasi nilai form dari `data` (saat load) atau `form` (saat gagal submit)
-	$: kegiatan = form?.kegiatan ?? data.nasyath.kegiatan;
-	$: tanggalMulai = formatDateForInput(form?.tanggalMulai ?? data.nasyath.tanggalMulai);
-	$: tanggalSelesai = formatDateForInput(form?.tanggalSelesai ?? data.nasyath.tanggalSelesai);
-	$: durasi = form?.durasi ?? data.nasyath.durasi;
-	$: jarak = form?.jarak ?? data.nasyath.jarak;
-	$: tempat = form?.tempat ?? data.nasyath.tempat;
-	$: namaKontak = form?.namaKontak ?? data.nasyath.namaKontak;
-	$: teleponKontak = form?.teleponKontak ?? data.nasyath.teleponKontak;
-	$: keterangan = form?.keterangan ?? data.nasyath.keterangan;
+	$: kegiatan = (form as any)?.data?.kegiatan ?? data.nasyath.kegiatan;
+	$: tanggalMulai = formatDateForInput((form as any)?.data?.tanggalMulai ?? data.nasyath.tanggalMulai);
+	$: tanggalSelesai = formatDateForInput((form as any)?.data?.tanggalSelesai ?? data.nasyath.tanggalSelesai);
+	$: durasi = (form as any)?.data?.durasi ?? data.nasyath.durasi;
+	$: jarak = (form as any)?.data?.jarak ?? data.nasyath.jarak;
+	$: tempat = (form as any)?.data?.tempat ?? data.nasyath.tempat;
+	$: namaKontak = (form as any)?.data?.namaKontak ?? data.nasyath.namaKontak;
+	$: teleponKontak = (form as any)?.data?.teleponKontak ?? data.nasyath.teleponKontak;
+	$: keterangan = (form as any)?.data?.keterangan ?? data.nasyath.keterangan;
 
 	async function handleSubmit() {
 		if (isLoading) return;
@@ -41,7 +41,7 @@
 				return;
 			}
 
-			if (result.type === 'fail') {
+			if (result.type === 'failure') {
 				// Biarkan pesan validasi ditampilkan di atas form
 				return;
 			}

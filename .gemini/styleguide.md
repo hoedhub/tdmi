@@ -3,7 +3,14 @@ _Foundational rules for consistency, stability, and alignment._
 
 1. **Follow Requirements & Patterns**  
    - Start with PRD/README. Replicate existing patterns/logic before creating new solutions.  
-   - For conflicting patterns, use README guidance or the most recently modified implementation.  
+   - For conflicting patterns, use README guidance or the most recently modified implementation.
+   - If for some reasons you must make changes that don't align with the README/PRD, update the README/PRD to reflect the changes.
+   -Record changes, at least the key changes in a worklog file `/worklogs.md` for "what" and "why" with timestamp.
+   - Always review `/worklogs.md` (create it if not exists) before planning changes to keep yourself in context.
+
+---
+
+
 2. **Strict Scope**  
    - Only modify code directly relevant to the task. Avoid unrelated changes.  
 3. **Simplicity & Stability**  
@@ -14,7 +21,7 @@ _Foundational rules for consistency, stability, and alignment._
 5. **Performance Mindset**  
    - Avoid computationally expensive operations in loops/APIs.  
    - Prevent N+1 queries via eager loading/batching.  
-   - Use `async/await`; never block the main thread.  
+   - Use `async/await`; never block the main thread.
 6. **Never Make Assumption**
    - If you don't understand or not sure of what the user means, ask for clarification.
 
@@ -109,7 +116,8 @@ _Knowledge sharing and troubleshooting._
    - **APIs**: Maintain updated schemas/examples.  
    - **READMEs**:  
      - List current patterns/technologies.  
-     - Outline setup, testing, and contribution steps.  
+     - Outline setup, testing, and contribution steps.
+
 
 ---
 

@@ -35,7 +35,7 @@
 	export let tableClass: Props['tableClass'] = '';
 	export let cardClass: Props['cardClass'] = '';
 	export let rowClass: Props['rowClass'] = '';
-	export let isSelectable: boolean = true;
+	export const isSelectable: boolean = true;
 	export let serverSide = false;
 	export let dbError: Props['dbError'] = false;
 	export let maxVisibleColumns: Props['maxVisibleColumns'] = 5;
@@ -85,7 +85,7 @@
 
 	// --- Computed Properties ---
 	$: sortedData = sortData(filteredData, $sortState, internalColumns);
-	$: totalItems = serverSide ? totalItemsProp ?? 0 : sortedData.length;
+	$: totalItems = serverSide ? (totalItemsProp ?? 0) : sortedData.length;
 	$: totalPageCount = calculateTotalPages(totalItems, $itemsPerPage);
 	$: displayData = serverSide ? sortedData : paginateData(sortedData, $currentPage, $itemsPerPage);
 	$: allSelected =
@@ -182,7 +182,7 @@
 	}
 
 	function handleSwipe(event: CustomEvent<{ row: T; direction: 'left' | 'right' }>) {
-		dispatch('swipe', event.detail);
+		// dispatch('swipe', event.detail);
 	}
 
 	function clearSelection() {
@@ -227,6 +227,7 @@
 							on:input={(e) => handleGlobalFilter(e.detail)}
 						/>
 					</slot>
+					<slot name="custom-filters" />
 				</div>
 
 				<!-- Toolbar -->
@@ -331,7 +332,9 @@
 				<!-- Mobile Card View -->
 				{#if $isLoading}
 					<slot name="loading-state">
-						<div class="flex w-full justify-center p-8"><span class="loading loading-spinner" /></div>
+						<div class="flex w-full justify-center p-8">
+							<span class="loading loading-spinner" />
+						</div>
 					</slot>
 				{:else if data.length === 0}
 					<slot name="empty-state">
@@ -376,7 +379,10 @@
 							{#if dbError}
 								<slot name="error-state">
 									<tr>
-										<td colspan={internalColumns.filter((c) => !c.hidden).length + 2} class="p-8 text-center text-error">
+										<td
+											colspan={internalColumns.filter((c) => !c.hidden).length + 2}
+											class="p-8 text-center text-error"
+										>
 											Gagal memuat data. Silakan coba lagi.
 										</td>
 									</tr>
@@ -384,7 +390,10 @@
 							{:else if $isLoading}
 								<slot name="loading-state">
 									<tr>
-										<td colspan={internalColumns.filter((c) => !c.hidden).length + 2} class="p-8 text-center">
+										<td
+											colspan={internalColumns.filter((c) => !c.hidden).length + 2}
+											class="p-8 text-center"
+										>
 											<span class="loading loading-spinner" />
 										</td>
 									</tr>
@@ -392,7 +401,10 @@
 							{:else if data.length === 0}
 								<slot name="empty-state">
 									<tr>
-										<td colspan={internalColumns.filter((c) => !c.hidden).length + 2} class="p-8 text-center text-base-content/70">
+										<td
+											colspan={internalColumns.filter((c) => !c.hidden).length + 2}
+											class="p-8 text-center text-base-content/70"
+										>
 											No data available
 										</td>
 									</tr>

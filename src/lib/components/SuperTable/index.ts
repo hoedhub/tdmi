@@ -1,10 +1,9 @@
-import Component from './SuperTable.svelte';
+import SuperTable from './SuperTable.svelte';
 import type { SuperTableComponent } from './types';
 
-// This is the magic line.
-// We are exporting the raw Svelte component, but we are telling TypeScript
-// that its type is our fully-featured SuperTableComponent class.
-export const SuperTable = Component as typeof SuperTableComponent;
+export { SuperTable };
+export type { SuperTableComponent };
+
 
 // Main component
 // export { default as SuperTable } from './SuperTable.svelte';

@@ -6,6 +6,7 @@
 	import { Save, RefreshCw } from 'lucide-svelte';
 
 	export let form: ActionData;
+	$: formData = (form as any)?.data;
 	let isLoading: boolean = false;
 
 	async function handleSubmit() {
@@ -25,7 +26,7 @@
 				return;
 			}
 
-			if (result.type === 'fail') {
+			if (result.type === 'failure') {
 				// Pesan kegagalan validasi akan ditampilkan oleh 'form' di atas.
 				// Toast tidak diperlukan di sini agar tidak duplikat.
 				return;
@@ -63,7 +64,7 @@
 				name="kegiatan"
 				class="input input-bordered w-full"
 				required
-				value={form?.kegiatan || ''}
+																value={formData?.kegiatan || ''}
 			/>
 		</div>
 
@@ -78,7 +79,7 @@
 					id="tanggalMulai"
 					name="tanggalMulai"
 					class="input input-bordered w-full"
-					value={form?.tanggalMulai || ''}
+					value={formData?.tanggalMulai || ''}
 				/>
 			</div>
 			<div class="form-control">
@@ -90,7 +91,7 @@
 					id="tanggalSelesai"
 					name="tanggalSelesai"
 					class="input input-bordered w-full"
-					value={form?.tanggalSelesai || ''}
+					value={formData?.tanggalSelesai || ''}
 				/>
 			</div>
 		</div>
@@ -107,7 +108,7 @@
 					name="durasi"
 					class="input input-bordered w-full"
 					placeholder="Contoh: 3 jam"
-					value={form?.durasi || ''}
+					value={formData?.durasi || ''}
 				/>
 			</div>
 			<div class="form-control">
@@ -120,7 +121,7 @@
 					name="jarak"
 					class="input input-bordered w-full"
 					placeholder="Contoh: 10 km"
-					value={form?.jarak || ''}
+					value={formData?.jarak || ''}
 				/>
 			</div>
 		</div>
@@ -135,7 +136,7 @@
 				id="tempat"
 				name="tempat"
 				class="input input-bordered w-full"
-				value={form?.tempat || ''}
+				value={formData?.tempat || ''}
 			/>
 		</div>
 
@@ -150,7 +151,7 @@
 					id="namaKontak"
 					name="namaKontak"
 					class="input input-bordered w-full"
-					value={form?.namaKontak || ''}
+					value={formData?.namaKontak || ''}
 				/>
 			</div>
 			<div class="form-control">
@@ -162,7 +163,7 @@
 					id="teleponKontak"
 					name="teleponKontak"
 					class="input input-bordered w-full"
-					value={form?.teleponKontak || ''}
+					value={formData?.teleponKontak || ''}
 				/>
 			</div>
 		</div>
@@ -177,7 +178,7 @@
 				name="keterangan"
 				class="textarea textarea-bordered w-full"
 				rows="3"
-			>{form?.keterangan || ''}</textarea>
+			>{formData?.keterangan || ''}</textarea>
 		</div>
 
 		<div class="flex justify-end space-x-2 pt-4">

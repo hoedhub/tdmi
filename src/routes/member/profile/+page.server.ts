@@ -13,7 +13,6 @@ export const load: PageServerLoad = async ({ locals }) => {
     const userToEdit = await db.select({
         id: usersTable.id,
         username: usersTable.username,
-        role: usersTable.role,
     }).from(usersTable).where(eq(usersTable.id, locals.user.id)).limit(1);
 
     if (!userToEdit || userToEdit.length === 0) {

@@ -1,5 +1,5 @@
 <!-- TableRowMobileCard.svelte -->
-<script lang="ts">
+<script lang="ts" generics="T extends Record<string, any>">
 	import { SvelteComponent } from 'svelte';
 	import type {
 		ColumnDef,
@@ -14,22 +14,22 @@
 	import { longPress } from '../actions/longPressAction';
 	import { selectedIds } from '../stores';
 
-	export let row: Record<string, any>;
-	export let columns: ColumnDef<typeof row>[];
-	export let rowKey: string;
+	export let row: T;
+	export let columns: ColumnDef<T>[];
+	export let rowKey: keyof T;
 	export let isSelectable = false;
 	export let cardClass = '';
 	export let className = '';
 	export let maxVisibleColumns: number | undefined = undefined;
 
 	const dispatch = createEventDispatcher<{
-		swipe: { row: Record<string, any>; direction: 'left' | 'right' };
-		select: { row: Record<string, any>; selected: boolean };
+		swipe: { row: T; direction: 'left' | 'right' };
+		select: { row: T; selected: boolean };
 	}>();
 
 	$: isSelected = $selectedIds.has(row[rowKey]);
-	let prioritizedColumns: ColumnDef<typeof row>[] = [];
-	let otherColumns: ColumnDef<typeof row>[] = [];
+	let prioritizedColumns: ColumnDef<T>[] = [];
+	let otherColumns: ColumnDef<T>[] = [];
 
 	$: {
 		const visibleColumns = columns.filter((col) => !col.hidden);
@@ -64,7 +64,7 @@
 		otherColumns = remainingColumns;
 	}
 
-	let showAllFields = true;
+	let showAllFields = false;
 
 	// function handleSwipe(event: SwipeEvent) {
 	// 	event.preventDefault();

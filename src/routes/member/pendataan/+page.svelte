@@ -52,7 +52,7 @@
 	let muridData: Murid[] = [];
 	let totalItems = data.totalItems;
 	let loading = false;
-	const pageSize = 10;
+	let pageSize = 10;
 	let currentPage = 1;
 	let currentSort: SortConfig | undefined = undefined;
 	let currentFilters: Record<string, any> = {};
@@ -189,6 +189,11 @@
 		await fetchTableData(currentSort, currentFilters, currentPage);
 	}
 
+	async function handleItemsPerPageChange(event: CustomEvent<number>) {
+		pageSize = event.detail;
+		await fetchTableData(currentSort, currentFilters, 1);
+	}
+
 	async function handleDeleteMurid(muridId: number, nama: string) {
 		if (
 			confirm(
@@ -239,15 +244,16 @@
 		data={muridData}
 		{columns}
 		rowKey="id"
-		itemsPerPage={pageSize}
+		itemsPerPageProp={pageSize}
 		totalItemsProp={totalItems}
-		isLoading={loading}
+		isLoadingProp={loading}
 		initialSort={currentSort}
 		serverSide={true}
 		on:sort={handleSort}
 		on:filter={handleFilter}
 		on:pageChange={handlePageChange}
-		on:rowClick={({ detail }) => goto(`/member/pendataan/${detail.id}/edit`)}
+		on:itemsPerPageChange={handleItemsPerPageChange}
+		on:rowClick={(e) => goto(`/member/pendataan/${e.detail.id}/edit`)}
 	>
 		<svelte:fragment slot="loading-state">
 			<div class="p-8 text-center">

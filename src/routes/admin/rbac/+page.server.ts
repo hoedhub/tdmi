@@ -36,16 +36,11 @@ export const load: PageServerLoad = async ({ locals }) => {
 			getRoleHierarchy()
 		]);
 
-	// Gabungkan data pengguna dengan peran mereka untuk kemudahan tampilan
-	const usersWithRoles = users.map((user) => ({
-		...user,
-		roles: userRoleMap.filter((ur) => ur.userId === user.id).map((ur) => ur.roleId)
-	}));
-
 	return {
-		users: usersWithRoles,
+		users,
 		roles,
 		permissions,
+		userRoleMap, // Kirim peta langsung ke klien
 		rolePermissionMap,
 		roleHierarchy
 	};
@@ -188,7 +183,7 @@ export const actions: Actions = {
 		}
 
 		try {
-			await updateUsersForRole(roleId, userIds);
+			await updateUserRoles(roleId, userIds);
 			return { success: true, message: `Keanggotaan peran ${roleId} berhasil diperbarui.` };
 		} catch (e) {
 			console.error(`Gagal memperbarui pengguna untuk peran ${roleId}:`, e);

@@ -1,116 +1,148 @@
-// --- START JSON-BASED ACCESS CONTROL DATA (TEMPORARY) ---
-// This section uses JSON files for roles, permissions, and hierarchy.
-// It will be replaced with Drizzle ORM queries to a database when the architecture is finalized.
+// src/lib/server/accessControlData.ts
+import { db } from '$lib/drizzle';
+import {
+	rolesTable,
+	permissionsTable,
+	userRolesTable,
+	rolePermissionsTable,
+	roleHierarchyTable
+} from '$lib/drizzle/schema';
+import { eq } from 'drizzle-orm';
 
-import rolesData from '../../../memory-bank/rbac-test-data/roles.json';
-import permissionsData from '../../../memory-bank/rbac-test-data/permissions.json';
-import userRolesData from '../../../memory-bank/rbac-test-data/userRoles.json';
-import rolePermissionsData from '../../../memory-bank/rbac-test-data/rolePermissions.json';
-import roleHierarchyData from '../../../memory-bank/rbac-test-data/roleHierarchy.json';
-import { writeFileSync } from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+// =================================================================
+// DATA MASTER RBAC
+// Inisialisasi data peran, izin, dan hierarki langsung di sini.
+// =================================================================
 
-// Get __dirname equivalent for file system operations
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const rolesData = [
+	{ id: 'SUPERADMIN', name: 'Super Administrator', description: 'Full access to all system features.' },
+	{ id: 'ADMIN', name: 'Administrator', description: 'Manages users and system settings.' },
+	{ id: 'PENDATAAN', name: 'Petugas Pendataan', description: 'Manages member data.' },
+	{ id: 'NASYATH', name: 'Petugas Nasyath', description: 'Manages activity data.' },
+	{ id: 'MEMBER', name: 'Member', description: 'Standard user access.' }
+];
 
-// Define paths to JSON files relative to this module
-const USER_ROLES_JSON_PATH = path.resolve(__dirname, '../../../memory-bank/rbac-test-data/userRoles.json');
+const permissionsData = [
+    // Admin Permissions
+    { id: 'perm-admin-access', name: 'Akses Panel Admin', description: 'Bisa mengakses halaman /admin' },
+    { id: 'perm-user-read', name: 'Lihat Pengguna', description: 'Bisa melihat daftar pengguna' },
+    { id: 'perm-user-write', name: 'Kelola Pengguna', description: 'Bisa membuat, mengedit, dan menghapus pengguna' },
+    { id: 'perm-role-read', name: 'Lihat Peran', description: 'Bisa melihat daftar peran dan izinnya' },
+    { id: 'perm-role-write', name: 'Kelola Peran', description: 'Bisa membuat, mengedit, dan menghapus peran' },
 
-// Export the loaded data for use in other modules
-export const roles = rolesData;
-export const permissions = permissionsData;
-export let userRoles = userRolesData; // Use `let` because we will modify this
-export const rolePermissions = rolePermissionsData;
-export const roleHierarchy = roleHierarchyData;
+    // Pendataan Permissions
+    { id: 'perm-pendataan-access', name: 'Akses Pendataan', description: 'Bisa mengakses halaman /member/pendataan' },
+    { id: 'perm-murid-read', name: 'Lihat Data Murid', description: 'Bisa melihat data semua murid' },
+    { id: 'perm-murid-write', name: 'Kelola Data Murid', description: 'Bisa membuat, mengedit, dan menghapus data murid' },
+    { id: 'perm-murid-export', name: 'Ekspor Data Murid', description: 'Bisa mengekspor data murid ke file' },
 
-// --- Mapped data for faster lookups ---
-const userRolesMap = new Map<string, string[]>();
-userRoles.forEach((ur: { userId: string; roleId: string }) => {
-    if (!userRolesMap.has(ur.userId)) {
-        userRolesMap.set(ur.userId, []);
-    }
-    userRolesMap.get(ur.userId)?.push(ur.roleId);
-});
+    // Nasyath Permissions
+    { id: 'perm-nasyath-access', name: 'Akses Nasyath', description: 'Bisa mengakses halaman /member/nasyath' },
+    { id: 'perm-nasyath-read', name: 'Lihat Data Nasyath', description: 'Bisa melihat data nasyath' },
+    { id: 'perm-nasyath-write', name: 'Kelola Data Nasyath', description: 'Bisa membuat, mengedit, dan menghapus data nasyath' },
+    { id: 'perm-nasyath-export', name: 'Ekspor Data Nasyath', description: 'Bisa mengekspor data nasyath' },
 
-const rolePermissionsMap = new Map<string, string[]>();
-rolePermissions.forEach((rp: { roleId: string; permissionId: string }) => {
-    if (!rolePermissionsMap.has(rp.roleId)) {
-        rolePermissionsMap.set(rp.roleId, []);
-    }
-    rolePermissionsMap.get(rp.roleId)?.push(rp.permissionId);
-});
+    // General Member Permissions
+    { id: 'perm-profile-read', name: 'Lihat Profil Sendiri', description: 'Bisa melihat halaman profil sendiri' },
+    { id: 'perm-profile-write', name: 'Edit Profil Sendiri', description: 'Bisa mengedit profil sendiri' },
+];
 
-// --- Public functions to access data ---
 
-/**
- * Retrieves all role IDs assigned to a specific user.
- * @param userId The ID of the user.
- * @returns An array of role IDs.
- */
-export function getUserRoles(userId: string): string[] {
-    return userRolesMap.get(userId) || [];
+const roleHierarchyData = [
+	{ parent: 'SUPERADMIN', child: 'ADMIN' },
+	{ parent: 'ADMIN', child: 'PENDATAAN' },
+	{ parent: 'ADMIN', child: 'NASYATH' },
+	{ parent: 'PENDATAAN', child: 'MEMBER' },
+	{ parent: 'NASYATH', child: 'MEMBER' }
+];
+
+// =================================================================
+// FUNGSI SEEDING
+// =================================================================
+
+export async function seedRbacData() {
+	try {
+		console.log('Starting RBAC data seeding...');
+
+		// 1. Hapus data lama untuk memastikan kebersihan (opsional, tergantung kebutuhan)
+		await db.delete(roleHierarchyTable);
+		await db.delete(rolePermissionsTable);
+		await db.delete(userRolesTable);
+		await db.delete(permissionsTable);
+		await db.delete(rolesTable);
+		console.log('Old RBAC data cleared.');
+
+		// 2. Masukkan Peran (Roles)
+		await db.insert(rolesTable).values(rolesData).onConflictDoNothing();
+		console.log('Roles seeded.');
+
+		// 3. Masukkan Izin (Permissions)
+		await db.insert(permissionsTable).values(permissionsData).onConflictDoNothing();
+		console.log('Permissions seeded.');
+
+		// 4. Tetapkan semua izin ke SUPERADMIN
+		const allPermissionIds = permissionsData.map((p) => p.id);
+		const superAdminPermissions = allPermissionIds.map((permId) => ({
+			roleId: 'SUPERADMIN',
+			permissionId: permId
+		}));
+		await db.insert(rolePermissionsTable).values(superAdminPermissions).onConflictDoNothing();
+		console.log('SUPERADMIN permissions seeded.');
+
+        // 5. Tetapkan izin spesifik untuk peran lain
+        const otherRolePermissions = [
+            // ADMIN
+            { roleId: 'ADMIN', permissionId: 'perm-admin-access' },
+            { roleId: 'ADMIN', permissionId: 'perm-user-read' },
+            { roleId: 'ADMIN', permissionId: 'perm-user-write' },
+            { roleId: 'ADMIN', permissionId: 'perm-role-read' },
+            { roleId: 'ADMIN', permissionId: 'perm-role-write' },
+            // PENDATAAN
+            { roleId: 'PENDATAAN', permissionId: 'perm-pendataan-access' },
+            { roleId: 'PENDATAAN', permissionId: 'perm-murid-read' },
+            { roleId: 'PENDATAAN', permissionId: 'perm-murid-write' },
+            { roleId: 'PENDATAAN', permissionId: 'perm-murid-export' },
+            // NASYATH
+            { roleId: 'NASYATH', permissionId: 'perm-nasyath-access' },
+            { roleId: 'NASYATH', permissionId: 'perm-nasyath-read' },
+            { roleId: 'NASYATH', permissionId: 'perm-nasyath-write' },
+            { roleId: 'NASYATH', permissionId: 'perm-nasyath-export' },
+            // MEMBER
+            { roleId: 'MEMBER', permissionId: 'perm-profile-read' },
+            { roleId: 'MEMBER', permissionId: 'perm-profile-write' },
+        ];
+        await db.insert(rolePermissionsTable).values(otherRolePermissions).onConflictDoNothing();
+        console.log('Other role permissions seeded.');
+
+
+		// 6. Bangun Hierarki Peran
+		const hierarchyToInsert = roleHierarchyData.map((h) => ({
+			parentRoleId: h.parent,
+			childRoleId: h.child
+		}));
+		await db.insert(roleHierarchyTable).values(hierarchyToInsert).onConflictDoNothing();
+		console.log('Role hierarchy seeded.');
+
+		console.log('RBAC data seeding completed successfully.');
+		return { success: true, message: 'RBAC data seeded successfully.' };
+	} catch (error) {
+		console.error('Error seeding RBAC data:', error);
+		return { success: false, message: 'Failed to seed RBAC data.', error };
+	}
 }
 
-/**
- * Retrieves all permission IDs assigned to a specific role.
- * @param roleId The ID of the role.
- * @returns An array of permission IDs.
- */
-export function getRolePermissions(roleId: string): string[] {
-    return rolePermissionsMap.get(roleId) || [];
+// =================================================================
+// FUNGSI UTILITAS (jika diperlukan)
+// Contoh: Fungsi untuk menetapkan peran ke pengguna
+// =================================================================
+
+export async function assignRoleToUser(userId: string, roleId: string) {
+	try {
+		await db.insert(userRolesTable).values({ userId, roleId }).onConflictDoNothing();
+		console.log(`Role '${roleId}' assigned to user '${userId}'.`);
+		return { success: true };
+	} catch (error) {
+		console.error(`Error assigning role '${roleId}' to user '${userId}':`, error);
+		return { success: false, error };
+	}
 }
-
-/**
- * Checks if a child role is a descendant of a parent role in the hierarchy.
- * @param parentRoleId The ID of the potential parent role.
- * @param childRoleId The ID of the potential child role.
- * @returns True if childRoleId is a sub-role of parentRoleId, false otherwise.
- */
-export function isSubRole(parentRoleId: string, childRoleId: string): boolean {
-    if (parentRoleId === childRoleId) return true; // A role is a sub-role of itself
-
-    const directChildren = roleHierarchy
-        .filter((link: { parentRoleId: string; childRoleId: string }) => link.parentRoleId === parentRoleId)
-        .map((link: { parentRoleId: string; childRoleId: string }) => link.childRoleId);
-
-    // Check direct children
-    if (directChildren.includes(childRoleId)) return true;
-
-    // Recursively check grandchildren
-    for (const child of directChildren) {
-        if (isSubRole(child, childRoleId)) return true;
-    }
-
-    return false;
-}
-
-/**
- * Updates the roles assigned to a user and persists the change to userRoles.json.
- * @param userId The ID of the user to update.
- * @param newRoleIds An array of new role IDs to assign to the user.
- */
-export function updateUserRolesJson(userId: string, newRoleIds: string[]): void {
-    // Remove existing entries for the user
-    userRoles = userRoles.filter((ur: { userId: string; roleId: string }) => ur.userId !== userId);
-
-    // Add new entries
-    newRoleIds.forEach(roleId => {
-        userRoles.push({ userId, roleId });
-    });
-
-    // Update the in-memory map
-    userRolesMap.set(userId, newRoleIds);
-
-    // Persist to file
-    try {
-        writeFileSync(USER_ROLES_JSON_PATH, JSON.stringify(userRoles, null, 4));
-        console.log(`Updated roles for user ${userId} in ${USER_ROLES_JSON_PATH}`);
-    } catch (error) {
-        console.error(`Failed to write to ${USER_ROLES_JSON_PATH}:`, error);
-        throw new Error('Failed to persist user roles.');
-    }
-}
-
-// --- END JSON-BASED ACCESS CONTROL DATA (TEMPORARY) ---

@@ -40,7 +40,7 @@
 	let totalItems = data.totalItems;
 	let loading = true; // Start with loading true
 	let hasDbError = false;
-	const pageSize = 10;
+	let pageSize = 10;
 	let currentPage = 1;
 	let currentSort: SortConfig | undefined = undefined;
 	let currentFilters: Record<string, any> = {};
@@ -156,6 +156,11 @@
 		await fetchTableData(currentSort, currentFilters, currentPage);
 	}
 
+	async function handleItemsPerPageChange(event: CustomEvent<number>) {
+		pageSize = event.detail;
+		await fetchTableData(currentSort, currentFilters, 1);
+	}
+
 	async function handleDeleteUser(userId: string, username: string) {
 		if (userId === data.user?.id) {
 			alert('You cannot delete your own account.');
@@ -195,16 +200,17 @@
 		data={users}
 		{columns}
 		rowKey="id"
-		itemsPerPage={pageSize}
-		{totalItems}
-		isLoading={loading}
+		itemsPerPageProp={pageSize}
+		totalItemsProp={totalItems}
+		isLoadingProp={loading}
 		initialSort={currentSort}
 		serverSide={true}
 		dbError={hasDbError}
 		on:sort={handleSort}
 		on:filter={handleFilter}
 		on:pageChange={handlePageChange}
-		on:rowClick={({ detail }) => goto(`/admin/users/${detail.id}/edit`)}
+		on:itemsPerPageChange={handleItemsPerPageChange}
+		on:rowClick={(e) => goto(`/admin/users/${e.detail.id}/edit`)}
 	>
 		<svelte:fragment slot="loading-state">
 			<div class="p-8 text-center">

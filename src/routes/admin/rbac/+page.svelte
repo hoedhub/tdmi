@@ -29,6 +29,7 @@
 	let usersChanged = false;
 
 	// --- Reactive Computations ---
+	$: formErrors = form?.errors as Record<string, unknown> | undefined;
 	$: selectedRole = data.roles.find((r) => r.id === selectedRoleId);
 
 	// Helper untuk membandingkan array (mengabaikan urutan)
@@ -51,7 +52,7 @@
 			currentPermissions = [...initialPermissions];
 
 			// Inisialisasi untuk tab Pengguna
-			initialUsers = data.users.filter((u) => u.roles.includes(selectedRole.id)).map((u) => u.id);
+			initialUsers = data.userRoleMap.filter((ur) => ur.roleId === selectedRole.id).map((ur) => ur.userId);
 			currentUsers = [...initialUsers];
 		} else {
 			// Jika tidak ada peran yang dipilih (misalnya setelah penghapusan), kosongkan state
@@ -74,16 +75,23 @@
 	});
 
 	// --- Functions ---
+		function getFirstError(error: unknown): string {
+		if (Array.isArray(error) && error.length > 0) {
+			return error[0];
+		}
+		return String(error ?? '');
+	}
+
 	function openNewRoleModal() {
 		formRole = { id: '', name: '', description: '' };
-		form = {};
+		form = null;
 		showRoleSelectorModal = false;
 		showRoleModal = true;
 	}
 
 	function openEditRoleModal(role: typeof data.roles[0]) {
 		formRole = { ...role, description: role.description ?? '' };
-		form = {};
+		form = null;
 		showRoleModal = true;
 	}
 
@@ -98,13 +106,13 @@
 
 	// --- Checkbox Management Functions ---
 	const resetPermissions = () => currentPermissions = [...initialPermissions];
-	const toggleAllPermissions = (e) => currentPermissions = e.currentTarget.checked ? data.permissions.map(p => p.id) : [];
+	const toggleAllPermissions = (e: Event & { currentTarget: HTMLInputElement }) => currentPermissions = e.currentTarget.checked ? data.permissions.map(p => p.id) : [];
 	const resetUsers = () => currentUsers = [...initialUsers];
-	const toggleAllUsers = (e) => currentUsers = e.currentTarget.checked ? data.users.map(u => u.id) : [];
+	const toggleAllUsers = (e: Event & { currentTarget: HTMLInputElement }) => currentUsers = e.currentTarget.checked ? data.users.map(u => u.id) : [];
 
 	// --- Form Handling ---
 	const enhanceForm = (loadingKey: string, dataType?: 'permissions' | 'users') => {
-		return ({ form, data: formData, cancel }) => {
+		return ({ form, data: formData, cancel }: { form: HTMLFormElement; data: FormData; cancel: () => void; }) => {
 			isLoading[loadingKey] = true;
 			isLoading = { ...isLoading };
 
@@ -117,7 +125,7 @@
 				currentUsers.forEach(id => formData.append('userIds', id));
 			}
 
-			return async ({ result, update }) => {
+			return async ({ result, update }: { result: any; update: (options?: { reset: boolean; }) => Promise<void>; }) => {
 				isLoading[loadingKey] = false;
 				isLoading = { ...isLoading };
 
@@ -209,8 +217,8 @@
 
 					<!-- Navigasi Tab -->
 					<div role="tablist" class="tabs tabs-bordered">
-						<a role="tab" class="tab" class:tab-active={activeTab === 'permissions'} on:click={() => activeTab = 'permissions'}><Key class="h-4 w-4 mr-2"/>Izin</a>
-						<a role="tab" class="tab" class:tab-active={activeTab === 'users'} on:click={() => activeTab = 'users'}><Users class="h-4 w-4 mr-2"/>Pengguna</a>
+						<button role="tab" class="tab" class:tab-active={activeTab === 'permissions'} on:click={() => activeTab = 'permissions'}><Key class="h-4 w-4 mr-2"/>Izin</button>
+						<button role="tab" class="tab" class:tab-active={activeTab === 'users'} on:click={() => activeTab = 'users'}><Users class="h-4 w-4 mr-2"/>Pengguna</button>
 					</div>
 
 					<!-- Konten Tab -->
@@ -383,12 +391,12 @@
 						id="role-id"
 						name="id"
 						class="input input-bordered w-full"
-						class:input-error={form?.errors?.id}
+						class:input-error={!!formErrors?.id}
 						bind:value={formRole.id}
 						readonly={!!formRole.id}
 						required
 					/>
-					{#if form?.errors?.id}<span class="text-error text-xs mt-1">{form.errors.id[0]}</span>{/if}
+					{#if formErrors?.id}<span class="text-error text-xs mt-1">{getFirstError(formErrors.id)}</span>{/if}
 				</div>
 				<div class="form-control">
 					<label for="role-name" class="label"><span class="label-text">Nama Tampilan</span></label>
@@ -397,11 +405,11 @@
 						id="role-name"
 						name="name"
 						class="input input-bordered w-full"
-						class:input-error={form?.errors?.name}
+						class:input-error={!!form?.errors?.name}
 						bind:value={formRole.name}
 						required
 					/>
-					{#if form?.errors?.name}<span class="text-error text-xs mt-1">{form.errors.name[0]}</span>{/if}
+					{#if form?.errors?.name}<span class="text-error text-xs mt-1">{Array.isArray(form.errors.name) ? form.errors.name[0] : form.errors.name}</span>{/if}
 				</div>
 				<div class="form-control">
 					<label for="role-desc" class="label"><span class="label-text">Deskripsi</span></label>

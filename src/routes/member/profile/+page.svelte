@@ -110,20 +110,6 @@
 					/>
 				</div>
 
-				<div class="form-control">
-					<label class="label" for="role">
-						<span class="label-text">Role</span>
-					</label>
-					<input
-						type="text"
-						id="role"
-						name="role"
-						readOnly={true}
-						class="input input-bordered w-full"
-						value={data.userToEdit.role}
-					/>
-				</div>
-
 				<h2 class="mb-6 text-xl font-semibold">Change Password</h2>
 
 				<div class="form-control">
