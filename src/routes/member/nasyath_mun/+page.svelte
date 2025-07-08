@@ -30,7 +30,7 @@
 	let dbError = false;
 	let pageSize = 10;
 	let currentPage = 1;
-	let currentSort: SortConfig | undefined = { key: 'tanggalMulai', direction: 'desc' };
+	let currentSort: SortConfig[] | undefined = [{ key: 'tanggalMulai', direction: 'desc' }];
 	let currentFilters: FilterState = { global: '', columns: {} };
 	let dateFilter: { start: string; end: string } = {
 		start: '',
@@ -122,7 +122,7 @@
 		applyDateFilter();
 	}
 
-	async function handleSort(event: CustomEvent<SortConfig | null>) {
+	async function handleSort(event: CustomEvent<SortConfig[] | null>) {
 		currentSort = event.detail ?? undefined;
 		await fetchNasyathData(currentSort, currentFilters, currentPage);
 	}

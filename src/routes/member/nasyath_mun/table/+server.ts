@@ -81,15 +81,17 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 		// --- Query untuk Mengambil Data --- 
 		const orderByClauses = [];
-		if (sort && sort.key) {
-			if (sort.key === 'murid.nama') {
-				orderByClauses.push(
-					sort.direction === 'asc' ? asc(muridTable.nama) : desc(muridTable.nama)
-				);
-			} else if (sort.key in nasyathTable) {
-				const sortColumn = (nasyathTable as any)[sort.key];
-				orderByClauses.push(sort.direction === 'asc' ? asc(sortColumn) : desc(sortColumn));
-			}
+		if (sort && Array.isArray(sort) && sort.length > 0) {
+			sort.forEach(sortConfig => {
+				if (sortConfig.key === 'murid.nama') {
+					orderByClauses.push(
+						sortConfig.direction === 'asc' ? asc(muridTable.nama) : desc(muridTable.nama)
+					);
+				} else if (sortConfig.key in nasyathTable) {
+					const sortColumn = (nasyathTable as any)[sortConfig.key];
+					orderByClauses.push(sortConfig.direction === 'asc' ? asc(sortColumn) : desc(sortColumn));
+				}
+			});
 		}
 
 		if (orderByClauses.length === 0) {

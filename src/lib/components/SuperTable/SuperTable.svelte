@@ -118,9 +118,25 @@
 		}, FILTER_DEBOUNCE_MS);
 	}
 
-	function handleSort(event: CustomEvent<SortConfig | null>) {
-		$sortState = event.detail;
-		dispatch('sort', event.detail);
+	function handleSort(event: CustomEvent<{ key: string; ctrlKey: boolean }>) {
+		const { key, ctrlKey } = event.detail;
+		const newSortState: SortConfig[] = ctrlKey ? [...($sortState || [])] : [];
+
+		const existingIndex = newSortState.findIndex((s) => s.key === key);
+
+		if (existingIndex !== -1) {
+			const existing = newSortState[existingIndex];
+			if (existing.direction === 'desc') {
+				newSortState.splice(existingIndex, 1);
+			} else {
+				newSortState[existingIndex] = { ...existing, direction: 'desc' };
+			}
+		} else {
+			newSortState.push({ key, direction: 'asc' });
+		}
+
+		$sortState = newSortState.length > 0 ? newSortState : null;
+		dispatch('sort', $sortState);
 	}
 
 	function handleGlobalFilter(value: string) {

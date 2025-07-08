@@ -1,11 +1,11 @@
 <!-- TableHeader.svelte -->
 <script lang="ts">
 	import type { ColumnDef, SortConfig } from '../types';
-	import { createEventDispatcher, onDestroy } from 'svelte';
+	import { createEventDispatcher } from 'svelte';
 	import { ChevronsUpDown, ChevronUp, ChevronDown } from 'lucide-svelte';
 
 	export let columns: ColumnDef[];
-	export let currentSort: SortConfig | null;
+	export let currentSort: SortConfig[] | null;
 	export let isSelectable: boolean = false;
 	export let allSelected: boolean = false;
 	export let someSelected: boolean = false;
@@ -17,32 +17,18 @@
 		dispatch('filterChange', { key: columnKey, value });
 	}
 
-	function handleSort(column: ColumnDef) {
+	function handleSort(column: ColumnDef, event: MouseEvent) {
 		if (!column.sortable) return;
-
-		const columnKey = String(column.key);
-		let newSort: SortConfig | null;
-		if (!currentSort || currentSort.key !== columnKey) {
-			// First click on this column - sort ascending
-			newSort = { key: columnKey, direction: 'asc' };
-		} else if (currentSort.direction === 'asc') {
-			// Second click - switch to descending
-			newSort = { key: columnKey, direction: 'desc' };
-		} else {
-			// Third click - remove sorting
-			newSort = null;
-		}
-		dispatch('sort', newSort);
+		dispatch('sort', { key: String(column.key), ctrlKey: event.ctrlKey || event.metaKey });
 	}
 
-	function handleSelectAll(event: Event) {
-		const target = event.target as HTMLInputElement;
-		dispatch('selectAll', { selected: target.checked });
+	function getSortForColumn(key: string): SortConfig | undefined {
+		return currentSort?.find((s) => s.key === key);
 	}
 
-	// Helper function to safely get filter value
-	function getFilterValue(columnKey: string): string {
-		return filterValues[columnKey] || '';
+	function getSortIndex(key: string): number {
+		if (!currentSort) return -1;
+		return currentSort.findIndex((s) => s.key === key);
 	}
 </script>
 
@@ -63,28 +49,29 @@
 		{/if}
 
 		{#each columns.filter((col) => !col.hidden) as column}
+			{@const sortConfig = getSortForColumn(String(column.key))}
+			{@const sortIndex = getSortIndex(String(column.key))}
 			<th
 				class="py-2 hover:bg-base-200 {column.headerClass || ''} {column.sortable
 					? 'cursor-pointer select-none'
-					: ''} {currentSort?.key === String(column.key) ? 'text-primary' : ''}"
-				on:click={() => handleSort(column)}
-				aria-sort={currentSort?.key === String(column.key)
-					? currentSort.direction === 'asc'
-						? 'ascending'
-						: 'descending'
-					: 'none'}
+					: ''} {sortConfig ? 'text-primary' : ''}"
+				on:click={(e) => handleSort(column, e)}
+				aria-sort={sortConfig ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
 				role="columnheader"
 				aria-label={`${column.label}${column.sortable ? '. Click to sort' : ''}`}
 			>
 				<div class="flex items-center justify-between gap-2">
 					<span>{column.label}</span>
 					{#if column.sortable}
-						<span class="opacity-50">
-							{#if currentSort?.key === String(column.key)}
-								{#if currentSort.direction === 'asc'}
+						<span class="relative opacity-50">
+							{#if sortConfig}
+								{#if sortConfig.direction === 'asc'}
 									<ChevronUp size={16} />
 								{:else}
 									<ChevronDown size={16} />
+								{/if}
+								{#if sortIndex !== -1 && (currentSort?.length || 0) > 1}
+									<span class="absolute -bottom-1 -right-1 text-xs">{sortIndex + 1}</span>
 								{/if}
 							{:else}
 								<ChevronsUpDown size={16} />
@@ -112,7 +99,7 @@
 						{#if column.filterOptions}
 							<select
 								class="select select-bordered select-xs w-full max-w-xs"
-								value={getFilterValue(String(column.key))}
+								value={filterValues[String(column.key)] || ''}
 								on:change={(e) => handleFilterChange(String(column.key), e.currentTarget.value)}
 								aria-label={`Filter ${column.label}`}
 							>
@@ -129,7 +116,7 @@
 							<input
 								type="search"
 								class="input input-xs input-bordered w-full max-w-xs"
-								value={getFilterValue(String(column.key))}
+								value={filterValues[String(column.key)] || ''}
 								placeholder={`Filter ${column.label.toLowerCase()}...`}
 								on:input={(e) => handleFilterChange(String(column.key), e.currentTarget.value)}
 								aria-label={`Filter ${column.label}`}
