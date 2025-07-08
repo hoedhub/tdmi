@@ -41,9 +41,9 @@
 	const columns: ColumnDef[] = [
 		// Tambahkan kolom baru di posisi yang Anda inginkan
 		{
-			key: 'nama', // Key ini fiktif, kita akan gunakan formatter
+			key: 'murid.nama', // Key ini fiktif, kita akan gunakan formatter
 			label: 'Nama Murid',
-			sortable: false, // Sorting pada kolom join lebih rumit, nonaktifkan dulu
+			sortable: true, // Sorting pada kolom join lebih rumit, nonaktifkan dulu
 			filterable: 'text', // Filtering juga butuh penanganan khusus di backend
 			formatter: (value: any, row: NasyathRow) => {
 				// Gunakan salah satu dari dua ini, tergantung implementasi backend
