@@ -171,7 +171,7 @@
 
 <div class="container mx-auto p-4">
 	<div class="mb-4 flex flex-wrap items-center justify-between">
-		<h1 class="text-2xl font-bold">قائمة أنشطتي الدعوية</h1>
+		<h1 class="text-2xl font-bold">قائمة أنشطة أعضاء المجلس</h1>
 		<div class="flex flex-wrap items-center gap-2">
 			<a
 				href={`/api/nasyath_mun/cetak.pdf?sort=${encodeURIComponent(

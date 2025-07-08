@@ -44,7 +44,7 @@
 </script>
 
 <div class="container mx-auto max-w-2xl p-4">
-	<h1 class="text-2xl font-bold mb-6">إضافة نشاط دعوي جديد</h1>
+	<h1 class="mb-6 text-2xl font-bold">إضافة نشاط جديد</h1>
 
 	{#if form?.message && !isLoading}
 		<div class="alert alert-error mb-4">
@@ -64,12 +64,12 @@
 				name="kegiatan"
 				class="input input-bordered w-full"
 				required
-																value={formData?.kegiatan || ''}
+				value={formData?.kegiatan || ''}
 			/>
 		</div>
 
 		<!-- Baris 2: Tanggal Mulai & Selesai -->
-		<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+		<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
 			<div class="form-control">
 				<label for="tanggalMulai" class="label">
 					<span class="label-text">تاريخ البدء</span>
@@ -97,7 +97,7 @@
 		</div>
 
 		<!-- Baris 3: Durasi & Jarak -->
-		<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+		<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
 			<div class="form-control">
 				<label for="durasi" class="label">
 					<span class="label-text">المدة (مثال: 3 ساعات, يومان)</span>
@@ -141,7 +141,7 @@
 		</div>
 
 		<!-- Baris 5: Kontak Person -->
-		<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+		<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
 			<div class="form-control">
 				<label for="namaKontak" class="label">
 					<span class="label-text">اسم جهة الاتصال</span>
@@ -173,12 +173,9 @@
 			<label for="keterangan" class="label">
 				<span class="label-text">ملاحظات إضافية</span>
 			</label>
-			<textarea
-				id="keterangan"
-				name="keterangan"
-				class="textarea textarea-bordered w-full"
-				rows="3"
-			>{formData?.keterangan || ''}</textarea>
+			<textarea id="keterangan" name="keterangan" class="textarea textarea-bordered w-full" rows="3"
+				>{formData?.keterangan || ''}</textarea
+			>
 		</div>
 
 		<div class="flex justify-end space-x-2 pt-4">

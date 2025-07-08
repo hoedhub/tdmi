@@ -3,6 +3,8 @@ import type { RequestHandler } from './$types';
 import { db } from '$lib/drizzle';
 import { nasyathTable, usersTable, muridTable } from '$lib/drizzle/schema'; // Pastikan muridTable diimpor
 import { count, eq, and, like, sql, asc, desc, gte, lte } from 'drizzle-orm'; // PERUBAHAN 1: Impor gte dan lte
+import { userHasPermission } from '$lib/server/accessControl';
+
 
 export const POST: RequestHandler = async ({ request, locals }) => {
 	if (!locals.user) {
@@ -20,7 +22,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	const offset = (page - 1) * pageSize;
 
 	try {
-		const canReadAll = true; // Sesuai kebutuhan Anda
+		const canReadAll = true; // await userHasPermission(locals.user.id, 'perm-nasyath-read');
 
 		const conditions = [];
 

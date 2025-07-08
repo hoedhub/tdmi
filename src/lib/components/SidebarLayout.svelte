@@ -161,7 +161,7 @@
 			<div class="divider my-0"></div>
 
 			<!-- 2. Menu Navigasi Utama (Scrollable) -->
-			<ul class="menu flex-grow space-y-1 overflow-y-auto">
+			<ul class="menu flex-grow flex-col space-y-1 overflow-y-auto">
 				{#each menuItems as item}
 					<li>
 						<a
