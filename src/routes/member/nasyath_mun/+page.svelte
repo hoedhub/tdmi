@@ -165,6 +165,25 @@
 	};
 
 	onMount(() => {
+		const today = new Date();
+		const year = today.getFullYear();
+		const month = today.getMonth();
+
+		const startDate = new Date(year, month, 1);
+		const endDate = new Date(year, month + 1, 0);
+
+		// Helper to format date as YYYY-MM-DD without UTC conversion
+		const formatDate = (d: Date) => {
+			const y = d.getFullYear();
+			// Month is 0-indexed, so add 1
+			const m = (d.getMonth() + 1).toString().padStart(2, '0');
+			const day = d.getDate().toString().padStart(2, '0');
+			return `${y}-${m}-${day}`;
+		};
+
+		dateFilter.start = formatDate(startDate);
+		dateFilter.end = formatDate(endDate);
+
 		fetchNasyathData(currentSort, currentFilters, currentPage);
 	});
 </script>
