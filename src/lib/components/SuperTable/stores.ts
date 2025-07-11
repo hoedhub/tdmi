@@ -1,8 +1,7 @@
 import { writable, derived } from 'svelte/store';
 import type { SortConfig, FilterState } from './types';
 
-// Sort state store
-export const sortState = writable<SortConfig | null>(null);
+
 
 // Filter state store
 export const filterState = writable<FilterState>({

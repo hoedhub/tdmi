@@ -91,7 +91,7 @@ export interface SuperTableProps<T = any> {
     columns: ColumnDef<T>[];
     rowKey: keyof T;
     mobileView?: MobileViewType;
-    initialSort?: SortConfig;
+    initialSort?: SortConfig[];
     itemsPerPage?: number;
     totalItems?: number;
     isLoading?: boolean;
@@ -104,7 +104,7 @@ export interface SuperTableProps<T = any> {
 }
 
 export interface SuperTableEvents<T = any> {
-    sort: CustomEvent<SortConfig | null>;
+    sort: CustomEvent<SortConfig[] | null>;
     filter: CustomEvent<FilterState>;
     selectionChange: CustomEvent<Array<T[keyof T]>>;
     pageChange: CustomEvent<number>;

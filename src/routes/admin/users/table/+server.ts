@@ -40,19 +40,21 @@ export const POST: RequestHandler = async ({ request, locals }) => {
         const finalWhereClause = conditions.length > 0 ? and(...conditions.filter(c => c !== undefined)) : undefined;
 
         const orderByClauses = [];
-        if (sort && sort.key) {
-            const direction = sort.direction === 'asc' ? asc : desc;
-            switch (sort.key) {
-                case 'username':
-                    orderByClauses.push(direction(usersTable.username));
-                    break;
-                case 'active':
-                    orderByClauses.push(direction(usersTable.active));
-                    break;
-                case 'createdAt':
-                    orderByClauses.push(direction(usersTable.createdAt));
-                    break;
-            }
+        if (sort && Array.isArray(sort) && sort.length > 0) {
+            sort.forEach(sortConfig => {
+                const direction = sortConfig.direction === 'asc' ? asc : desc;
+                switch (sortConfig.key) {
+                    case 'username':
+                        orderByClauses.push(direction(usersTable.username));
+                        break;
+                    case 'active':
+                        orderByClauses.push(direction(usersTable.active));
+                        break;
+                    case 'createdAt':
+                        orderByClauses.push(direction(usersTable.createdAt));
+                        break;
+                }
+            });
         }
         if (orderByClauses.length === 0) {
             orderByClauses.push(desc(usersTable.createdAt));

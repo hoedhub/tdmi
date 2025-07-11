@@ -21,23 +21,28 @@ function compareValues(a: any, b: any, direction: 'asc' | 'desc'): number {
     return 0;
 }
 
-export function sortData<T>(data: T[], sortConfig: SortConfig | null, columns: ColumnDef<T>[]): T[] {
-    if (!sortConfig) return [...data];
-
-    const column = columns.find(col => col.key === sortConfig.key);
-    if (!column) return [...data];
+export function sortData<T>(data: T[], sortConfigs: SortConfig[] | null, columns: ColumnDef<T>[]): T[] {
+    if (!sortConfigs || sortConfigs.length === 0) return [...data];
 
     return [...data].sort((a, b) => {
-        const aVal = getValue(a, sortConfig.key);
-        const bVal = getValue(b, sortConfig.key);
+        for (const sortConfig of sortConfigs) {
+            const column = columns.find(col => col.key === sortConfig.key);
+            if (!column) continue;
 
-        // Use formatter if available and it's a function
-        if (column.formatter && isFormatterFunction<T>(column.formatter)) {
-            const aFormatted = column.formatter(aVal, a, column);
-            const bFormatted = column.formatter(bVal, b, column);
-            return compareValues(aFormatted, bFormatted, sortConfig.direction);
+            const aVal = getValue(a, sortConfig.key);
+            const bVal = getValue(b, sortConfig.key);
+
+            let aFormatted = aVal;
+            let bFormatted = bVal;
+
+            if (column.formatter && isFormatterFunction<T>(column.formatter)) {
+                aFormatted = column.formatter(aVal, a, column);
+                bFormatted = column.formatter(bVal, b, column);
+            }
+
+            const comparison = compareValues(aFormatted, bFormatted, sortConfig.direction);
+            if (comparison !== 0) return comparison;
         }
-
-        return compareValues(aVal, bVal, sortConfig.direction);
+        return 0;
     });
 }

@@ -30,7 +30,10 @@
 	let dbError = false;
 	let pageSize = 10;
 	let currentPage = 1;
-	let currentSort: SortConfig[] | undefined = [{ key: 'tanggalMulai', direction: 'desc' }];
+	let currentSort: SortConfig[] | undefined = [
+		{ key: 'murid.nama', direction: 'asc' },
+		{ key: 'tanggalMulai', direction: 'desc' }
+	];
 	let currentFilters: FilterState = { global: '', columns: {} };
 	let dateFilter: { start: string; end: string } = {
 		start: '',
@@ -72,7 +75,7 @@
 
 	// --- Fungsi Pengambilan Data ---
 	async function fetchNasyathData(
-		sort?: SortConfig | null,
+		sort?: SortConfig[] | null,
 		filters?: FilterState,
 		page: number = 1
 	) {
@@ -227,7 +230,7 @@
 		{dbError}
 		itemsPerPageProp={pageSize}
 		totalItemsProp={totalItems}
-		initialSort={currentSort}
+		sort={currentSort}
 		on:sort={handleSort}
 		on:filter={handleFilter}
 		on:pageChange={handlePageChange}

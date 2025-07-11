@@ -136,20 +136,21 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
         // Apply sorting
         const orderByClauses = [];
-        if (sort && sort.key) {
-            // Map client-side sort keys to database columns
-            let sortColumn;
-            switch (sort.key) {
-                case 'deskelName': sortColumn = deskelTable.deskel; break;
-                case 'kecamatanName': sortColumn = kecamatanTable.kecamatan; break;
-                case 'kokabName': sortColumn = kokabTable.kokab; break;
-                case 'propinsiName': sortColumn = propTable.propinsi; break;
-                default: sortColumn = (muridTable as any)[sort.key]; break;
-            }
+        if (sort && Array.isArray(sort) && sort.length > 0) {
+            sort.forEach(sortConfig => {
+                let sortColumn;
+                switch (sortConfig.key) {
+                    case 'deskelName': sortColumn = deskelTable.deskel; break;
+                    case 'kecamatanName': sortColumn = kecamatanTable.kecamatan; break;
+                    case 'kokabName': sortColumn = kokabTable.kokab; break;
+                    case 'propinsiName': sortColumn = propTable.propinsi; break;
+                    default: sortColumn = (muridTable as any)[sortConfig.key]; break;
+                }
 
-            if (sortColumn) {
-                orderByClauses.push(sort.direction === 'asc' ? asc(sortColumn) : desc(sortColumn));
-            }
+                if (sortColumn) {
+                    orderByClauses.push(sortConfig.direction === 'asc' ? asc(sortColumn) : desc(sortColumn));
+                }
+            });
         }
 
         // Apply default sort if no custom sort was successfully added

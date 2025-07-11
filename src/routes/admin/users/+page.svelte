@@ -203,7 +203,7 @@
 		itemsPerPageProp={pageSize}
 		totalItemsProp={totalItems}
 		isLoadingProp={loading}
-		initialSort={currentSort}
+		sort={currentSort}
 		serverSide={true}
 		dbError={hasDbError}
 		on:sort={handleSort}

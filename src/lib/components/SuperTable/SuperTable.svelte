@@ -1,14 +1,7 @@
 <script lang="ts" generics="T extends Record<string, any>">
 	import type { ColumnDef, SortConfig, FilterState, SuperTableProps } from './types';
 	import { createEventDispatcher, onMount } from 'svelte';
-	import {
-		sortState,
-		filterState,
-		selectedIds,
-		currentPage,
-		itemsPerPage,
-		isLoading
-	} from './stores';
+	import { filterState, selectedIds, currentPage, itemsPerPage, isLoading } from './stores';
 	import { sortData } from './features/sorting';
 	import { filterData } from './features/filtering';
 	import { paginateData, calculateTotalPages } from './features/pagination';
@@ -28,7 +21,7 @@
 	export let columns: Props['columns'] = [];
 	export let rowKey: Props['rowKey'];
 	export let mobileView: Props['mobileView'] = 'cards';
-	export let initialSort: Props['initialSort'] = undefined;
+	export let sort: Props['initialSort'] = []; // Changed from initialSort
 	export let itemsPerPageProp: Props['itemsPerPage'] = 10;
 	export let totalItemsProp: Props['totalItems'] = undefined;
 	export let isLoadingProp: Props['isLoading'] = false;
@@ -51,7 +44,6 @@
 
 	// --- Lifecycle & Reactivity ---
 	onMount(() => {
-		$sortState = initialSort ?? null;
 		$itemsPerPage = itemsPerPageProp ?? 10;
 		$isLoading = false;
 
@@ -84,7 +76,7 @@
 	}
 
 	// --- Computed Properties ---
-	$: sortedData = sortData(filteredData, $sortState, internalColumns);
+	$: sortedData = sortData(filteredData, sort, internalColumns);
 	$: totalItems = serverSide ? (totalItemsProp ?? 0) : sortedData.length;
 	$: totalPageCount = calculateTotalPages(totalItems, $itemsPerPage);
 	$: displayData = serverSide ? sortedData : paginateData(sortedData, $currentPage, $itemsPerPage);
@@ -120,23 +112,46 @@
 
 	function handleSort(event: CustomEvent<{ key: string; ctrlKey: boolean }>) {
 		const { key, ctrlKey } = event.detail;
-		const newSortState: SortConfig[] = ctrlKey ? [...($sortState || [])] : [];
+		const currentSorts = sort ? [...sort] : [];
+		const existingIndex = currentSorts.findIndex((s) => s.key === key);
 
-		const existingIndex = newSortState.findIndex((s) => s.key === key);
+		let newSortState: SortConfig[];
 
-		if (existingIndex !== -1) {
-			const existing = newSortState[existingIndex];
-			if (existing.direction === 'desc') {
-				newSortState.splice(existingIndex, 1);
+		if (!ctrlKey) {
+			// SINGLE SORT LOGIC
+			if (existingIndex !== -1 && currentSorts.length === 1) {
+				// The column is already being sorted
+				if (currentSorts[existingIndex].direction === 'asc') {
+					// It's 'asc', so flip to 'desc'. This becomes the ONLY sort criteria.
+					newSortState = [{ key, direction: 'desc' }];
+				} else {
+					// It's 'desc', so clear all sorting.
+					newSortState = [];
+				}
 			} else {
-				newSortState[existingIndex] = { ...existing, direction: 'desc' };
+				// The column was not sorted or other columns were also sorted.
+				// Make it the ONLY sort criteria, 'asc'.
+				newSortState = [{ key, direction: 'asc' }];
 			}
 		} else {
-			newSortState.push({ key, direction: 'asc' });
+			// MULTI SORT LOGIC
+			newSortState = currentSorts; // Start with the current sorts
+			if (existingIndex !== -1) {
+				// It exists, so check direction
+				if (currentSorts[existingIndex].direction === 'desc') {
+					// Was 'desc', so remove it
+					newSortState.splice(existingIndex, 1);
+				} else {
+					// Was 'asc', so flip to 'desc'
+					newSortState[existingIndex] = { ...currentSorts[existingIndex], direction: 'desc' };
+				}
+			} else {
+				// It doesn't exist, so add it as 'asc'
+				newSortState.push({ key, direction: 'asc' });
+			}
 		}
 
-		$sortState = newSortState.length > 0 ? newSortState : null;
-		dispatch('sort', $sortState);
+		dispatch('sort', newSortState.length > 0 ? newSortState : null);
 	}
 
 	function handleGlobalFilter(value: string) {
@@ -381,7 +396,7 @@
 					<table class="table table-sm w-full {tableClass}">
 						<TableHeader
 							columns={internalColumns}
-							currentSort={$sortState}
+							currentSort={sort} 
 							filterValues={$filterState.columns}
 							isSelectable={true}
 							{allSelected}

@@ -247,7 +247,7 @@
 		itemsPerPageProp={pageSize}
 		totalItemsProp={totalItems}
 		isLoadingProp={loading}
-		initialSort={currentSort}
+		sort={currentSort}
 		serverSide={true}
 		on:sort={handleSort}
 		on:filter={handleFilter}
