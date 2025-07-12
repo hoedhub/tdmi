@@ -143,7 +143,7 @@
 	}
 
 	async function fetchTableData(
-		sort?: SortConfig | null,
+		sort?: SortConfig[] | null,
 		filters?: Record<string, any>,
 		page: number = 1
 	) {

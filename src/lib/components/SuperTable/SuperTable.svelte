@@ -396,7 +396,7 @@
 					<table class="table table-sm w-full {tableClass}">
 						<TableHeader
 							columns={internalColumns}
-							currentSort={sort} 
+							currentSort={sort ?? null} 
 							filterValues={$filterState.columns}
 							isSelectable={true}
 							{allSelected}
