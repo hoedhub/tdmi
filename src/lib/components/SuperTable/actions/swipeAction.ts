@@ -13,7 +13,7 @@ interface SwipeOptions {
 
 export function swipe(node: HTMLElement, options: SwipeOptions = {}) {
     const {
-        threshold = 50,
+        threshold = 100, // Increased from 50 to 100 for less sensitivity
         maxTime = 300,
         disableScroll = true,
         triggerPercent = 0.4,
