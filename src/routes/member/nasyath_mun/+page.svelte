@@ -1,14 +1,19 @@
 <script lang="ts">
+	// 1. IMPORTS
 	import { onMount } from 'svelte';
 	import SuperTable from '$lib/components/SuperTable/SuperTable.svelte';
 	import type { ColumnDef, SortConfig, FilterState } from '$lib/components/SuperTable/types';
-	import { Edit, Trash2, PlusCircle, Calendar } from 'lucide-svelte';
+	import { Edit, Trash2, PlusCircle, Calendar, Download } from 'lucide-svelte';
 	import { goto } from '$app/navigation';
 	import { enhance } from '$app/forms';
 	import { success, error } from '$lib/components/toast';
 	import type { ActionResult } from '@sveltejs/kit';
+	import type { PageData } from './$types';
 
-	// PERBAIKAN: Definisikan tipe untuk baris data Anda
+	// 2. PROPS
+	export let data: PageData;
+
+	// 3. TYPES
 	interface NasyathRow {
 		id: number;
 		kegiatan: string;
@@ -17,14 +22,12 @@
 		durasi: string | null;
 		tempat: string | null;
 		murid?: {
-			// Dari Opsi A (dengan relasi)
 			nama: string | null;
 		};
-		namaMurid?: string | null; // Dari Opsi B (join manual)
 	}
 
-	// --- State untuk SuperTable Server-Side ---
-	let nasyathData: NasyathRow[] = []; // Gunakan tipe yang sudah didefinisikan
+	// 4. STATE
+	let nasyathData: NasyathRow[] = [];
 	let totalItems = 0;
 	let loading = true;
 	let dbError = false;
@@ -39,41 +42,48 @@
 		start: '',
 		end: ''
 	};
+	let isExporting = false;
 
-	// --- Definisi Kolom ---
-	const columns: ColumnDef[] = [
-		// Tambahkan kolom baru di posisi yang Anda inginkan
-		{
-			key: 'murid.nama', // Key ini fiktif, kita akan gunakan formatter
-			label: 'Nama Murid',
-			sortable: true, // Sorting pada kolom join lebih rumit, nonaktifkan dulu
-			filterable: 'text', // Filtering juga butuh penanganan khusus di backend
-			formatter: (value: any, row: NasyathRow) => {
-				// Gunakan salah satu dari dua ini, tergantung implementasi backend
-				return row.murid?.nama || row.namaMurid || 'N/A';
-			}
-		},
-		{ key: 'kegiatan', label: 'النشاط', sortable: true, filterable: 'text' },
-		{
-			key: 'tanggalMulai',
-			label: 'تاريخ البدء',
-			sortable: true,
-			formatter: (value: string | Date) =>
-				value ? new Date(value).toLocaleDateString('id-ID') : '-'
-		},
-		{
-			key: 'tanggalSelesai',
-			label: 'تاريخ الانتهاء',
-			sortable: true,
-			// PERBAIKAN: Tambahkan tipe pada parameter 'value'
-			formatter: (value: string | Date | null) =>
-				value ? new Date(value).toLocaleDateString('id-ID') : '-'
-		},
-		{ key: 'durasi', label: 'المدة', sortable: true, filterable: 'text' },
-		{ key: 'tempat', label: 'المكان', sortable: true, filterable: 'text' }
-	];
+	// 5. REACTIVE STATEMENTS
+	$: columns = (() => {
+		const baseColumns: ColumnDef[] = [
+			{ key: 'kegiatan', label: 'النشاط', sortable: true, filterable: 'text' },
+			{
+				key: 'tanggalMulai',
+				label: 'تاريخ البدء',
+				sortable: true,
+				formatter: (value: string | Date) =>
+					value ? new Date(value).toLocaleDateString('id-ID') : '-'
+			},
+			{
+				key: 'tanggalSelesai',
+				label: 'تاريخ الانتهاء',
+				sortable: true,
+				formatter: (value: string | Date | null) =>
+					value ? new Date(value).toLocaleDateString('id-ID') : '-'
+			},
+			{ key: 'durasi', label: 'المدة', sortable: true, filterable: 'text' },
+			{ key: 'tempat', label: 'المكان', sortable: true, filterable: 'text' }
+		];
 
-	// --- Fungsi Pengambilan Data ---
+		if (data && data.canReadAll) {
+			return [
+				{
+					key: 'murid.nama',
+					label: 'الاسم',
+					sortable: true,
+					filterable: 'text',
+					formatter: (value: any, row: NasyathRow) => {
+						return row.murid?.nama || 'N/A';
+					}
+				},
+				...baseColumns
+			];
+		}
+		return baseColumns;
+	})();
+
+	// 6. FUNCTIONS
 	async function fetchNasyathData(
 		sort?: SortConfig[] | null,
 		filters?: FilterState,
@@ -89,7 +99,6 @@
 					sort,
 					filters: {
 						...filters,
-						// Kirim filter tanggal di bawah key khusus
 						dateRange: dateFilter
 					},
 					page,
@@ -112,10 +121,7 @@
 		}
 	}
 
-	// --- Event Handlers untuk SuperTable ---
 	function applyDateFilter() {
-		// Panggil kembali fetch data dengan filter baru
-		// Reset ke halaman 1 setiap kali filter diubah
 		fetchNasyathData(currentSort, currentFilters, 1);
 	}
 
@@ -132,7 +138,7 @@
 
 	async function handleFilter(event: CustomEvent<FilterState>) {
 		currentFilters = event.detail;
-		await fetchNasyathData(currentSort, currentFilters, 1); // Reset ke halaman 1
+		await fetchNasyathData(currentSort, currentFilters, 1);
 	}
 
 	async function handlePageChange(event: CustomEvent<number>) {
@@ -145,7 +151,6 @@
 		await fetchNasyathData(currentSort, currentFilters, 1);
 	}
 
-	// --- Event Handlers untuk Aksi Baris ---
 	function handleEdit(id: number) {
 		goto(`/member/nasyath_mun/${id}/edit`);
 	}
@@ -167,6 +172,48 @@
 		}
 	};
 
+	async function handleExport() {
+		if (isExporting) return;
+		isExporting = true;
+
+		try {
+			const response = await fetch('/member/nasyath_mun/export', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ sort: currentSort, filters: currentFilters })
+			});
+
+			if (!response.ok) {
+				throw new Error(await response.text());
+			}
+
+			const blob = await response.blob();
+			const url = window.URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = url;
+			const contentDisposition = response.headers.get('content-disposition');
+			let fileName = 'nasyath_export.xlsx';
+			if (contentDisposition) {
+				const match = contentDisposition.match(/filename="?([^"]+)"?/);
+				if (match && match[1]) {
+					fileName = match[1];
+				}
+			}
+			a.download = fileName;
+			document.body.appendChild(a);
+a.click();
+			window.URL.revokeObjectURL(url);
+			a.remove();
+			success('Data berhasil diekspor!');
+		} catch (e: any) {
+			console.error('Error exporting data:', e);
+			error(`Gagal mengekspor data: ${e.message}`);
+		} finally {
+			isExporting = false;
+		}
+	}
+
+	// 7. LIFECYCLE
 	onMount(() => {
 		const today = new Date();
 		const year = today.getFullYear();
@@ -175,10 +222,8 @@
 		const startDate = new Date(year, month, 1);
 		const endDate = new Date(year, month + 1, 0);
 
-		// Helper to format date as YYYY-MM-DD without UTC conversion
 		const formatDate = (d: Date) => {
 			const y = d.getFullYear();
-			// Month is 0-indexed, so add 1
 			const m = (d.getMonth() + 1).toString().padStart(2, '0');
 			const day = d.getDate().toString().padStart(2, '0');
 			return `${y}-${m}-${day}`;
@@ -192,28 +237,17 @@
 </script>
 
 <div class="container mx-auto p-4">
-	<div class="mb-4 flex flex-wrap items-center justify-between">
-		<h1 class="text-2xl font-bold">قائمة أنشطة أعضاء المجلس</h1>
-		<div class="flex flex-wrap items-center gap-2">
-			<a
-				href={`/api/nasyath_mun/cetak.pdf?sort=${encodeURIComponent(
-					JSON.stringify(currentSort)
-				)}&filters=${encodeURIComponent(JSON.stringify(currentFilters))}`}
-				class="btn btn-secondary btn-sm"
-				target="_blank"
-				rel="noopener noreferrer"
-			>
-				Cetak Laporan
-			</a>
-			<a
-				href={`/api/nasyath_mun/cetak.csv?sort=${encodeURIComponent(
-					JSON.stringify(currentSort)
-				)}&filters=${encodeURIComponent(JSON.stringify(currentFilters))}`}
-				class="btn btn-info btn-sm"
-				download="laporan-nasyath.csv"
-			>
-				Cetak CSV
-			</a>
+	<div class="flex justify-between items-center mb-4">
+		<h1 class="text-2xl font-bold">قائمة أنشطتي الدعوية</h1>
+		<div class="flex items-center gap-2">
+			<button class="btn btn-secondary btn-sm" on:click={handleExport} disabled={isExporting}>
+				<Download class="h-4 w-4" />
+				{#if isExporting}
+					Mengekspor...
+				{:else}
+					Export ke Excel
+				{/if}
+			</button>
 			<a href="/member/nasyath_mun/new" class="btn btn-primary btn-sm">
 				<PlusCircle class="h-4 w-4" /> Tambah Baru
 			</a>

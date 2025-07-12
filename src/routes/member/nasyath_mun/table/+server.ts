@@ -2,7 +2,7 @@ import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { db } from '$lib/drizzle';
 import { nasyathTable, usersTable, muridTable } from '$lib/drizzle/schema';
-import { count, eq, and, like, sql, asc, desc, gte, lte, getTableColumns } from 'drizzle-orm';
+import { count, eq, and, like, or, sql, asc, desc, gte, lte, getTableColumns } from 'drizzle-orm';
 import { userHasPermission } from '$lib/server/accessControl';
 
 export const POST: RequestHandler = async ({ request, locals }) => {
@@ -15,7 +15,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	const offset = (page - 1) * pageSize;
 
 	try {
-		const canReadAll = true; // await userHasPermission(locals.user.id, 'perm-nasyath-read');
+		const canReadAll = await userHasPermission(locals.user.id, 'perm-nasyath-read');
 
 		const allConditions = [];
 
@@ -34,22 +34,22 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		if (filters) {
 			if (filters.global) {
 				const globalSearch = `%${filters.global}%`;
-				allConditions.push(
-					sql`(${like(nasyathTable.kegiatan, globalSearch)}) OR (${like(
-						nasyathTable.tempat,
-						globalSearch
-					)}) OR (${like(nasyathTable.keterangan, globalSearch)}) OR (${like(
-						muridTable.nama,
-						globalSearch
-					)})`
-				);
+				const globalFilterConditions = [
+					like(nasyathTable.kegiatan, globalSearch),
+					like(nasyathTable.tempat, globalSearch),
+					like(nasyathTable.keterangan, globalSearch)
+				];
+				if (canReadAll) {
+					globalFilterConditions.push(like(muridTable.namaArab, globalSearch));
+				}
+				allConditions.push(or(...globalFilterConditions));
 			}
 			if (filters.columns) {
 				for (const key in filters.columns) {
 					const value = filters.columns[key];
 					if (value) {
-						if (key === 'murid.nama') {
-							allConditions.push(like(muridTable.nama, `%${value}%`));
+						if (key === 'murid.nama') { // Keep key for frontend compatibility
+							allConditions.push(like(muridTable.namaArab, `%${value}%`));
 						} else if (key in nasyathTable) {
 							allConditions.push(like((nasyathTable as any)[key], `%${value}%`));
 						}
@@ -69,7 +69,6 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 		const whereClause = allConditions.length > 0 ? and(...allConditions) : undefined;
 
-		// --- Query untuk Menghitung Total Item (dengan join) ---
 		const totalItemsQuery = db
 			.select({ count: count() })
 			.from(nasyathTable)
@@ -79,13 +78,12 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		const totalItemsResult = await totalItemsQuery.get();
 		const totalItems = totalItemsResult?.count || 0;
 
-		// --- Query untuk Mengambil Data --- 
 		const orderByClauses = [];
 		if (sort && Array.isArray(sort) && sort.length > 0) {
 			sort.forEach(sortConfig => {
-				if (sortConfig.key === 'murid.nama') {
+				if (sortConfig.key === 'murid.nama') { // Keep key for frontend
 					orderByClauses.push(
-						sortConfig.direction === 'asc' ? asc(muridTable.nama) : desc(muridTable.nama)
+						sortConfig.direction === 'asc' ? asc(muridTable.namaArab) : desc(muridTable.namaArab)
 					);
 				} else if (sortConfig.key in nasyathTable) {
 					const sortColumn = (nasyathTable as any)[sortConfig.key];
@@ -95,13 +93,13 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		}
 
 		if (orderByClauses.length === 0) {
-			orderByClauses.push(desc(nasyathTable.tanggalMulai)); // Default sort
+			orderByClauses.push(desc(nasyathTable.tanggalMulai));
 		}
 
 		const query = db
 			.select({
 				...getTableColumns(nasyathTable),
-				muridNama: muridTable.nama
+				muridNama: muridTable.namaArab // Fetch the Arabic name
 			})
 			.from(nasyathTable)
 			.leftJoin(muridTable, eq(nasyathTable.muridId, muridTable.id))
@@ -112,13 +110,12 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 		const rawData = await query;
 
-		// Transformasi data agar sesuai dengan ekspektasi frontend
 		const data = rawData.map((item) => {
 			const { muridNama, ...nasyathProps } = item;
 			return {
 				...nasyathProps,
 				murid: {
-					nama: muridNama
+					nama: muridNama // Assign it to the expected 'nama' property
 				}
 			};
 		});

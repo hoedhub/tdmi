@@ -217,8 +217,26 @@
 
 					<!-- Navigasi Tab -->
 					<div role="tablist" class="tabs tabs-bordered">
-						<button role="tab" class="tab" class:tab-active={activeTab === 'permissions'} on:click={() => activeTab = 'permissions'}><Key class="h-4 w-4 mr-2"/>Izin</button>
-						<button role="tab" class="tab" class:tab-active={activeTab === 'users'} on:click={() => activeTab = 'users'}><Users class="h-4 w-4 mr-2"/>Pengguna</button>
+						<button
+							role="tab"
+							class="tab"
+							class:tab-active={activeTab === 'permissions'}
+							on:click={() => (activeTab = 'permissions')}
+						>
+							<Key class="h-4 w-4 mr-2" />
+							Izin
+							<div class="badge badge-sm ml-2">{initialPermissions.length}</div>
+						</button>
+						<button
+							role="tab"
+							class="tab"
+							class:tab-active={activeTab === 'users'}
+							on:click={() => (activeTab = 'users')}
+						>
+							<Users class="h-4 w-4 mr-2" />
+							Pengguna
+							<div class="badge badge-sm ml-2">{initialUsers.length}</div>
+						</button>
 					</div>
 
 					<!-- Konten Tab -->
