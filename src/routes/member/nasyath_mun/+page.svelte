@@ -76,7 +76,7 @@
 					formatter: (value: any, row: NasyathRow) => {
 						return row.murid?.nama || 'N/A';
 					}
-				},
+				} as ColumnDef<NasyathRow>,
 				...baseColumns
 			];
 		}

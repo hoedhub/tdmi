@@ -79,7 +79,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		worksheet.views = [{ rightToLeft: true }];
 
 		// Header
-		const headers = [
+		const headers: Partial<ExcelJS.Column>[] = [
 			{ header: 'النشاط', key: 'kegiatan', width: 40, style: { alignment: { horizontal: 'right' } } },
 			{ header: 'تاريخ البدء', key: 'tanggalMulai', width: 15, style: { alignment: { horizontal: 'center' } } },
 			{ header: 'تاريخ الانتهاء', key: 'tanggalSelesai', width: 15, style: { alignment: { horizontal: 'center' } } },
@@ -98,11 +98,11 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		worksheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' };
 
 		// Group data by Murid
-		let currentMurid = '';
+		let currentMurid: string | null = null;
 		dataToExport.forEach((row) => {
 			if (row.namaMurid !== currentMurid) {
 				currentMurid = row.namaMurid;
-				const groupRow = worksheet.addRow([currentMurid]);
+				const groupRow = worksheet.addRow([currentMurid ?? 'Tanpa Nama']);
 				worksheet.mergeCells(groupRow.number, 1, groupRow.number, headers.length);
 				groupRow.font = { bold: true, color: { argb: 'FF000000' } };
 				groupRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9E1F2' } };

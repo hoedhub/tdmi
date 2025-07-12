@@ -76,7 +76,7 @@
 	}
 
 	// --- Computed Properties ---
-	$: sortedData = sortData(filteredData, sort, internalColumns);
+	$: sortedData = sortData(filteredData, sort ?? null, internalColumns);
 	$: totalItems = serverSide ? (totalItemsProp ?? 0) : sortedData.length;
 	$: totalPageCount = calculateTotalPages(totalItems, $itemsPerPage);
 	$: displayData = serverSide ? sortedData : paginateData(sortedData, $currentPage, $itemsPerPage);

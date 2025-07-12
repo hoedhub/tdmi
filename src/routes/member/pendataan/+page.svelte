@@ -54,7 +54,7 @@
 	let loading = false;
 	let pageSize = 10;
 	let currentPage = 1;
-	let currentSort: SortConfig | undefined = undefined;
+	let currentSort: SortConfig[] | undefined = undefined;
 	let currentFilters: Record<string, any> = {};
 
 	// --- Reactive Data from Props ---
@@ -172,7 +172,7 @@
 		}
 	}
 
-	async function handleSort(event: CustomEvent<SortConfig | null>) {
+	async function handleSort(event: CustomEvent<SortConfig[] | null>) {
 		currentSort = event.detail ?? undefined;
 		await fetchTableData(currentSort, currentFilters, currentPage);
 	}
