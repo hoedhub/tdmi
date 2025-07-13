@@ -61,7 +61,19 @@
 	$: canReadMurid = data.canReadMurid;
 	$: canWriteMurid = data.canWriteMurid;
 
-		let columns: ColumnDef<Murid>[] = [
+	function calculateAge(tglLahir: string | null): number | null {
+		if (!tglLahir) return null;
+		const birthDate = new Date(tglLahir);
+		const today = new Date();
+		let age = today.getFullYear() - birthDate.getFullYear();
+		const m = today.getMonth() - birthDate.getMonth();
+		if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+			age--;
+		}
+		return age;
+	}
+
+	let columns: ColumnDef<Murid>[] = [
 		{ key: 'nama', label: 'Nama', sortable: true, filterable: 'text' },
 		{ key: 'namaArab', label: 'Nama Arab', sortable: true, filterable: 'text' },
 		{
@@ -71,6 +83,15 @@
 			filterable: 'select',
 			filterOptions: ['Pria', 'Wanita'],
 			formatter: (value: boolean) => (value ? 'Pria' : 'Wanita')
+		},
+		{
+			key: 'tglLahir',
+			label: 'Umur',
+			sortable: true,
+			formatter: (value) => {
+				const age = calculateAge(value);
+				return age !== null ? `${age} tahun` : '-';
+			}
 		},
 		{
 			key: 'marhalah',
