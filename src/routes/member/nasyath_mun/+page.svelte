@@ -237,15 +237,16 @@ a.click();
 </script>
 
 <div class="container mx-auto p-4">
-	<div class="flex justify-between items-center mb-4">
-		<h1 class="text-2xl font-bold">قائمة أنشطتي الدعوية</h1>
-		<div class="flex items-center gap-2">
+	<!-- Header Responsif -->
+	<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+		<h1 class="text-2xl font-bold text-center sm:text-left">قائمة نشاط الأعضاء</h1>
+		<div class="flex items-center justify-center sm:justify-end gap-2">
 			<button class="btn btn-secondary btn-sm" on:click={handleExport} disabled={isExporting}>
 				<Download class="h-4 w-4" />
 				{#if isExporting}
 					Mengekspor...
 				{:else}
-					Export ke Excel
+					Export
 				{/if}
 			</button>
 			<a href="/member/nasyath_mun/new" class="btn btn-primary btn-sm">
@@ -269,10 +270,11 @@ a.click();
 		on:filter={handleFilter}
 		on:pageChange={handlePageChange}
 		on:itemsPerPageChange={handleItemsPerPageChange}
-		><svelte:fragment slot="custom-filters">
-			<div class="flex items-end gap-2">
-				<!-- Filter Tanggal Mulai -->
-				<div class="form-control">
+	>
+		<svelte:fragment slot="custom-filters">
+			<!-- Filter Tanggal Responsif -->
+			<div class="flex flex-col md:flex-row md:items-end gap-2 pt-2">
+				<div class="form-control w-full md:w-auto">
 					<label for="startDate" class="label pb-1">
 						<span class="label-text">Dari Tanggal</span>
 					</label>
@@ -280,12 +282,10 @@ a.click();
 						type="date"
 						id="startDate"
 						bind:value={dateFilter.start}
-						class="input input-sm input-bordered w-full max-w-xs"
+						class="input input-sm input-bordered w-full"
 					/>
 				</div>
-
-				<!-- Filter Tanggal Selesai -->
-				<div class="form-control">
+				<div class="form-control w-full md:w-auto">
 					<label for="endDate" class="label pb-1">
 						<span class="label-text">Hingga Tanggal</span>
 					</label>
@@ -293,14 +293,12 @@ a.click();
 						type="date"
 						id="endDate"
 						bind:value={dateFilter.end}
-						class="input input-sm input-bordered w-full max-w-xs"
+						class="input input-sm input-bordered w-full"
 					/>
 				</div>
-
-				<!-- Tombol Apply & Reset -->
-				<div class="flex items-center gap-1">
-					<button class="btn btn-primary btn-sm" on:click={applyDateFilter}> Filter </button>
-					<button class="btn btn-ghost btn-sm" on:click={resetDateFilter}> Reset </button>
+				<div class="flex items-center gap-1 pt-4 md:pt-0">
+					<button class="btn btn-primary btn-sm" on:click={applyDateFilter}>Filter</button>
+					<button class="btn btn-ghost btn-sm" on:click={resetDateFilter}>Reset</button>
 				</div>
 			</div>
 		</svelte:fragment>
