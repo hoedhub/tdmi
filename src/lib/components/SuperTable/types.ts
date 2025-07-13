@@ -104,6 +104,7 @@ export interface SuperTableProps<T = any> {
     maxVisibleColumns?: number; // Max columns to show initially in mobile card view
     dbError?: boolean; // Flag to indicate if there was a DB error
     selectionMode?: SelectionMode;
+    disabledRowKeys?: (string | number)[];
 }
 
 export interface SuperTableEvents<T = any> {

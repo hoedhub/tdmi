@@ -61,7 +61,7 @@
 	$: canReadMurid = data.canReadMurid;
 	$: canWriteMurid = data.canWriteMurid;
 
-	let columns: ColumnDef[] = [
+		let columns: ColumnDef<Murid>[] = [
 		{ key: 'nama', label: 'Nama', sortable: true, filterable: 'text' },
 		{ key: 'namaArab', label: 'Nama Arab', sortable: true, filterable: 'text' },
 		{
@@ -81,10 +81,23 @@
 			formatter: (value: 1 | 2 | 3) => value.toString()
 		},
 		{ key: 'nomorTelepon', label: 'Telepon', sortable: true, filterable: 'text' },
-		{ key: 'deskelName', label: 'Deskel', sortable: true, filterable: 'text' },
-		{ key: 'kecamatanName', label: 'Kecamatan', sortable: true, filterable: 'text' },
-		{ key: 'kokabName', label: 'Kokab', sortable: true, filterable: 'text' },
-		{ key: 'propinsiName', label: 'Propinsi', sortable: true, filterable: 'text' },
+		{
+			key: 'alamat',
+			label: 'Alamat',
+			sortable: true,
+			filterable: 'text',
+			formatter: (value, row) => {
+				return [
+					value,
+					row.deskelName,
+					row.kecamatanName,
+					row.kokabName,
+					row.propinsiName
+				]
+					.filter(Boolean)
+					.join(', ');
+			}
+		},
 		{
 			key: 'aktif',
 			label: 'Aktif',

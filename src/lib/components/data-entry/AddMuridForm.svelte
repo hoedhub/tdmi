@@ -22,6 +22,7 @@
 	// --- PROPS ---
 	export let formData: FormData | undefined = undefined;
 	export let propinsiList: Propinsi[] = [];
+	export let editedMuridId: number | undefined = undefined;
 
 	// --- STATE ---
 	let countryId: string;
@@ -292,7 +293,7 @@
 		{phoneNumber}
 	/>
 
-	<IrsyadiyahForm formData={internalFormData} {handleInput} />
+	<IrsyadiyahForm formData={internalFormData} {handleInput} {editedMuridId} />
 	{#if internalFormData.muhrimData}
 		<input type="hidden" name="muhrimData" value={JSON.stringify(internalFormData.muhrimData)} />
 	{/if}

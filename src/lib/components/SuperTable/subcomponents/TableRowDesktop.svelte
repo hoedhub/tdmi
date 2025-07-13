@@ -18,6 +18,7 @@
 	export let rowKey: keyof T;
 	export let isSelectable = false;
 	export let className = '';
+	export let disabled = false;
 
 	const dispatch = createEventDispatcher<{
 		swipe: { row: T; direction: 'left' | 'right' };
@@ -27,11 +28,13 @@
 	$: isSelected = $selectedIds.has(row[rowKey]);
 
 	function handleSwipe(event: SwipeEvent) {
+		if (disabled) return;
 		event.preventDefault();
 		dispatch('swipe', { row, direction: event.detail.direction });
 	}
 
 	function handleLongPress(event: Event) {
+		if (disabled) return;
 		event.preventDefault();
 		if (isSelectable) {
 			dispatch('select', { row, selected: !isSelected });
@@ -39,6 +42,7 @@
 	}
 
 	function handleCheckboxChange(event: Event) {
+		if (disabled) return;
 		const target = event.target as HTMLInputElement;
 		dispatch('select', { row, selected: target.checked });
 	}
@@ -51,13 +55,13 @@
 <tr
 	class="group relative cursor-pointer hover:bg-base-200 [&_tbody_tr:nth-child(even)]:bg-base-200/50 {className} {isSelected
 		? 'bg-base-200'
-		: ''}"
+		: ''} {disabled ? 'disabled opacity-50 cursor-not-allowed' : ''}"
 	use:swipe
 	use:longPress
 	on:swipe={handleSwipe}
 	on:longpress={handleLongPress}
 	on:click={() => {
-		if (isSelectable) {
+		if (isSelectable && !disabled) {
 			dispatch('select', { row, selected: !isSelected });
 		}
 	}}
@@ -70,6 +74,7 @@
 				checked={isSelected}
 				aria-checked={isSelected}
 				on:change={handleCheckboxChange}
+				{disabled}
 			/>
 		</td>
 	{/if}

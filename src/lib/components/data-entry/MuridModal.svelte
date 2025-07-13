@@ -18,6 +18,7 @@
 
 	// --- Props ---
 	export let showModal = false;
+	export let editedMuridId: number | undefined = undefined;
 
 	// --- State ---
 	let muridData: Murid[] = [];
@@ -59,7 +60,7 @@
 			const response = await fetch('/member/pendataan/table', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ sort, filters, page, pageSize })
+				body: JSON.stringify({ sort, filters, page, pageSize, excludeId: editedMuridId })
 			});
 
 			if (!response.ok) throw new Error('Failed to fetch murid data');
@@ -143,6 +144,7 @@
 					on:itemsPerPageChange={handleItemsPerPageChange}
 					on:selectionChange={handleSelect}
 					dbError={hasDbError}
+					disabledRowKeys={editedMuridId ? [editedMuridId] : []}
 				>
 					<svelte:fragment slot="error-state">
 						<div class="p-8 text-center text-error">

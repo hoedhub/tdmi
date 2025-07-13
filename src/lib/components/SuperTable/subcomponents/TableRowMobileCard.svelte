@@ -21,6 +21,7 @@
 	export let cardClass = '';
 	export let className = '';
 	export let maxVisibleColumns: number | undefined = undefined;
+	export let disabled = false;
 
 	const dispatch = createEventDispatcher<{
 		swipe: { row: T; direction: 'left' | 'right' };
@@ -72,6 +73,7 @@
 	// }
 
 	function handleLongPress(event: Event) {
+		if (disabled) return;
 		event.preventDefault();
 		if (isSelectable) {
 			dispatch('select', { row, selected: !isSelected });
@@ -84,7 +86,9 @@
 </script>
 
 <div
-	class="card {cardClass} {className} {isSelected ? 'ring-2 ring-primary' : ''}"
+	class="card {cardClass} {className} {isSelected ? 'ring-2 ring-primary' : ''} {disabled
+		? 'disabled opacity-50 cursor-not-allowed'
+		: ''}"
 	use:swipe
 	use:longPress
 	on:longpress={handleLongPress}
@@ -98,7 +102,12 @@
 					class="checkbox"
 					checked={isSelected}
 					aria-checked={isSelected}
-					on:change={() => dispatch('select', { row, selected: !isSelected })}
+					on:change={() => {
+						if (!disabled) {
+							dispatch('select', { row, selected: !isSelected });
+						}
+					}}
+					{disabled}
 				/>
 			</div>
 		{/if}

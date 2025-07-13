@@ -4,6 +4,7 @@
 
 	export let formData: MuridFormData['formData'];
 	export let handleInput: () => void;
+	export let editedMuridId: number | undefined = undefined;
 </script>
 
 <fieldset class="space-y-4 rounded-lg border border-base-300 p-4">
@@ -14,6 +15,7 @@
 			<RelatedMurid
 				placeholder="Pilih murid terkait"
 				initialData={formData.muhrimId && formData.muhrimData ? { id: formData.muhrimId, nama: formData.muhrimData.nama } : undefined}
+				{editedMuridId}
 				on:change={({ detail }) => {
 					formData.muhrimId = detail.selectedId;
 					formData.muhrimData = {
@@ -36,6 +38,7 @@
 		<RelatedMurid
 			placeholder="Pilih murid terkait"
 			initialData={formData.mursyidId && formData.mursyidData ? { id: formData.mursyidId, nama: formData.mursyidData.nama } : undefined}
+			{editedMuridId}
 			on:change={({ detail }) => {
 				formData.mursyidId = detail.selectedId;
 				formData.mursyidData = {
@@ -57,6 +60,7 @@
 		<RelatedMurid
 			placeholder="Pilih murid terkait"
 			initialData={formData.baiatId && formData.baiatData ? { id: formData.baiatId, nama: formData.baiatData.nama } : undefined}
+			{editedMuridId}
 			on:change={({ detail }) => {
 				formData.baiatId = detail.selectedId;
 				formData.baiatData = {
@@ -78,6 +82,7 @@
 		<RelatedMurid
 			placeholder="Pilih murid terkait"
 			initialData={formData.wiridId && formData.wiridData ? { id: formData.wiridId, nama: formData.wiridData.nama } : undefined}
+			{editedMuridId}
 			on:change={({ detail }) => {
 				formData.wiridId = detail.selectedId;
 				formData.wiridData = {

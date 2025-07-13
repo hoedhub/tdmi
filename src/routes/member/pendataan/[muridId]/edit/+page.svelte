@@ -76,7 +76,7 @@
           - `fotoUrl` berisi string URL gambar (atau null)
           Ini akan cocok dengan prop yang diharapkan oleh AddMuridForm.
         -->
-				<AddMuridForm formData={initialFormData} />
+				<AddMuridForm formData={initialFormData} editedMuridId={data.murid.id} />
 			{:else}
 				<div class="flex items-center justify-center p-8">
 					<span class="loading loading-spinner loading-lg"></span>

@@ -14,6 +14,7 @@
 	export let placeholder: string = 'Pilih murid';
 	export let disabled: boolean = false;
 	export let initialData: { id: number; nama: string } | null | undefined = null;
+	export let editedMuridId: number | undefined = undefined;
 
 	// State
 	let showModal = false;
@@ -85,4 +86,4 @@
 	{/if}
 </div>
 
-<MuridModal {showModal} on:select={handleSelect} on:close={() => (showModal = false)} />
+<MuridModal {showModal} {editedMuridId} on:select={handleSelect} on:close={() => (showModal = false)} />

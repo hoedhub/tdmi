@@ -32,8 +32,8 @@
 	export let serverSide = false;
 	export let dbError: Props['dbError'] = false;
 	export let maxVisibleColumns: Props['maxVisibleColumns'] = 5;
-
 	export let selectionMode: Props['selectionMode'] = 'multiple';
+	export let disabledRowKeys: Props['disabledRowKeys'] = [];
 
 	const dispatch = createEventDispatcher();
 
@@ -399,6 +399,7 @@
 							{maxVisibleColumns}
 							on:select={handleSelect}
 							on:swipe={handleSwipe}
+							disabled={(disabledRowKeys || []).includes(row[rowKey])}
 						>
 							<svelte:fragment slot="row-actions" let:row>
 								<slot name="row-actions" {row} />
@@ -462,6 +463,7 @@
 										className={typeof rowClass === 'function' ? rowClass(row) : rowClass}
 										on:select={handleSelect}
 										on:swipe={handleSwipe}
+										disabled={(disabledRowKeys || []).includes(row[rowKey])}
 									>
 										<svelte:fragment slot="row-actions" let:row>
 											<slot name="row-actions" {row} />

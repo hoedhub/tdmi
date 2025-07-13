@@ -17,7 +17,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
         throw error(403, 'Akses Ditolak. Anda tidak memiliki izin untuk melihat data murid.');
     }
 
-    const { sort, filters, page, pageSize } = await request.json();
+    const { sort, filters, page, pageSize, excludeId } = await request.json();
 
     const offset = (page - 1) * pageSize;
 
@@ -71,6 +71,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
         // Apply filters
         const conditions: any[] = [];
+        if (excludeId) {
+            conditions.push(sql`${muridTable.id} != ${excludeId}`);
+        }
         if (filters) {
             if (filters.global) {
                 const globalSearch = `%${filters.global}%`;
@@ -93,14 +96,11 @@ export const POST: RequestHandler = async ({ request, locals }) => {
                             conditions.push(eq(muridTable.marhalah, parseInt(value) as (1 | 2 | 3)));
                         } 
                         // Handle territory name filters
-                        else if (key === 'propinsiName') {
-                            conditions.push(like(propTable.propinsi, `%${value}%`));
-                        } else if (key === 'kokabName') {
-                            conditions.push(like(kokabTable.kokab, `%${value}%`));
-                        } else if (key === 'kecamatanName') {
-                            conditions.push(like(kecamatanTable.kecamatan, `%${value}%`));
-                        } else if (key === 'deskelName') {
-                            conditions.push(like(deskelTable.deskel, `%${value}%`));
+                        else if (key === 'alamat') {
+                            const searchVal = `%${value}%`;
+                            conditions.push(
+                                sql`(${muridTable.alamat} LIKE ${searchVal} OR ${deskelTable.deskel} LIKE ${searchVal} OR ${kecamatanTable.kecamatan} LIKE ${searchVal} OR ${kokabTable.kokab} LIKE ${searchVal} OR ${propTable.propinsi} LIKE ${searchVal})`
+                            );
                         }
                         // Handle general text search on specific muridTable columns
                         else if (key === 'nama' || key === 'namaArab' || key === 'nomorTelepon' || key === 'nik') {
@@ -140,10 +140,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
             sort.forEach(sortConfig => {
                 let sortColumn;
                 switch (sortConfig.key) {
-                    case 'deskelName': sortColumn = deskelTable.deskel; break;
-                    case 'kecamatanName': sortColumn = kecamatanTable.kecamatan; break;
-                    case 'kokabName': sortColumn = kokabTable.kokab; break;
-                    case 'propinsiName': sortColumn = propTable.propinsi; break;
+                    case 'alamat': sortColumn = muridTable.alamat; break;
                     default: sortColumn = (muridTable as any)[sortConfig.key]; break;
                 }
 
