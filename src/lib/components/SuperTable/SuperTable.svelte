@@ -396,7 +396,7 @@
 					<table class="table table-sm w-full {tableClass}">
 						<TableHeader
 							columns={internalColumns}
-							currentSort={sort ?? null} 
+							currentSort={sort ?? null}
 							filterValues={$filterState.columns}
 							isSelectable={true}
 							{allSelected}
@@ -408,38 +408,34 @@
 						/>
 						<tbody>
 							{#if dbError}
-								<slot name="error-state">
-									<tr>
-										<td
-											colspan={internalColumns.filter((c) => !c.hidden).length + 2}
-											class="p-8 text-center text-error"
-										>
-											Gagal memuat data. Silakan coba lagi.
-										</td>
-									</tr>
-								</slot>
+								<tr>
+									<td
+										colspan={internalColumns.filter((c) => !c.hidden).length + 2}
+										class="p-8 text-center text-error"
+									>
+										<slot name="error-state">Gagal memuat data. Silakan coba lagi.</slot>
+									</td>
+								</tr>
 							{:else if $isLoading}
-								<slot name="loading-state">
-									<tr>
-										<td
-											colspan={internalColumns.filter((c) => !c.hidden).length + 2}
-											class="p-8 text-center"
-										>
+								<tr>
+									<td
+										colspan={internalColumns.filter((c) => !c.hidden).length + 2}
+										class="p-8 text-center"
+									>
+										<slot name="loading-state">
 											<span class="loading loading-spinner" />
-										</td>
-									</tr>
-								</slot>
+										</slot>
+									</td>
+								</tr>
 							{:else if data.length === 0}
-								<slot name="empty-state">
-									<tr>
-										<td
-											colspan={internalColumns.filter((c) => !c.hidden).length + 2}
-											class="p-8 text-center text-base-content/70"
-										>
-											No data available
-										</td>
-									</tr>
-								</slot>
+								<tr>
+									<td
+										colspan={internalColumns.filter((c) => !c.hidden).length + 2}
+										class="p-8 text-center text-base-content/70"
+									>
+										<slot name="empty-state">No data available</slot>
+									</td>
+								</tr>
 							{:else}
 								{#each displayData as row (String(row[rowKey]))}
 									<TableRowDesktop
