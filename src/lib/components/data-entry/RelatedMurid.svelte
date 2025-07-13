@@ -1,11 +1,13 @@
 <script lang="ts">
 	import { onMount, createEventDispatcher } from 'svelte';
-	import type { InferSelectModel } from 'drizzle-orm';
-	import { muridTable } from '$lib/drizzle/schema';
 	import MuridModal from './MuridModal.svelte';
 
-	// Types
-	type Murid = InferSelectModel<typeof muridTable>;
+	// Types for the data received from the modal
+	interface ModalMurid {
+		id: number;
+		nama: string;
+		// Add other properties from the modal's Murid type if needed
+	}
 
 	// Props
 	export let className: string = '';
@@ -22,7 +24,7 @@
 		clear: undefined;
 	}>();
 
-	function handleSelect(event: CustomEvent<Murid>) {
+	function handleSelect(event: CustomEvent<ModalMurid>) {
 		const murid = event.detail;
 		selectedMurid = { id: murid.id, nama: murid.nama };
 		dispatch('change', { selectedId: murid.id, selectedName: murid.nama });
