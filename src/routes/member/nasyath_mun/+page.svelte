@@ -9,6 +9,7 @@
 	import { success, error } from '$lib/components/toast';
 	import type { ActionResult } from '@sveltejs/kit';
 	import type { PageData } from './$types';
+	import { toHindi } from '$lib/utils/toHindi';
 
 	// 2. PROPS
 	export let data: PageData;
@@ -35,7 +36,7 @@
 	let currentPage = 1;
 	let currentSort: SortConfig[] | undefined = [
 		{ key: 'murid.nama', direction: 'asc' },
-		{ key: 'tanggalMulai', direction: 'desc' }
+		{ key: 'tanggalMulai', direction: 'asc' }
 	];
 	let currentFilters: FilterState = { global: '', columns: {} };
 	let dateFilter: { start: string; end: string } = {
@@ -52,17 +53,35 @@
 				key: 'tanggalMulai',
 				label: 'تاريخ البدء',
 				sortable: true,
-				formatter: (value: string | Date) =>
-					value ? new Date(value).toLocaleDateString('id-ID') : '-'
+				formatter: (value: any, row: NasyathRow) => {
+					if (!value) return '-';
+					const date = new Date(value);
+					const day = toHindi(date.getDate());
+					const month = toHindi(date.getMonth() + 1);
+					const year = toHindi(date.getFullYear());
+					return `${day}/${month}/${year}`;
+				}
 			},
 			{
 				key: 'tanggalSelesai',
 				label: 'تاريخ الانتهاء',
 				sortable: true,
-				formatter: (value: string | Date | null) =>
-					value ? new Date(value).toLocaleDateString('id-ID') : '-'
+				formatter: (value: any, row: NasyathRow) => {
+					if (!value) return '-';
+					const date = new Date(value);
+					const day = toHindi(date.getDate());
+					const month = toHindi(date.getMonth() + 1);
+					const year = toHindi(date.getFullYear());
+					return `${day}/${month}/${year}`;
+				}
 			},
-			{ key: 'durasi', label: 'المدة', sortable: true, filterable: 'text' },
+			{
+				key: 'durasi',
+				label: 'المدة',
+				sortable: true,
+				filterable: 'text',
+				formatter: (value: any) => toHindi(value)
+			},
 			{ key: 'tempat', label: 'المكان', sortable: true, filterable: 'text' }
 		];
 
@@ -180,7 +199,7 @@
 			const response = await fetch('/member/nasyath_mun/export', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ sort: currentSort, filters: currentFilters })
+				body: JSON.stringify({ sort: currentSort, filters: { ...currentFilters, dateRange: dateFilter } })
 			});
 
 			if (!response.ok) {

@@ -93,13 +93,15 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		}
 
 		if (orderByClauses.length === 0) {
-			orderByClauses.push(desc(nasyathTable.tanggalMulai));
+			orderByClauses.push(asc(nasyathTable.tanggalMulai));
 		}
 
 		const query = db
 			.select({
 				...getTableColumns(nasyathTable),
-				muridNama: muridTable.namaArab // Fetch the Arabic name
+				murid: {
+					nama: muridTable.namaArab
+				}
 			})
 			.from(nasyathTable)
 			.leftJoin(muridTable, eq(nasyathTable.muridId, muridTable.id))
@@ -108,17 +110,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			.limit(isCetak ? 9999 : pageSize)
 			.offset(isCetak ? 0 : offset);
 
-		const rawData = await query;
-
-		const data = rawData.map((item) => {
-			const { muridNama, ...nasyathProps } = item;
-			return {
-				...nasyathProps,
-				murid: {
-					nama: muridNama // Assign it to the expected 'nama' property
-				}
-			};
-		});
+		const data = await query.all();
 
 		return json({
 			data,
