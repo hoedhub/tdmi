@@ -126,7 +126,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 		let currentMurid: string | null = null;
 		dataToExport.forEach((row) => {
-			const namaMurid = row.murid?.nama;
+			const namaMurid = row.murid?.nama ?? null;
 			if (namaMurid !== currentMurid) {
 				currentMurid = namaMurid;
 				const groupRow = worksheet.addRow([currentMurid ?? 'Tanpa Nama']);

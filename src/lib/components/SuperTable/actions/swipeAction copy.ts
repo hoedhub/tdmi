@@ -1,6 +1,6 @@
 import type { SwipeEvent } from '../types';
 
-// Opsi tetap sama
+// Swipe action for mobile row actions
 interface SwipeOptions {
     threshold?: number;
     maxTime?: number;
@@ -13,8 +13,8 @@ interface SwipeOptions {
 
 export function swipe(node: HTMLElement, options: SwipeOptions = {}) {
     const {
-        threshold = 50, // threshold bisa sedikit dikurangi karena kita punya deteksi yang lebih baik
-        maxTime = 500,
+        threshold = 200, // Increased from 50 to 200 for less sensitivity
+        maxTime = 300,
         disableScroll = true,
         triggerPercent = 0.4,
         onSwipeStart,
@@ -22,17 +22,12 @@ export function swipe(node: HTMLElement, options: SwipeOptions = {}) {
         onSwipeCancel
     } = options;
 
-    // --- State Baru untuk Mengunci Arah & Zona Mati ---
     let startX = 0;
     let startY = 0;
     let startTime = 0;
     let translateX = 0;
     let isAnimating = false;
     let elementWidth = node.offsetWidth;
-
-    // BARU: State untuk mengunci arah gerakan
-    let lockDirection: 'horizontal' | 'vertical' | null = null;
-    const deadZone = 10; // Abaikan 10px pertama gerakan untuk mencegah getaran kecil
 
     function dispatchSwipeEvent(direction: 'left' | 'right') {
         const event = new CustomEvent('swipe', {
@@ -51,91 +46,64 @@ export function swipe(node: HTMLElement, options: SwipeOptions = {}) {
         startTime = Date.now();
         isAnimating = true;
 
-        // BARU: Reset kunci arah setiap kali sentuhan baru dimulai
-        lockDirection = null;
-
-        // Reset transisi untuk pergerakan langsung
+        // Reset any existing translation
         node.style.transition = 'none';
     }
 
-    // DIUBAH: Logika inti dipindahkan ke sini
     function handleTouchMove(event: TouchEvent) {
         if (!startTime || event.touches.length !== 1) return;
 
         const touch = event.touches[0];
         const diffX = touch.clientX - startX;
-        const diffY = touch.clientY - startY;
-
-        // --- Tahap 1: Tentukan & Kunci Arah ---
-        if (lockDirection === null) {
-            // Hitung total jarak dari titik awal
-            const distance = Math.sqrt(diffX * diffX + diffY * diffY);
-
-            // Jika masih di dalam zona mati, jangan lakukan apa-apa
-            if (distance < deadZone) {
-                return;
-            }
-
-            // Keluar dari zona mati, sekarang putuskan arahnya
-            if (Math.abs(diffY) > Math.abs(diffX)) {
-                // Gerakan dominan vertikal -> Kunci ke mode scroll
-                lockDirection = 'vertical';
-            } else {
-                // Gerakan dominan horizontal -> Kunci ke mode swipe
-                lockDirection = 'horizontal';
-                onSwipeStart?.(); // Panggil callback jika ada
-            }
-        }
-
-        // --- Tahap 2: Lakukan Aksi Berdasarkan Arah yang Dikunci ---
-        if (lockDirection === 'vertical') {
-            // Jika terkunci vertikal, biarkan browser melakukan scroll.
-            // Jangan lakukan apa-apa di sini.
+        const diffY = Math.abs(touch.clientY - startY);            // If vertical scrolling is detected, cancel swipe
+        if (diffY > Math.abs(diffX)) {
+            startX = 0;
+            isAnimating = false;
+            onSwipeCancel?.();
             return;
         }
 
-        // Jika sampai di sini, artinya lockDirection === 'horizontal'
-        // Cegah browser melakukan scroll karena kita sudah berkomitmen untuk swipe
+        // Prevent scrolling if disableScroll is true
         if (disableScroll) {
             event.preventDefault();
         }
 
-        // Terapkan pergeseran visual (logika lama Anda)
+        // Constrain the translation to element width
         translateX = Math.max(-elementWidth, Math.min(elementWidth, diffX));
         const percent = translateX / elementWidth;
+
         node.style.transform = `translateX(${translateX}px)`;
         onSwipeMove?.(percent);
+
+        // Add resistance at the edges
+        if (Math.abs(translateX) > elementWidth * 0.6) {
+            translateX = elementWidth * 0.6 * Math.sign(translateX);
+        }
     }
 
     function handleTouchEnd(event: TouchEvent) {
         if (!startTime || event.changedTouches.length !== 1) return;
-
-        // BARU: Hanya proses akhir swipe jika arahnya horizontal
-        if (lockDirection !== 'horizontal') {
-            resetPosition(); // Pastikan elemen kembali ke posisi semula jika itu scroll
-            return;
-        }
 
         const touch = event.changedTouches[0];
         const deltaX = touch.clientX - startX;
         const deltaTime = Date.now() - startTime;
         const percentMoved = Math.abs(deltaX) / elementWidth;
 
-        // Logika lama Anda untuk menentukan apakah swipe berhasil
-        if ((deltaTime <= maxTime && Math.abs(deltaX) >= threshold) || percentMoved >= triggerPercent) {
+        if (deltaTime <= maxTime && Math.abs(deltaX) >= threshold) {
+            const direction = deltaX > 0 ? 'right' : 'left';
+            dispatchSwipeEvent(direction);
+        } else if (percentMoved >= triggerPercent) {
             const direction = deltaX > 0 ? 'right' : 'left';
             dispatchSwipeEvent(direction);
         } else {
             onSwipeCancel?.();
         }
 
-        // Selalu reset posisi pada akhirnya
+        startTime = 0;
         resetPosition();
-        startTime = 0; // Reset startTime untuk memastikan handleTouchMove tidak berjalan lagi
     }
 
     function resetPosition() {
-        // Fungsi ini tidak perlu diubah
         isAnimating = true;
         node.style.transform = `translateX(0)`;
         node.style.transition = 'transform 0.2s ease-out';
@@ -149,6 +117,7 @@ export function swipe(node: HTMLElement, options: SwipeOptions = {}) {
         elementWidth = node.offsetWidth;
     }
 
+    // Add event listeners
     node.addEventListener('touchstart', handleTouchStart, { passive: true });
     node.addEventListener('touchmove', handleTouchMove, { passive: !disableScroll });
     node.addEventListener('touchend', handleTouchEnd);
