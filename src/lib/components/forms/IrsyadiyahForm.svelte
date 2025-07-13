@@ -13,13 +13,13 @@
 			<label for="muhrim">Muhrim</label>
 			<RelatedMurid
 				placeholder="Pilih murid terkait"
-				initialData={formData.muhrimData}
+				initialData={formData.muhrimData ? { id: formData.muhrimId, nama: formData.muhrimData.nama } : undefined}
 				on:change={({ detail }) => {
-					formData.muhrimId = detail.newMuridData.id;
+					formData.muhrimId = detail.selectedId;
 					formData.muhrimData = {
-						id: detail.newMuridData.id,
-						nama: detail.newMuridData.nama,
-						nomorTelepon: detail.newMuridData.nomorTelepon
+						id: detail.selectedId,
+						nama: detail.selectedName,
+						nomorTelepon: '' // nomorTelepon is not available in the new setup
 					};
 					handleInput();
 				}}
@@ -35,13 +35,13 @@
 		<label for="mursyid">Mursyid{formData.gender ? '' : 'ah'}</label>
 		<RelatedMurid
 			placeholder="Pilih murid terkait"
-			initialData={formData.mursyidData}
+			initialData={formData.mursyidData ? { id: formData.mursyidId, nama: formData.mursyidData.nama } : undefined}
 			on:change={({ detail }) => {
-				formData.mursyidId = detail.newMuridData.id;
+				formData.mursyidId = detail.selectedId;
 				formData.mursyidData = {
-					id: detail.newMuridData.id,
-					nama: detail.newMuridData.nama,
-					nomorTelepon: detail.newMuridData.nomorTelepon
+					id: detail.selectedId,
+					nama: detail.selectedName,
+					nomorTelepon: ''
 				};
 				handleInput();
 			}}
@@ -56,13 +56,13 @@
 		<label for="baiat">Baiat</label>
 		<RelatedMurid
 			placeholder="Pilih murid terkait"
-			initialData={formData.baiatData}
+			initialData={formData.baiatData ? { id: formData.baiatId, nama: formData.baiatData.nama } : undefined}
 			on:change={({ detail }) => {
-				formData.baiatId = detail.newMuridData.id;
+				formData.baiatId = detail.selectedId;
 				formData.baiatData = {
-					id: detail.newMuridData.id,
-					nama: detail.newMuridData.nama,
-					nomorTelepon: detail.newMuridData.nomorTelepon
+					id: detail.selectedId,
+					nama: detail.selectedName,
+					nomorTelepon: ''
 				};
 				handleInput();
 			}}
@@ -77,13 +77,13 @@
 		<label for="wirid">Wirid</label>
 		<RelatedMurid
 			placeholder="Pilih murid terkait"
-			initialData={formData.wiridData}
+			initialData={formData.wiridData ? { id: formData.wiridId, nama: formData.wiridData.nama } : undefined}
 			on:change={({ detail }) => {
-				formData.wiridId = detail.newMuridData.id;
+				formData.wiridId = detail.selectedId;
 				formData.wiridData = {
-					id: detail.newMuridData.id,
-					nama: detail.newMuridData.nama,
-					nomorTelepon: detail.newMuridData.nomorTelepon
+					id: detail.selectedId,
+					nama: detail.selectedName,
+					nomorTelepon: ''
 				};
 				handleInput();
 			}}

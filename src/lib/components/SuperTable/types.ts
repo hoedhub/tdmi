@@ -85,6 +85,8 @@ export interface ColumnDef<T = any> {
     filterOptions?: FilterOption[];
 }
 
+export type SelectionMode = 'single' | 'multiple';
+
 // Props & Events
 export interface SuperTableProps<T = any> {
     data: T[];
@@ -101,6 +103,7 @@ export interface SuperTableProps<T = any> {
     serverSide?: boolean;  // Whether filtering/sorting/pagination is handled by the server
     maxVisibleColumns?: number; // Max columns to show initially in mobile card view
     dbError?: boolean; // Flag to indicate if there was a DB error
+    selectionMode?: SelectionMode;
 }
 
 export interface SuperTableEvents<T = any> {

@@ -33,6 +33,8 @@
 	export let dbError: Props['dbError'] = false;
 	export let maxVisibleColumns: Props['maxVisibleColumns'] = 5;
 
+	export let selectionMode: Props['selectionMode'] = 'multiple';
+
 	const dispatch = createEventDispatcher();
 
 	// --- State Management ---
@@ -179,24 +181,36 @@
 	}
 
 	function handleSelectAll(event: CustomEvent<{ selected: boolean }>) {
-		const newSelectedIds = new Set($selectedIds);
-		if (event.detail.selected) {
-			displayData.forEach((row) => newSelectedIds.add(row[rowKey]));
-		} else {
-			displayData.forEach((row) => newSelectedIds.delete(row[rowKey]));
+		if (selectionMode === 'multiple') {
+			const newSelectedIds = new Set($selectedIds);
+			if (event.detail.selected) {
+				displayData.forEach((row) => newSelectedIds.add(row[rowKey]));
+			} else {
+				displayData.forEach((row) => newSelectedIds.delete(row[rowKey]));
+			}
+			$selectedIds = newSelectedIds;
+			dispatch('selectionChange', Array.from(newSelectedIds));
 		}
-		$selectedIds = newSelectedIds;
-		dispatch('selectionChange', Array.from(newSelectedIds));
 	}
 
 	function handleSelect(event: CustomEvent<{ row: T; selected: boolean }>) {
 		const { row, selected } = event.detail;
-		const newSelectedIds = new Set($selectedIds);
-		if (selected) {
-			newSelectedIds.add(row[rowKey]);
+		let newSelectedIds: Set<any>;
+
+		if (selectionMode === 'single') {
+			newSelectedIds = new Set();
+			if (selected) {
+				newSelectedIds.add(row[rowKey]);
+			}
 		} else {
-			newSelectedIds.delete(row[rowKey]);
+			newSelectedIds = new Set($selectedIds);
+			if (selected) {
+				newSelectedIds.add(row[rowKey]);
+			} else {
+				newSelectedIds.delete(row[rowKey]);
+			}
 		}
+
 		$selectedIds = newSelectedIds;
 		dispatch('selectionChange', Array.from(newSelectedIds));
 	}
@@ -222,10 +236,12 @@
 	}
 
 	function selectAllOnPage() {
-		const newSelectedIds = new Set($selectedIds);
-		displayData.forEach((row) => newSelectedIds.add(row[rowKey]));
-		$selectedIds = newSelectedIds;
-		dispatch('selectionChange', Array.from(newSelectedIds));
+		if (selectionMode === 'multiple') {
+			const newSelectedIds = new Set($selectedIds);
+			displayData.forEach((row) => newSelectedIds.add(row[rowKey]));
+			$selectedIds = newSelectedIds;
+			dispatch('selectionChange', Array.from(newSelectedIds));
+		}
 	}
 
 	function handleDeleteSelected() {
@@ -321,7 +337,7 @@
 					{/if}
 
 					<!-- Bulk Selection Actions -->
-					{#if $selectedIds.size > 0}
+					{#if selectionMode === 'multiple' && $selectedIds.size > 0}
 						<div class="flex flex-grow flex-wrap items-center justify-end gap-x-4 gap-y-2">
 							<div class="flex items-center gap-1">
 								<span class="text-sm text-base-content/70">{$selectedIds.size} selected</span>
