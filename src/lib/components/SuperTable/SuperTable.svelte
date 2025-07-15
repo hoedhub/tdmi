@@ -13,7 +13,8 @@
 	import TableRowMobileCard from './subcomponents/TableRowMobileCard.svelte';
 	import PaginationControls from './subcomponents/PaginationControls.svelte';
 	import FilterInput from './subcomponents/FilterInput.svelte';
-	import { XCircle, Trash2, Columns, Funnel } from 'lucide-svelte';
+	import SortModal from './subcomponents/SortModal.svelte';
+	import { XCircle, Trash2, Columns, Funnel, ArrowUpDown } from 'lucide-svelte';
 
 	// Props
 	type Props = SuperTableProps<T>;
@@ -41,6 +42,7 @@
 	let internalColumns: ColumnDef<T>[] = [];
 	let filteredData: T[] = [];
 	let isFilterDrawerOpen = false;
+	let isSortModalOpen = false;
 	let filterTimeout: NodeJS.Timeout;
 	const FILTER_DEBOUNCE_MS = 300;
 
@@ -253,9 +255,22 @@
 			col.key === key ? { ...col, hidden: !col.hidden } : col
 		);
 	}
+
+	function handleSortSave(event: CustomEvent<SortConfig[]>) {
+		const newSortState = event.detail;
+		dispatch('sort', newSortState.length > 0 ? newSortState : null);
+	}
 </script>
 
 <svelte:window on:resize={onResize} />
+
+<SortModal
+	isOpen={isSortModalOpen}
+	columns={internalColumns}
+	currentSorts={sort}
+	on:close={() => (isSortModalOpen = false)}
+	on:save={handleSortSave}
+/>
 
 <div class="w-full space-y-1">
 	<!-- Bulk actions and global filter section -->
@@ -312,6 +327,13 @@
 								</li>
 							{/each}
 						</ul>
+					</div>
+
+					<!-- Sort Modal Button -->
+					<div class="tooltip tooltip-bottom" data-tip="Manage sort">
+						<button class="btn btn-sm btn-ghost btn-circle" on:click={() => (isSortModalOpen = true)}>
+							<ArrowUpDown class="h-4 w-4" />
+						</button>
 					</div>
 
 					<!-- Mobile Filter Drawer Button -->
