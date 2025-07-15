@@ -267,7 +267,7 @@
 <SortModal
 	isOpen={isSortModalOpen}
 	columns={internalColumns}
-	currentSorts={sort}
+	currentSorts={sort || []}
 	on:close={() => (isSortModalOpen = false)}
 	on:save={handleSortSave}
 />

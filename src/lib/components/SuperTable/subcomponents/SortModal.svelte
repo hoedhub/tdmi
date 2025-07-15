@@ -1,5 +1,5 @@
 <script lang="ts" generics="T extends Record<string, any>">
-	import { createEventDispatcher } from 'svelte';
+	import { createEventDispatcher, onMount, onDestroy } from 'svelte';
 	import type { ColumnDef, SortConfig } from '../types';
 	import { ArrowDown, ArrowUp, GripVertical, Trash2 } from 'lucide-svelte';
 
@@ -12,10 +12,32 @@
 
 	let internalSorts: InternalSortConfig[] = [];
 	let nextId = 0;
+	let dialog: HTMLDialogElement;
+
+	onMount(() => {
+		if (isOpen) {
+			dialog.showModal();
+			initializeState();
+		}
+		window.addEventListener('keydown', handleKeydown);
+	});
+
+	onDestroy(() => {
+		window.removeEventListener('keydown', handleKeydown);
+	});
 
 	// When the modal opens, initialize the internal state.
-	$: if (isOpen) {
+	$: if (isOpen && dialog) {
+		dialog.showModal();
 		initializeState();
+	} else if (!isOpen && dialog) {
+		dialog.close();
+	}
+
+	function handleKeydown(event: KeyboardEvent) {
+		if (isOpen && event.key === 'Escape') {
+			close();
+		}
 	}
 
 	function initializeState() {
@@ -98,71 +120,69 @@
 	}
 </script>
 
-{#if isOpen}
-	<div class="modal modal-open" role="dialog" on:click={close}>
-		<div class="modal-box" role="document" on:click|stopPropagation>
-			<h3 class="text-lg font-bold">Manage Sorting</h3>
-			<button class="btn btn-circle btn-ghost btn-sm absolute right-2 top-2" on:click={close}
-				>×</button
-			>
+<dialog bind:this={dialog} class="modal" on:close={close}>
+	<div class="modal-box" role="document">
+		<h3 class="text-lg font-bold" id="sort-modal-title">Manage Sorting</h3>
+		<form method="dialog">
+			<button class="btn btn-circle btn-ghost btn-sm absolute right-2 top-2">×</button>
+		</form>
 
-			<div class="divider my-2"></div>
+		<div class="divider my-2"></div>
 
-			<div class="space-y-3 py-4">
-				{#if internalSorts.length === 0}
-					<p class="text-center text-base-content/70">No sort conditions applied.</p>
-				{/if}
-				{#each internalSorts as sort, index (sort.id)}
-					<div
-						class="flex items-center gap-2 rounded-lg border border-base-300 p-2"
-						draggable="true"
-						on:dragstart={() => onDragStart(index)}
-						on:dragover={onDragOver}
-						on:drop={() => onDrop(index)}
+		<div class="space-y-3 py-4" role="list">
+			{#if internalSorts.length === 0}
+				<p class="text-center text-base-content/70">No sort conditions applied.</p>
+			{/if}
+			{#each internalSorts as sort, index (sort.id)}
+				<div
+					class="flex items-center gap-2 rounded-lg border border-base-300 p-2"
+					role="listitem"
+					draggable="true"
+					on:dragstart={() => onDragStart(index)}
+					on:dragover={onDragOver}
+					on:drop={() => onDrop(index)}
+				>
+					<button class="btn btn-ghost btn-sm cursor-move px-1">
+						<GripVertical class="h-5 w-5 text-base-content/50" />
+					</button>
+
+					<select class="select select-bordered select-sm w-full flex-grow" bind:value={sort.key}>
+						{#each columns.filter((c) => c.sortable) as col (col.key)}
+							<option
+								value={col.key}
+								disabled={internalSorts.some((s, i) => i !== index && s.key === col.key)}
+							>
+								{col.label}
+							</option>
+						{/each}
+					</select>
+
+					<button
+						class="btn btn-ghost btn-sm btn-circle"
+						on:click={() => toggleDirection(index)}
+						aria-label="Toggle sort direction"
 					>
-						<button class="btn btn-ghost btn-sm cursor-move px-1">
-							<GripVertical class="h-5 w-5 text-base-content/50" />
-						</button>
+						{#if sort.direction === 'asc'}
+							<ArrowUp class="h-5 w-5" />
+						{:else}
+							<ArrowDown class="h-5 w-5" />
+						{/if}
+					</button>
 
-						<select
-							class="select select-bordered select-sm w-full flex-grow"
-							bind:value={sort.key}
-						>
-							{#each columns.filter((c) => c.sortable) as col (col.key)}
-								<option
-									value={col.key}
-									disabled={internalSorts.some((s, i) => i !== index && s.key === col.key)}
-								>
-									{col.label}
-								</option>
-							{/each}
-						</select>
+					<button class="btn btn-ghost btn-sm text-error" on:click={() => removeSort(index)}>
+						<Trash2 class="h-4 w-4" />
+					</button>
+				</div>
+			{/each}
+		</div>
 
-						<button
-							class="btn btn-ghost btn-sm btn-circle"
-							on:click={() => toggleDirection(index)}
-							aria-label="Toggle sort direction"
-						>
-							{#if sort.direction === 'asc'}
-								<ArrowUp class="h-5 w-5" />
-							{:else}
-								<ArrowDown class="h-5 w-5" />
-							{/if}
-						</button>
+		<button class="btn btn-primary btn-sm w-full" on:click={addSort}>+ Add Sort Level</button>
 
-						<button class="btn btn-ghost btn-sm text-error" on:click={() => removeSort(index)}>
-							<Trash2 class="h-4 w-4" />
-						</button>
-					</div>
-				{/each}
-			</div>
-
-			<button class="btn btn-primary btn-sm w-full" on:click={addSort}>+ Add Sort Level</button>
-
-			<div class="modal-action">
-				<button class="btn" on:click={close}>Cancel</button>
-				<button class="btn btn-primary" on:click={handleSave}>Apply</button>
-			</div>
+		<div class="modal-action">
+			<form method="dialog">
+				<button class="btn">Cancel</button>
+			</form>
+			<button class="btn btn-primary" on:click={handleSave}>Apply</button>
 		</div>
 	</div>
-{/if}
+</dialog>
