@@ -7,27 +7,44 @@ import fotoBuffer from '$lib/utils/fotoBuffer';
 import { type InferInsertModel } from 'drizzle-orm';
 
 export const load: PageServerLoad = async ({ locals }) => {
-    if (!locals.user) {
-        throw redirect(302, '/login');
-    }
+	console.log('Memasuki fungsi load untuk /member/pendataan/new');
+	try {
+		if (!locals.user) {
+			console.log('Pengguna tidak login, mengalihkan ke /login');
+			throw redirect(302, '/login');
+		}
+		console.log(`Pengguna terautentikasi: ${locals.user.id}`);
 
-    const [canAccessPendataan, canWriteMurid] = await Promise.all([
-        userHasPermission(locals.user.id, 'perm-pendataan-access'),
-        userHasPermission(locals.user.id, 'perm-pendataan-write')
-    ]);
+		console.log('Memeriksa izin akses...');
+		const [canAccessPendataan, canWriteMurid] = await Promise.all([
+			userHasPermission(locals.user.id, 'perm-pendataan-access'),
+			userHasPermission(locals.user.id, 'perm-pendataan-write')
+		]);
+		console.log(`Izin akses: canAccessPendataan=${canAccessPendataan}, canWriteMurid=${canWriteMurid}`);
 
-    if (!canAccessPendataan || !canWriteMurid) {
-        throw error(403, 'Akses Ditolak. Anda tidak memiliki izin untuk membuat data murid baru.');
-    }
+		if (!canAccessPendataan || !canWriteMurid) {
+			console.log('Akses ditolak karena izin tidak memadai.');
+			throw error(403, 'Akses Ditolak. Anda tidak memiliki izin untuk membuat data murid baru.');
+		}
 
-    // Optionally load data needed for form (e.g., deskel, kecamatan, kokab, prop lists)
-    // For simplicity, we'll assume these lists are fetched client-side or are not needed for initial form render.
-    // If needed, you would fetch them here and return.
-    const propinsiList = await db.select().from(propTable).all();
+		console.log('Mengambil daftar provinsi dari database...');
+		const propinsiList = await db.select().from(propTable).all();
+		console.log(`Berhasil mengambil ${propinsiList.length} provinsi.`);
 
-    return {
-        propinsiList
-    };
+		return {
+			propinsiList
+		};
+	} catch (e: any) {
+		// Log error yang lebih detail ke konsol Vercel
+		console.error('Terjadi error kritis di fungsi load:', e);
+
+		// Tampilkan halaman error 500 yang lebih informatif (hanya jika dalam mode debug)
+		// Di production, Anda mungkin hanya ingin melempar error umum.
+		throw error(
+			500,
+			`Terjadi kesalahan internal di server. Silakan periksa log Vercel. Pesan Error: ${e.message}`
+		);
+	}
 };
 
 export const actions: Actions = {
