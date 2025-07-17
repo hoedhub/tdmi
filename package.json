@@ -14,18 +14,6 @@
 		"db:migrate": "drizzle-kit migrate",
 		"db:studio": "drizzle-kit studio"
 	},
-	"pnpm": {
-		"supportedArchitectures": {
-			"os": [
-				"current",
-				"linux"
-			],
-			"cpu": [
-				"current",
-				"x64"
-			]
-		}
-	},
 	"devDependencies": {
 		"@sveltejs/adapter-auto": "^2.1.1",
 		"@sveltejs/kit": "^1.30.4",
