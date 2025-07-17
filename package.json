@@ -12,7 +12,8 @@
 		"format": "prettier --write .",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "drizzle-kit migrate",
-		"db:studio": "drizzle-kit studio"
+		"db:studio": "drizzle-kit studio",
+		"postinstall": "pnpm i sharp --os=linux --cpu=x64"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-auto": "^2.1.1",

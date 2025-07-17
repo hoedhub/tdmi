@@ -45,6 +45,7 @@
 	let isSortModalOpen = false;
 	let filterTimeout: NodeJS.Timeout;
 	const FILTER_DEBOUNCE_MS = 300;
+	let isMobile: boolean = false;
 
 	// --- Lifecycle & Reactivity ---
 	onMount(() => {
@@ -59,8 +60,12 @@
 			filteredData = data;
 		}
 
-		onResize();
+		const onResize = () => {
+			isMobile = window.innerWidth < 768;
+		};
+
 		window.addEventListener('resize', onResize);
+		onResize(); // Call once to set initial value
 
 		return () => {
 			if (filterTimeout) clearTimeout(filterTimeout);
@@ -87,14 +92,6 @@
 	$: allSelected =
 		displayData.length > 0 && displayData.every((row) => $selectedIds.has(row[rowKey]));
 	$: someSelected = displayData.some((row) => $selectedIds.has(row[rowKey]));
-
-	// --- Mobile Detection ---
-	let isMobile: boolean = false;
-	function onResize() {
-		if (typeof window !== 'undefined') {
-			isMobile = window.innerWidth < 768;
-		}
-	}
 
 	// --- Event Handlers ---
 
@@ -261,8 +258,6 @@
 		dispatch('sort', newSortState.length > 0 ? newSortState : null);
 	}
 </script>
-
-<svelte:window on:resize={onResize} />
 
 <SortModal
 	isOpen={isSortModalOpen}
