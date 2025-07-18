@@ -43,7 +43,6 @@
 	},
 	"type": "module",
 	"dependencies": {
-		"@img/sharp-linux-x64": "^0.34.3",
 		"@libsql/client": "^0.15.8",
 		"@lucia-auth/adapter-drizzle": "^1.1.0",
 		"@types/lodash.debounce": "^4.0.9",
