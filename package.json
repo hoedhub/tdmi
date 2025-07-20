@@ -52,6 +52,7 @@
 		"exceljs": "^4.4.0",
 		"fetch-retry": "^6.0.0",
 		"fontkit": "^2.0.4",
+		"googleapis": "^153.0.0",
 		"lodash.debounce": "^4.0.8",
 		"lucide-svelte": "^0.510.0",
 		"oslo": "^1.2.1",

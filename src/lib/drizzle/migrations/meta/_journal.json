@@ -15,6 +15,13 @@
       "when": 1749354070241,
       "tag": "0001_smart_energizer",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1752935416215,
+      "tag": "0002_narrow_gorilla_man",
+      "breakpoints": true
     }
   ]
 }

@@ -1,4 +1,3 @@
-<!-- src/lib/components/data-entry/Wilayah.svelte -->
 <script lang="ts">
 	import { tick } from 'svelte';
 	import { onMount } from 'svelte';
@@ -35,6 +34,7 @@
 	let initialLoading = false; // For the initial load in edit mode
 
 	// Error state variables
+	let propinsiError = false;
 	let kokabError = false;
 	let kecamatanError = false;
 	let deskelError = false;
@@ -46,6 +46,23 @@
 	let deskelSearchTerm = '';
 
 	// --- DATA FETCHING & LOGIC ---
+
+	async function loadPropinsi() {
+		loadingPropinsi = true;
+		propinsiError = false;
+		try {
+			const response = await fetch('/api/propinsi');
+			if (!response.ok) {
+				throw new Error(`HTTP error! status: ${response.status}`);
+			}
+			propinsiList = await response.json();
+		} catch (error) {
+			console.error('Error loading propinsi:', error);
+			propinsiError = true;
+		} finally {
+			loadingPropinsi = false;
+		}
+	}
 
 	// New function to handle pre-filling the form in "Edit" mode
 	async function loadWilayahByDeskel(id: number) {
@@ -78,6 +95,9 @@
 
 	// --- Svelte Lifecycle Hook ---
 	onMount(async () => {
+		if (propinsiList.length === 0) {
+			await loadPropinsi();
+		}
 		if (deskelId) {
 			// If deskelId is provided (Edit Mode), fetch the full hierarchy
 			await loadWilayahByDeskel(deskelId);
@@ -288,6 +308,11 @@
 				<ul class="menu menu-sm mt-2 max-h-60 flex-nowrap overflow-y-auto">
 					{#if loadingPropinsi}
 						<li class="menu-title">Memuat...</li>
+					{:else if propinsiError}
+						<li class="menu-title text-error">Gagal memuat data.</li>
+						<li>
+							<button type="button" on:click={loadPropinsi}>Coba Lagi</button>
+						</li>
 					{:else if filteredPropinsiList.length === 0}
 						<li class="menu-title">Tidak ditemukan.</li>
 					{/if}

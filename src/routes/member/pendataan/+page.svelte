@@ -56,6 +56,7 @@
 	let currentPage = 1;
 	let currentSort: SortConfig[] | undefined = undefined;
 	let currentFilters: Record<string, any> = {};
+	let selectedMuridIds: number[] = [];
 
 	// --- Reactive Data from Props ---
 	$: canReadMurid = data.canReadMurid;
@@ -247,6 +248,16 @@
 		}
 	}
 
+	function handleSelectionChange(event: CustomEvent<number[]>) {
+		selectedMuridIds = event.detail;
+	}
+
+	function handleEditSelected() {
+		if (selectedMuridIds.length === 1) {
+			goto(`/member/pendataan/${selectedMuridIds[0]}/edit`);
+		}
+	}
+
 	// --- Reactive Statements ---
 	$: if (form?.success) {
 		alert(form.message);
@@ -288,7 +299,16 @@
 		on:pageChange={handlePageChange}
 		on:itemsPerPageChange={handleItemsPerPageChange}
 		on:rowClick={(e) => goto(`/member/pendataan/${e.detail.id}/edit`)}
+		on:selectionChange={handleSelectionChange}
 	>
+		<svelte:fragment slot="bulk-actions" let:selectedIds>
+			{#if canWriteMurid && selectedIds.length === 1}
+				<button class="btn btn-secondary btn-sm" on:click={handleEditSelected}>
+					<Pen class="h-4 w-4" />
+					Edit Selected
+				</button>
+			{/if}
+		</svelte:fragment>
 		<svelte:fragment slot="loading-state">
 			<div class="p-8 text-center">
 				<span class="loading loading-spinner mb-4"></span>

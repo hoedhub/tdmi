@@ -19,11 +19,15 @@
 			dialog.showModal();
 			initializeState();
 		}
-		window.addEventListener('keydown', handleKeydown);
+		if (typeof window !== 'undefined') {
+			window.addEventListener('keydown', handleKeydown);
+		}
 	});
 
 	onDestroy(() => {
-		window.removeEventListener('keydown', handleKeydown);
+		if (typeof window !== 'undefined') {
+			window.removeEventListener('keydown', handleKeydown);
+		}
 	});
 
 	// When the modal opens, initialize the internal state.

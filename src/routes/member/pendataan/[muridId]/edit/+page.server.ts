@@ -2,217 +2,172 @@ import { error, fail, redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 import { db } from '$lib/drizzle';
 import { muridTable, deskelTable, kecamatanTable, kokabTable, propTable } from '$lib/drizzle/schema';
-import { eq, type InferSelectModel } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { userHasPermission } from '$lib/server/accessControl';
-import fotoBuffer from '$lib/utils/fotoBuffer';
+import { getPublicFileUrl, uploadFile, deleteFile } from '$lib/server/googleDrive';
 
-// --- DEFINISIKAN DAN EKSPOR TIPE DATA UNTUK HALAMAN ---
-// Ini akan menjadi "kontrak" tipe antara server dan klien.
-export type MuridPageData = Omit<InferSelectModel<typeof muridTable>, 'foto'> & {
-    fotoUrl: string | null;
-    deskelName: string | null;
-    kecamatanName: string | null;
-    kokabName: string | null;
-    propinsiName: string | null;
-    selectedPropinsiId: number | null;
-    selectedKokabId: number | null;
-    selectedKecamatanId: number | null;
-    selectedDeskelId: number | null;
-};
+export const load: PageServerLoad = async ({ locals, params }) => {
+	if (!locals.user) {
+		throw redirect(302, '/login');
+	}
 
-export const load: PageServerLoad = async ({ params, locals }) => {
-    if (!locals.user) {
-        throw redirect(302, '/login');
-    }
+	const muridId = parseInt(params.muridId);
+	if (isNaN(muridId)) {
+		throw error(400, 'Murid ID tidak valid.');
+	}
 
-    const muridId = parseInt(params.muridId);
-    if (isNaN(muridId)) {
-        throw error(400, 'Invalid Murid ID');
-    }
+	const canAccessPendataan = await userHasPermission(locals.user.id, 'perm-pendataan-access');
+	if (!canAccessPendataan) {
+		throw error(403, 'Akses Ditolak. Anda tidak memiliki izin untuk mengakses halaman Pendataan.');
+	}
 
-    const [canAccessPendataan, canReadMurid, canWriteMurid] = await Promise.all([
-        userHasPermission(locals.user.id, 'perm-pendataan-access'),
-        userHasPermission(locals.user.id, 'perm-pendataan-read'),
-        userHasPermission(locals.user.id, 'perm-pendataan-write')
-    ]);
+	const muridData = await db
+		.select({
+			id: muridTable.id,
+			nama: muridTable.nama,
+			namaArab: muridTable.namaArab,
+			gender: muridTable.gender,
+			deskelId: muridTable.deskelId,
+			alamat: muridTable.alamat,
+			nomorTelepon: muridTable.nomorTelepon,
+			muhrimId: muridTable.muhrimId,
+			mursyidId: muridTable.mursyidId,
+			baiatId: muridTable.baiatId,
+			wiridId: muridTable.wiridId,
+			qari: muridTable.qari,
+			marhalah: muridTable.marhalah,
+			tglLahir: muridTable.tglLahir,
+			aktif: muridTable.aktif,
+			partisipasi: muridTable.partisipasi,
+			nik: muridTable.nik,
+			fotoDriveId: muridTable.fotoDriveId, // Ambil fotoDriveId
+			deskel: deskelTable.deskel,
+			kecamatan: kecamatanTable.kecamatan,
+			kokab: kokabTable.kokab,
+			propinsi: propTable.propinsi
+		})
+		.from(muridTable)
+		.leftJoin(deskelTable, eq(muridTable.deskelId, deskelTable.id))
+		.leftJoin(kecamatanTable, eq(deskelTable.idKecamatan, kecamatanTable.id))
+		.leftJoin(kokabTable, eq(kecamatanTable.idKokab, kokabTable.id))
+		.leftJoin(propTable, eq(kokabTable.idProp, propTable.id))
+		.where(eq(muridTable.id, muridId))
+		.get();
 
-    if (!canAccessPendataan || !canReadMurid) {
-        throw error(403, 'Akses Ditolak. Anda tidak memiliki izin untuk melihat data murid ini.');
-    }
+	if (!muridData) {
+		throw error(404, 'Data murid tidak ditemukan.');
+	}
 
-    try {
-        const muridData = await db.select()
-            .from(muridTable)
-            .where(eq(muridTable.id, muridId))
-            .leftJoin(deskelTable, eq(muridTable.deskelId, deskelTable.id))
-            .leftJoin(kecamatanTable, eq(deskelTable.idKecamatan, kecamatanTable.id))
-            .leftJoin(kokabTable, eq(kecamatanTable.idKokab, kokabTable.id))
-            .leftJoin(propTable, eq(kokabTable.idProp, propTable.id))
-            .get();
+	const canWriteMurid = await userHasPermission(locals.user.id, 'perm-pendataan-write', {
+		deskelId: muridData.deskelId
+	});
 
-        if (!muridData) {
-            throw error(404, 'Murid tidak ditemukan.');
-        }
+	let fotoUrl: string | null = null;
+	if (muridData.fotoDriveId) {
+		fotoUrl = getPublicFileUrl(muridData.fotoDriveId);
+	}
 
-        // Perform territory scope check for reading the specific murid data
-        const withinScope = await userHasPermission(
-            locals.user.id,
-            'perm-pendataan-read', // Re-check read permission with resource context
-            { deskelId: muridData.murid.deskelId }
-        );
-
-        if (!withinScope) {
-            throw error(403, 'Akses Ditolak. Anda tidak memiliki izin untuk melihat data murid di wilayah ini.');
-        }
-
-        let fotoUrl = null;
-        if (muridData.murid.foto) {
-            // Memberi fallback jika data di DB korup dan tidak bisa di-parse
-            try {
-                const buffer = Buffer.from(muridData.murid.foto as Uint8Array);
-                fotoUrl = `data:image/jpeg;base64,${buffer.toString('base64')}`;
-            } catch (parseError) {
-                console.error(`Gagal mem-parse buffer foto untuk murid ID ${muridId}. Data mungkin korup.`, parseError);
-                fotoUrl = null; // Fallback jika parsing gagal
-            }
-        }
-
-        // Flatten the joined data for easier access in the Svelte component
-        const formattedMurid: Omit<MuridPageData, 'foto'> = {
-            ...muridData.murid,
-            fotoUrl: fotoUrl,
-            deskelName: muridData.deskel?.deskel || null,
-            kecamatanName: muridData.kecamatan?.kecamatan || null,
-            kokabName: muridData.kokab?.kokab || null,
-            propinsiName: muridData.prop?.propinsi || null,
-            selectedPropinsiId: muridData.prop?.id || null,
-            selectedKokabId: muridData.kokab?.id || null,
-            selectedKecamatanId: muridData.kecamatan?.id || null,
-            selectedDeskelId: muridData.deskel?.id || null
-        };
-
-        const propinsiList = await db.select().from(propTable).all();
-        const kokabList = await db.select().from(kokabTable).all();
-        const kecamatanList = await db.select().from(kecamatanTable).all();
-        const deskelList = await db.select().from(deskelTable).all();
-
-        delete (formattedMurid as any).foto;
-
-        return {
-            murid: formattedMurid,
-            canWriteMurid, // Pass write permission flag to the client
-            propinsiList,
-            kokabList,
-            kecamatanList,
-            deskelList
-        };
-
-    } catch (e) {
-        console.error(`Error loading murid ${muridId}:`, e);
-        if (e instanceof Error && (e as any).status) {
-            throw e;
-        }
-        throw error(500, 'Gagal memuat data murid karena kesalahan server.');
-    }
+	return {
+		user: locals.user,
+		murid: { ...muridData, fotoUrl },
+		canWriteMurid
+	};
 };
 
 export const actions: Actions = {
-    default: async ({ request, params, locals }) => {
-        if (!locals.user) {
-            return fail(401, { message: 'Unauthorized' });
-        }
+	default: async ({ request, locals, params }) => {
+		if (!locals.user) {
+			return fail(401, { message: 'Unauthorized' });
+		}
 
-        const muridId = parseInt(params.muridId);
-        if (isNaN(muridId)) {
-            return fail(400, { message: 'Invalid Murid ID.' });
-        }
+		const muridId = parseInt(params.muridId);
+		if (isNaN(muridId)) {
+			return fail(400, { message: 'Murid ID tidak valid.' });
+		}
 
-        const formData = await request.formData();
-        const nama = formData.get('nama')?.toString();
-        const namaArab = formData.get('namaArab')?.toString() || null;
-        const gender = formData.get('gender')?.toString() === 'true';
-        const deskelId = parseInt(formData.get('deskelId')?.toString() || '0');
-        const alamat = formData.get('alamat')?.toString() || null;
-        const nomorTelepon = formData.get('nomorTelepon')?.toString() || null;
-        const muhrimId = parseInt(formData.get('muhrimId')?.toString() || '0') || null;
-        const mursyidId = parseInt(formData.get('mursyidId')?.toString() || '0') || null;
-        const baiatId = parseInt(formData.get('baiatId')?.toString() || '0') || null;
-        const wiridId = parseInt(formData.get('wiridId')?.toString() || '0') || null;
-        const qari = formData.get('qari')?.toString() === 'true';
-        const marhalah = parseInt(formData.get('marhalah')?.toString() || '1') as (1 | 2 | 3);
-        const tglLahir = formData.get('tglLahir')?.toString() || null;
-        const aktif = formData.get('aktif')?.toString() === 'on';
-        const partisipasi = formData.get('partisipasi')?.toString() === 'on';
-        const nik = formData.get('nik')?.toString() || null;
+		const formData = await request.formData();
+		const action = formData.get('action');
 
-        const fotoFile = formData.get('foto') as File | null;
-        const removeFoto = formData.get('removeFoto')?.toString() === 'true';
+		const deskelId = parseInt(formData.get('deskelId')?.toString() || '0');
 
-        if (!nama || !deskelId) {
-            return fail(400, { message: 'Nama dan Desa/Kelurahan wajib diisi.', nama, deskelId });
-        }
+		const canWriteMurid = await userHasPermission(locals.user.id, 'perm-pendataan-write', {
+			deskelId: deskelId
+		});
 
-        // Check permission with territory scope for the updated murid's deskelId
-        const canWriteMurid = await userHasPermission(
-            locals.user.id,
-            'perm-pendataan-write',
-            { deskelId: deskelId }
-        );
+		if (!canWriteMurid) {
+			return fail(403, {
+				message: 'Akses Ditolak. Anda tidak memiliki izin untuk mengubah data di wilayah ini.'
+			});
+		}
 
-        if (!canWriteMurid) {
-            return fail(403, { message: 'Akses Ditolak. Anda tidak memiliki izin untuk mengubah data murid di wilayah ini.' });
-        }
+		const nama = formData.get('nama')?.toString();
+		if (!nama) {
+			return fail(400, { message: 'Nama wajib diisi.' });
+		}
 
-        try {
-            const updatedMuridData: { [key: string]: any } = {
-                updaterId: locals.user.id, // Assuming updaterId is the current user's ID
-                nama,
-                namaArab,
-                gender,
-                deskelId,
-                alamat,
-                nomorTelepon,
-                muhrimId: muhrimId === 0 ? null : muhrimId,
-                mursyidId: mursyidId === 0 ? null : mursyidId,
-                baiatId: baiatId === 0 ? null : baiatId,
-                wiridId: wiridId === 0 ? null : wiridId,
-                qari,
-                marhalah,
-                tglLahir,
-                aktif,
-                partisipasi,
-                nik
-            };
+		try {
+			const updatedValues: Record<string, any> = {
+				updaterId: locals.user.id,
+				updatedAt: sql`CURRENT_TIMESTAMP`,
+				nama: nama,
+				namaArab: formData.get('namaArab')?.toString() || null,
+				gender: formData.get('gender')?.toString() === 'true',
+				deskelId: deskelId,
+				alamat: formData.get('alamat')?.toString() || null,
+				nomorTelepon: formData.get('nomorTelepon')?.toString() || null,
+				muhrimId: parseInt(formData.get('muhrimId')?.toString() || '0') || null,
+				mursyidId: parseInt(formData.get('mursyidId')?.toString() || '0') || null,
+				baiatId: parseInt(formData.get('baiatId')?.toString() || '0') || null,
+				wiridId: parseInt(formData.get('wiridId')?.toString() || '0') || null,
+				qari: formData.get('qari')?.toString() === 'true',
+				marhalah: parseInt(formData.get('marhalah')?.toString() || '1') as 1 | 2 | 3,
+				tglLahir: formData.get('tglLahir')?.toString() || null,
+				aktif: formData.get('aktif')?.toString() === 'on',
+				partisipasi: formData.get('partisipasi')?.toString() === 'on',
+				nik: formData.get('nik')?.toString() || null
+			};
 
-            // Logika untuk menangani update foto
-            if (removeFoto) {
-                // Jika ada flag untuk menghapus foto
-                updatedMuridData.foto = null;
-            } else if (fotoFile && fotoFile.size > 0) {
-                // Jika ada file baru yang diunggah
-                const buffer = await fotoBuffer(fotoFile);
-                updatedMuridData.foto = buffer;
-            }
-            // Jika tidak ada kondisi di atas, properti `foto` tidak ditambahkan ke `updatedMuridData`,
-            // sehingga Drizzle tidak akan mengubahnya di database.
+			const fotoFile = formData.get('foto') as File | null;
+			const removeFoto = formData.get('removeFoto')?.toString() === 'true';
 
-            const result = await db
-                .update(muridTable)
-                .set(updatedMuridData)
-                .where(eq(muridTable.id, muridId))
-                .run();
+			const oldMuridData = await db.select({ fotoDriveId: muridTable.fotoDriveId }).from(muridTable).where(eq(muridTable.id, muridId)).get();
+			const oldFileId = oldMuridData?.fotoDriveId;
 
-            if (result.rowsAffected === 0) {
-                return fail(404, { message: 'Murid tidak ditemukan atau tidak ada perubahan.' });
-            }
+			if (removeFoto) {
+				updatedValues.fotoDriveId = null;
+				if (oldFileId) {
+					await deleteFile(oldFileId);
+				}
+			} else if (fotoFile && fotoFile.size > 0) {
+				const buffer = Buffer.from(await fotoFile.arrayBuffer());
+				const newFileId = await uploadFile(buffer, fotoFile.type, fotoFile.name);
+				updatedValues.fotoDriveId = newFileId;
+				if (oldFileId) {
+					await deleteFile(oldFileId);
+				}
+			}
 
-            return { success: true, message: 'Data murid berhasil diperbarui.' };
-        } catch (e: any) {
-            console.error(`Error updating murid ${muridId}:`, e);
-            if (e.message && e.message.includes('UNIQUE constraint failed: murid.nik')) {
-                return fail(409, { message: 'NIK sudah terdaftar. Harap gunakan NIK yang berbeda.', nik });
-            }
-            return fail(500, { message: 'Gagal memperbarui data murid karena kesalahan server.' });
-        }
-    }
+			await db.update(muridTable).set(updatedValues).where(eq(muridTable.id, muridId));
+
+			if (action === 'save-and-close') {
+				return {
+					success: true,
+					message: 'Data murid berhasil diperbarui.',
+					redirect: '/member/pendataan'
+				};
+			} else {
+				// Default action is 'save', so we stay on the page
+				return {
+					success: true,
+					message: 'Data murid berhasil diperbarui.'
+				};
+			}
+		} catch (e: any) {
+			console.error('Error updating murid:', e);
+			if (e.message && e.message.includes('UNIQUE constraint failed: murid.nik')) {
+				return fail(409, { message: 'NIK sudah terdaftar. Harap gunakan NIK yang berbeda.' });
+			}
+			return fail(500, { message: 'Gagal memperbarui data murid karena kesalahan server.' });
+		}
+	}
 };
