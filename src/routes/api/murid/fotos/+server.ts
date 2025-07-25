@@ -3,7 +3,7 @@ import type { RequestHandler } from './$types';
 import { db } from '$lib/drizzle';
 import { muridTable } from '$lib/drizzle/schema';
 import { sql, eq, inArray } from 'drizzle-orm';
-import { deleteFile, getPublicFileUrl, uploadFile } from '$lib/server/googleDrive';
+import { deleteFile, getPublicFileUrl, uploadFile } from '$lib/server/cloudinary';
 
 export const POST: RequestHandler = async ({ request }) => {
 	try {
@@ -16,16 +16,16 @@ export const POST: RequestHandler = async ({ request }) => {
 		const fotos = await db
 			.select({
 				id: muridTable.id,
-				fotoDriveId: muridTable.fotoDriveId
+				fotoPublicId: muridTable.fotoPublicId
 			})
 			.from(muridTable)
 			.where(inArray(muridTable.id, ids));
 
 		// Convert to object with id as key and a public URL for the image
 		const fotosMap = fotos.reduce(
-			(acc, { id, fotoDriveId }) => {
-				if (fotoDriveId) {
-					acc[id] = getPublicFileUrl(fotoDriveId);
+			(acc, { id, fotoPublicId }) => {
+				if (fotoPublicId) {
+					acc[id] = getPublicFileUrl(fotoPublicId);
 				} else {
 					acc[id] = null;
 				}
@@ -55,21 +55,21 @@ export const PATCH: RequestHandler = async ({ request }) => {
 
 		// 1. Get the old file ID before updating
 		const existingMurid = await db
-			.select({ fotoDriveId: muridTable.fotoDriveId })
+			.select({ fotoPublicId: muridTable.fotoPublicId })
 			.from(muridTable)
 			.where(eq(muridTable.id, muridId))
 			.get();
 
-		const oldFileId = existingMurid?.fotoDriveId;
+		const oldFileId = existingMurid?.fotoPublicId;
 
 		// 2. Upload the new file
 		const fotoBuffer = Buffer.from(await foto.arrayBuffer());
 		const newFileId = await uploadFile(fotoBuffer, foto.type, foto.name);
 
 		// 3. Update the database with the new file ID
-		await db.update(muridTable).set({ fotoDriveId: newFileId }).where(eq(muridTable.id, muridId));
+		await db.update(muridTable).set({ fotoPublicId: newFileId }).where(eq(muridTable.id, muridId));
 
-		// 4. If an old file existed, delete it from Google Drive
+		// 4. If an old file existed, delete it from Cloudinary
 		if (oldFileId) {
 			await deleteFile(oldFileId);
 		}

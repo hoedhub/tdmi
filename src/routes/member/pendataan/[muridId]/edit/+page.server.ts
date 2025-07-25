@@ -4,7 +4,7 @@ import { db } from '$lib/drizzle';
 import { muridTable, deskelTable, kecamatanTable, kokabTable, propTable } from '$lib/drizzle/schema';
 import { eq, sql } from 'drizzle-orm';
 import { userHasPermission } from '$lib/server/accessControl';
-import { getPublicFileUrl, uploadFile, deleteFile } from '$lib/server/googleDrive';
+import { getPublicFileUrl, uploadFile, deleteFile } from '$lib/server/cloudinary';
 
 export const load: PageServerLoad = async ({ locals, params }) => {
 	if (!locals.user) {
@@ -40,7 +40,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 			aktif: muridTable.aktif,
 			partisipasi: muridTable.partisipasi,
 			nik: muridTable.nik,
-			fotoDriveId: muridTable.fotoDriveId, // Ambil fotoDriveId
+			fotoPublicId: muridTable.fotoPublicId, // Ambil fotoPublicId
 			deskel: deskelTable.deskel,
 			kecamatan: kecamatanTable.kecamatan,
 			kokab: kokabTable.kokab,
@@ -63,8 +63,8 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 	});
 
 	let fotoUrl: string | null = null;
-	if (muridData.fotoDriveId) {
-		fotoUrl = getPublicFileUrl(muridData.fotoDriveId);
+	if (muridData.fotoPublicId) {
+		fotoUrl = getPublicFileUrl(muridData.fotoPublicId);
 	}
 
 	return {
@@ -130,18 +130,18 @@ export const actions: Actions = {
 			const fotoFile = formData.get('foto') as File | null;
 			const removeFoto = formData.get('removeFoto')?.toString() === 'true';
 
-			const oldMuridData = await db.select({ fotoDriveId: muridTable.fotoDriveId }).from(muridTable).where(eq(muridTable.id, muridId)).get();
-			const oldFileId = oldMuridData?.fotoDriveId;
+			const oldMuridData = await db.select({ fotoPublicId: muridTable.fotoPublicId }).from(muridTable).where(eq(muridTable.id, muridId)).get();
+			const oldFileId = oldMuridData?.fotoPublicId;
 
 			if (removeFoto) {
-				updatedValues.fotoDriveId = null;
+				updatedValues.fotoPublicId = null;
 				if (oldFileId) {
 					await deleteFile(oldFileId);
 				}
 			} else if (fotoFile && fotoFile.size > 0) {
 				const buffer = Buffer.from(await fotoFile.arrayBuffer());
 				const newFileId = await uploadFile(buffer, fotoFile.type, fotoFile.name);
-				updatedValues.fotoDriveId = newFileId;
+				updatedValues.fotoPublicId = newFileId;
 				if (oldFileId) {
 					await deleteFile(oldFileId);
 				}

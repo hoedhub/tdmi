@@ -3,7 +3,7 @@ import type { PageServerLoad, Actions } from './$types';
 import { userHasPermission } from '$lib/server/accessControl';
 import { db } from '$lib/drizzle';
 import { muridTable, propTable } from '$lib/drizzle/schema';
-import { uploadFile } from '$lib/server/googleDrive';
+import { uploadFile } from '$lib/server/cloudinary';
 import { type InferInsertModel } from 'drizzle-orm';
 
 export const load: PageServerLoad = async ({ locals }) => {
@@ -114,7 +114,7 @@ export const actions: Actions = {
             if (fotoFile && fotoFile.size > 0) {
 				const buffer = Buffer.from(await fotoFile.arrayBuffer());
 				const fileId = await uploadFile(buffer, fotoFile.type, fotoFile.name);
-				newMurid.fotoDriveId = fileId;
+				newMurid.fotoPublicId = fileId;
 			}
 
             const [murid] = await db.insert(muridTable).values(newMurid).returning();

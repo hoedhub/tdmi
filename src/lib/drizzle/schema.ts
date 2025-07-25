@@ -67,7 +67,7 @@ export const muridTable = sqliteTable(
 		aktif: integer('aktif', { mode: 'boolean' }).notNull().default(true),
 		partisipasi: integer('partisipasi', { mode: 'boolean' }).notNull().default(true),
 		nik: text('nik', { length: 16 }).unique(),
-		fotoDriveId: text('foto_drive_id')
+		fotoPublicId: text('foto_public_id')
 	},
 	(table) => ([ // <-- BENAR
 		index('nama_idx').on(table.nama),

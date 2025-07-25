@@ -189,6 +189,7 @@
 							src={displayUrl}
 							alt="Pratinjau Foto Murid"
 							class="h-full w-full rounded-lg object-cover"
+							crossorigin="anonymous"
 						/>
 					{:else}
 						<!-- Fallback Icon -->
