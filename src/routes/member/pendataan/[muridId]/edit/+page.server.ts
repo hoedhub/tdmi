@@ -140,11 +140,10 @@ export const actions: Actions = {
 				}
 			} else if (fotoFile && fotoFile.size > 0) {
 				const buffer = Buffer.from(await fotoFile.arrayBuffer());
-				const newFileId = await uploadFile(buffer, fotoFile.type, fotoFile.name);
+				// Use the new uploadFile function with the muridId
+				const newFileId = await uploadFile(buffer, muridId);
 				updatedValues.fotoPublicId = newFileId;
-				if (oldFileId) {
-					await deleteFile(oldFileId);
-				}
+				// No need to manually delete the old file, `overwrite: true` handles it.
 			}
 
 			await db.update(muridTable).set(updatedValues).where(eq(muridTable.id, muridId));

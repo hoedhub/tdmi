@@ -91,7 +91,8 @@ export const actions: Actions = {
         }
 
         try {
-            const newMurid: InferInsertModel<typeof muridTable> = {
+            // 1. Create the murid record WITHOUT the photo ID first.
+            const newMuridData: InferInsertModel<typeof muridTable> = {
                 updaterId: locals.user.id,
                 nama,
                 namaArab,
@@ -111,13 +112,17 @@ export const actions: Actions = {
                 nik
             };
 
-            if (fotoFile && fotoFile.size > 0) {
-				const buffer = Buffer.from(await fotoFile.arrayBuffer());
-				const fileId = await uploadFile(buffer, fotoFile.type, fotoFile.name);
-				newMurid.fotoPublicId = fileId;
-			}
+            const [murid] = await db.insert(muridTable).values(newMuridData).returning();
 
-            const [murid] = await db.insert(muridTable).values(newMurid).returning();
+            // 2. If there is a photo, upload it now using the new murid's ID.
+            if (fotoFile && fotoFile.size > 0) {
+                const buffer = Buffer.from(await fotoFile.arrayBuffer());
+                const fileId = await uploadFile(buffer, murid.id);
+                
+                // 3. Update the record with the new photo ID.
+                await db.update(muridTable).set({ fotoPublicId: fileId }).where(eq(muridTable.id, murid.id));
+                murid.fotoPublicId = fileId; // Update the object for the return value
+            }
 
             if (action === 'save-and-add') {
                 return {

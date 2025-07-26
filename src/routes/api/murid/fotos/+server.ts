@@ -53,26 +53,13 @@ export const PATCH: RequestHandler = async ({ request }) => {
 
 		const muridId = Number(id);
 
-		// 1. Get the old file ID before updating
-		const existingMurid = await db
-			.select({ fotoPublicId: muridTable.fotoPublicId })
-			.from(muridTable)
-			.where(eq(muridTable.id, muridId))
-			.get();
-
-		const oldFileId = existingMurid?.fotoPublicId;
-
-		// 2. Upload the new file
+		// Upload the new file using the muridId.
+		// This will automatically overwrite the old file in Cloudinary.
 		const fotoBuffer = Buffer.from(await foto.arrayBuffer());
-		const newFileId = await uploadFile(fotoBuffer, foto.type, foto.name);
+		const newFileId = await uploadFile(fotoBuffer, muridId);
 
-		// 3. Update the database with the new file ID
+		// Update the database with the new file ID
 		await db.update(muridTable).set({ fotoPublicId: newFileId }).where(eq(muridTable.id, muridId));
-
-		// 4. If an old file existed, delete it from Cloudinary
-		if (oldFileId) {
-			await deleteFile(oldFileId);
-		}
 
 		return json({
 			message: 'Foto updated successfully',

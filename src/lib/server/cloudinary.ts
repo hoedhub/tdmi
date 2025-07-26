@@ -1,34 +1,26 @@
 
 import { v2 as cloudinary } from 'cloudinary';
 import stream from 'stream';
-import path from 'path';
 
 // The SDK automatically configures itself from the CLOUDINARY_URL env var.
 // No manual .config() calls are needed.
 
-export async function uploadFile(
-	fileBuffer: Buffer,
-	mimetype: string,
-	originalFilename: string
-): Promise<string> {
+/**
+ * Uploads a file to Cloudinary with a standardized Public ID.
+ * @param fileBuffer The file content as a Buffer.
+ * @param muridId The unique ID of the murid, used to create the Public ID.
+ * @returns The Cloudinary Public ID (e.g., "murid_photos/123").
+ */
+export async function uploadFile(fileBuffer: Buffer, muridId: number): Promise<string> {
 	return new Promise((resolve, reject) => {
-		// Get the filename without the extension.
-		const extension = path.extname(originalFilename);
-		const filenameWithoutExt = path.basename(originalFilename, extension);
-
-		// Sanitize the base filename.
-		const sanitizedFilename = filenameWithoutExt.replace(/\s+/g, '_').replace(/[^\w-]/g, '');
-
-		// Create the public_id using the sanitized base filename.
-		// Cloudinary will handle the format/extension automatically.
-		const public_id = `tdmi/${new Date().toISOString()}-${sanitizedFilename}`;
+		// Standardized Public ID format: "murid_photos/[murid_id]"
+		const public_id = `murid_photos/${muridId}`;
 
 		const uploadStream = cloudinary.uploader.upload_stream(
 			{
 				public_id: public_id,
-				use_filename: false,
-				unique_filename: false,
-				overwrite: true
+				overwrite: true, // Overwrite the file if it already exists for this ID
+				invalidate: true // Invalidate the CDN cache to show the new image immediately
 			},
 			(error, result) => {
 				if (error) {
@@ -37,7 +29,7 @@ export async function uploadFile(
 				if (!result) {
 					return reject(new Error('Cloudinary upload result is undefined.'));
 				}
-				// Resolve with the exact public_id Cloudinary used.
+				// Resolve with the exact public_id used.
 				resolve(result.public_id);
 			}
 		);
@@ -50,7 +42,7 @@ export async function uploadFile(
 
 export async function deleteFile(publicId: string): Promise<void> {
 	try {
-		// The `destroy` method works with the base publicId.
+		// The `destroy` method works perfectly with the new publicId format.
 		await cloudinary.uploader.destroy(publicId);
 	} catch (error) {
 		console.error(`Failed to delete file ${publicId} from Cloudinary:`, error);
@@ -58,8 +50,6 @@ export async function deleteFile(publicId: string): Promise<void> {
 }
 
 export function getPublicFileUrl(publicId: string): string {
-	// Reverting to the official SDK method.
-	// This will generate the full, correct, versioned URL, including the
-	// appropriate file extension for delivery.
+	// The official SDK method will generate the correct, fully-qualified URL.
 	return cloudinary.url(publicId, { secure: true });
 }
