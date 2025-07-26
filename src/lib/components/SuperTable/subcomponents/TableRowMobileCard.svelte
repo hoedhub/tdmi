@@ -96,7 +96,7 @@
 	<!-- on:swipe={handleSwipe} -->
 	<div class="card-body">
 		{#if isSelectable}
-			<div class="absolute right-2 top-2">
+			<div class="absolute right-2 top-2 rtl:left-2 rtl:right-auto">
 				<input
 					type="checkbox"
 					class="checkbox"
@@ -163,7 +163,7 @@
 			{/if}
 		{/if}
 
-		<div class="card-actions justify-end">
+		<div class="card-actions justify-end rtl:justify-start">
 			<slot name="row-actions" {row} />
 		</div>
 	</div>

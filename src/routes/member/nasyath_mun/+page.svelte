@@ -255,11 +255,11 @@ a.click();
 	});
 </script>
 
-<div class="container mx-auto p-4">
+<div class="container mx-auto p-4" dir="rtl">
 	<!-- Header Responsif -->
 	<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-		<h1 class="text-2xl font-bold text-center sm:text-left">قائمة نشاط الأعضاء</h1>
-		<div class="flex items-center justify-center sm:justify-end gap-2">
+		<h1 class="text-2xl font-bold text-center sm:text-right">قائمة نشاط الأعضاء</h1>
+		<div class="flex items-center justify-center sm:justify-start gap-2">
 			<button class="btn btn-secondary btn-sm" on:click={handleExport} disabled={isExporting}>
 				<Download class="h-4 w-4" />
 				{#if isExporting}

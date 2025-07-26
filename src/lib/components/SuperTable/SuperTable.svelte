@@ -355,7 +355,7 @@
 
 					<!-- Bulk Selection Actions -->
 					{#if selectionMode === 'multiple' && $selectedIds.size > 0}
-						<div class="flex flex-grow flex-wrap items-center justify-end gap-x-4 gap-y-2">
+						<div class="flex flex-grow flex-wrap items-center justify-end gap-x-4 gap-y-2 rtl:justify-start">
 							<div class="flex items-center gap-1">
 								<span class="text-sm text-base-content/70">{$selectedIds.size} selected</span>
 								<div class="tooltip tooltip-bottom" data-tip="Clear selection">
