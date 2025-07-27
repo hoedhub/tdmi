@@ -1,36 +1,116 @@
-import { redirect, error } from '@sveltejs/kit';
+import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { db } from '$lib/drizzle';
-import { usersTable } from '$lib/drizzle/schema';
-import { eq } from 'drizzle-orm';
+import { nasyathTable, muridTable } from '$lib/drizzle/schema';
+import { sql, and, eq, gte, lte, desc, count } from 'drizzle-orm';
 import { userHasPermission } from '$lib/server/accessControl';
 
-export const load: PageServerLoad = async ({ locals, url }) => {
-	// 1. Pastikan pengguna sudah login
+export const load: PageServerLoad = async ({ locals }) => {
 	if (!locals.user) {
-		throw redirect(302, `/login?redirectTo=${url.pathname}`);
+		throw redirect(302, '/login');
 	}
 
-	// 2. Periksa apakah pengguna memiliki izin untuk melihat semua nasyath (admin)
+	// Logika `canReadAll` menentukan apakah dashboard bersifat global atau personal
 	const canReadAll = await userHasPermission(locals.user.id, 'perm-nasyath-read');
+	const currentYear = new Date().getFullYear();
 
-	// 3. Jika bukan admin, pastikan pengguna terhubung dengan data murid
-	if (!canReadAll) {
-		const user = await db.query.usersTable.findFirst({
-			where: eq(usersTable.id, locals.user.id),
-			columns: {
-				muridId: true
-			}
-		});
+	// Jika bukan admin, filter berdasarkan muridId dari user yang login
+	const baseConditions = canReadAll
+		? []
+		: [eq(nasyathTable.muridId, locals.user.muridId || 0)];
 
-		if (!user || !user.muridId) {
-			throw error(
-				403,
-				'Akses Ditolak: Akun Anda tidak terhubung dengan data murid untuk melihat data nasyath.'
-			);
-		}
+	// --- KPI Queries ---
+	const startOfMonth = new Date();
+	startOfMonth.setDate(1);
+	startOfMonth.setHours(0, 0, 0, 0);
+	const endOfMonth = new Date(startOfMonth);
+	endOfMonth.setMonth(endOfMonth.getMonth() + 1);
+
+	const totalThisMonthResult = await db
+		.select({ count: count() })
+		.from(nasyathTable)
+		.where(
+			and(
+				...baseConditions,
+				gte(nasyathTable.tanggalMulai, startOfMonth.toISOString()),
+				lte(nasyathTable.tanggalMulai, endOfMonth.toISOString())
+			)
+		);
+	const totalThisMonth = totalThisMonthResult[0].count;
+
+	const startOfYear = new Date(currentYear, 0, 1);
+	const endOfYear = new Date(currentYear, 11, 31, 23, 59, 59, 999);
+	const totalThisYearResult = await db
+		.select({ count: count() })
+		.from(nasyathTable)
+		.where(
+			and(
+				...baseConditions,
+				gte(nasyathTable.tanggalMulai, startOfYear.toISOString()),
+				lte(nasyathTable.tanggalMulai, endOfYear.toISOString())
+			)
+		);
+	const totalThisYear = totalThisYearResult[0].count;
+
+	const mostFrequentResult = await db
+		.select({ kegiatan: nasyathTable.kegiatan, count: count() })
+		.from(nasyathTable)
+		.where(and(...baseConditions))
+		.groupBy(nasyathTable.kegiatan)
+		.orderBy(desc(count()))
+		.limit(1);
+	const mostFrequentActivity = mostFrequentResult[0]?.kegiatan || 'N/A';
+
+	// --- Chart Data Queries ---
+	const sixMonthsAgo = new Date();
+	sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+	const activitiesPerMonthResult = await db
+		.select({
+			month: sql<string>`strftime('%Y-%m', ${nasyathTable.tanggalMulai})`,
+			count: count()
+		})
+		.from(nasyathTable)
+		.where(
+			and(...baseConditions, gte(nasyathTable.tanggalMulai, sixMonthsAgo.toISOString()))
+		)
+		.groupBy(sql`strftime('%Y-%m', ${nasyathTable.tanggalMulai})`)
+		.orderBy(sql`strftime('%Y-%m', ${nasyathTable.tanggalMulai})`);
+
+	// --- **QUERY BARU UNTUK PIE CHART** ---
+	// Menghitung anggota teraktif. Hanya relevan untuk admin.
+	let mostActiveMembers: { muridName: string | null; activityCount: number }[] = [];
+	if (canReadAll) {
+		mostActiveMembers = await db
+			.select({
+				muridName: muridTable.nama,
+				activityCount: count()
+			})
+			.from(nasyathTable)
+			.leftJoin(muridTable, eq(nasyathTable.muridId, muridTable.id))
+			.groupBy(muridTable.nama)
+			.orderBy(desc(count()))
+			.limit(7); // Ambil 7 anggota teraktif
 	}
 
-	// 4. Kembalikan data ke frontend
-	return { canReadAll };
+	// --- Table Data Query ---
+	const recentActivities = await db
+		.select()
+		.from(nasyathTable)
+		.where(and(...baseConditions))
+		.orderBy(desc(nasyathTable.tanggalMulai))
+		.limit(5);
+
+	return {
+		canReadAll,
+		kpi: {
+			totalThisMonth,
+			totalThisYear,
+			mostFrequentActivity
+		},
+		charts: {
+			activitiesPerMonth: activitiesPerMonthResult,
+			mostActiveMembers: mostActiveMembers // Kirim data baru ke frontend
+		},
+		recentActivities
+	};
 };
