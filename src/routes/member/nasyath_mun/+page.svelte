@@ -165,7 +165,9 @@
 <div class="container mx-auto p-4" dir="rtl">
 	<!-- Header with View Toggle -->
 	<div class="mb-6 flex flex-col items-center justify-between gap-4 sm:flex-row">
-		<h1 class="text-2xl font-bold">لوحة معلومات النشاط</h1>
+		<h1 class="text-2xl font-bold">
+			{currentView === 'dashboard' ? 'لوحة معلومات النشاط' : 'قائمة نشاط الأعضاء'}
+		</h1>
 		<div class="btn-group">
 			<button class="btn btn-sm" class:btn-active={currentView === 'dashboard'} on:click={() => setView('dashboard')}>
 				<LayoutDashboard class="h-4 w-4" /> Dashboard
@@ -189,7 +191,7 @@
 			<!-- Charts -->
 			<div class="grid grid-cols-1 gap-6 lg:grid-cols-5">
 				<div class="card bg-base-200 shadow-lg lg:col-span-3"><div class="card-body"><h2 class="card-title">النشاط الشهري (آخر 6 أشهر)</h2><div class="h-64"><Bar data={activitiesPerMonth} options={chartOptions} /></div></div></div>
-				<div class="card bg-base-200 shadow-lg lg:col-span-2"><div class="card-body"><h2 class="card-title">الأعضاء الأكثر نشاطًا</h2>{#if data.canReadAll}{#if data.charts.mostActiveMembers.length > 0}<div class="h-64"><Pie data={mostActiveMembers} options={chartOptions} /></div>{:else}<div class="flex h-full flex-col items-center justify-center text-center"><Users class="h-12 w-12 text-base-content/30" /><p class="mt-2 text-sm text-base-content/60">Belum ada data aktivitas anggota untuk ditampilkan.</p></div>{/if}{:else}<div class="flex h-full flex-col items-center justify-center text-center"><Users class="h-12 w-12 text-base-content/30" /><p class="mt-2 text-sm text-base-content/60">Tampilan ini hanya tersedia untuk admin.</p></div>{/if}</div></div>
+				<div class="card bg-base-200 shadow-lg lg:col-span-2"><div class="card-body"><h2 class="card-title">الأعضاء الأكثر نشاطًا</h2>{#if data.canReadAll}{#if data.charts.mostActiveMembers.length > 0}<div class="h-64">{#key data.charts.mostActiveMembers}<Pie data={mostActiveMembers} options={chartOptions} />{/key}</div>{:else}<div class="flex h-full flex-col items-center justify-center text-center"><Users class="h-12 w-12 text-base-content/30" /><p class="mt-2 text-sm text-base-content/60">Belum ada data aktivitas anggota untuk ditampilkan.</p></div>{/if}{:else}<div class="flex h-full flex-col items-center justify-center text-center"><Users class="h-12 w-12 text-base-content/30" /><p class="mt-2 text-sm text-base-content/60">Tampilan ini hanya tersedia untuk admin.</p></div>{/if}</div></div>
 			</div>
 			<!-- Recent Activities Table -->
 			<div class="card bg-base-200 shadow-lg"><div class="card-body"><h2 class="card-title mb-4">أحدث 5 أنشطة</h2><div class="overflow-x-auto"><table class="table w-full"><thead><tr><th>النشاط</th><th>تاريخ البدء</th><th>المكان</th></tr></thead><tbody>{#each data.recentActivities as activity}<tr><td>{activity.kegiatan}</td><td>{#if activity.tanggalMulai}{new Date(activity.tanggalMulai).toLocaleDateString('ar-EG')}{:else}-{/if}</td><td>{activity.tempat || '-'}</td></tr>{:else}<tr><td colspan="3" class="text-center">لا توجد أنشطة حديثة.</td></tr>{/each}</tbody></table></div></div></div>

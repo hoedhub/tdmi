@@ -1,24 +1,11 @@
 // src/lib/server/auth.ts
 import { Lucia } from "lucia";
 import { dev } from "$app/environment";
-import { config } from 'dotenv';
-import { drizzle } from "drizzle-orm/libsql";
-import { createClient } from "@libsql/client"; // Or your Turso client setup
 import { DrizzleSQLiteAdapter } from "@lucia-auth/adapter-drizzle";
-import { usersTable, sessionTable } from "../drizzle/schema"; // Removed 'type userRoles'
-import * as schema from '../drizzle/schema';
+import { usersTable, sessionTable } from "../drizzle/schema";
+import { db } from "$lib/drizzle"; // <-- IMPORT the existing, correct db instance
 
-config({ path: '.env' });
-
-// Initialize your Turso client
-const client = createClient({
-    url: process.env.TURSO_CONNECTION_URL!,
-    authToken: process.env.TURSO_AUTH_TOKEN!,
-});
-
-export const db = drizzle(client, { schema });
-
-// Pass your Drizzle instance and table definitions to the adapter
+// The adapter now uses the centralized db instance, ensuring one correct connection.
 const adapter = new DrizzleSQLiteAdapter(db, sessionTable, usersTable);
 
 export const lucia = new Lucia(adapter, {
@@ -31,14 +18,10 @@ export const lucia = new Lucia(adapter, {
     getUserAttributes: (attributes) => {
         return {
             // attributes has the type of DatabaseUserAttributes
-            // Add any user attributes you want to access in session.user
-            // e.g., 
-            id: attributes.id, // Lucia usually handles id, but good to be explicit if needed
+            id: attributes.id,
             username: attributes.username,
-            role: attributes.role,
             active: attributes.active,
             muridId: attributes.muridId
-            // email: attributes.email
         };
     },
     getSessionAttributes: (attributes) => {
@@ -59,9 +42,8 @@ declare module "lucia" {
 export interface DatabaseUserAttributes {
     id: string;
     username: string;
-    role: string; // Simplified to string, as it's a role ID
     active: boolean | null;
-    muridId: number;
+    muridId: number | null;
 }
 
 // Your existing sessionTable schema matches Lucia's requirements closely.
