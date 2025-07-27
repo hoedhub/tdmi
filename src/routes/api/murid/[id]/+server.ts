@@ -76,21 +76,16 @@ export async function GET({ params }) {
         const profile = profiles[0];
         const age = calculateAge(profile.murid.tglLahir);
 
-        // Handle binary data conversion properly
-        let fotoBase64 = null;
-        if (profile.murid.foto) {
-            // Convert the Uint8Array to Buffer properly
-            const uint8Array = new Uint8Array(profile.murid.foto as unknown as ArrayBuffer);
-            const buffer = Buffer.from(uint8Array);
-            fotoBase64 = `data:image/jpeg;base64,${buffer.toString('base64')}`;
-        }
+        // The `foto` property is no longer a buffer. 
+        // The URL is constructed on the client from `fotoPublicId`.
+        // This block can be removed.
 
         return json({
             success: true,
             data: {
                 ...profile.murid,
                 age,
-                foto: fotoBase64,
+                // foto is now derived from fotoPublicId on the client
                 alamatLengkap: [
                     profile.deskel,
                     profile.kecamatan,

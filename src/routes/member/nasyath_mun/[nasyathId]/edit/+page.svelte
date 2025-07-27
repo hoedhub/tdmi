@@ -59,7 +59,7 @@
 	}
 </script>
 
-<div class="container mx-auto max-w-2xl p-4">
+<div class="container mx-auto max-w-2xl p-4" dir="rtl">
 	<h1 class="mb-6 text-2xl font-bold">تحرير نشاط اﻷعضاء</h1>
 
 	{#if form?.message && !isLoading}

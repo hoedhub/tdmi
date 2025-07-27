@@ -1,6 +1,6 @@
 <!-- PaginationControls.svelte -->
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
+	import { createEventDispatcher, onMount } from 'svelte';
 	import { ChevronLeft, ChevronRight } from 'lucide-svelte';
 	import { generatePageNumbers } from '../features/pagination';
 
@@ -10,6 +10,16 @@
 	export let totalItems: number;
 
 	const dispatch = createEventDispatcher();
+
+	let element: HTMLDivElement;
+	let isRtl = false;
+
+	onMount(() => {
+		if (element) {
+			// Check the computed direction of the element itself or a parent
+			isRtl = getComputedStyle(element).direction === 'rtl';
+		}
+	});
 
 	$: pages = generatePageNumbers(currentPage, totalPages);
 	$: startItem = (currentPage - 1) * itemsPerPage + 1;
@@ -23,7 +33,9 @@
 </script>
 
 <div
+	bind:this={element}
 	class="flex flex-col items-center gap-4 sm:flex-row sm:justify-between"
+	class:rtl={isRtl}
 	role="navigation"
 	aria-label="Pagination"
 >
@@ -33,6 +45,7 @@
 	</div>
 
 	<div class="flex w-full flex-wrap items-center justify-center gap-4 sm:w-auto sm:justify-end">
+		<!-- In RTL, reverse the order of the button group and the "items per page" selector -->
 		<div class="join" role="group" aria-label="Pagination controls">
 			<!-- Previous page -->
 			<button
@@ -41,7 +54,7 @@
 				disabled={currentPage === 1}
 				aria-label="Previous page"
 			>
-				<ChevronLeft size={16} />
+				<ChevronLeft size={16} class="transform {isRtl ? 'rotate-180' : ''}" />
 			</button>
 
 			<!-- Page numbers -->
@@ -67,7 +80,7 @@
 				disabled={currentPage === totalPages}
 				aria-label="Next page"
 			>
-				<ChevronRight size={16} />
+				<ChevronRight size={16} class="transform {isRtl ? 'rotate-180' : ''}" />
 			</button>
 		</div>
 

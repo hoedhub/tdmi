@@ -41,11 +41,6 @@
 		{ href: '/settings', label: 'Settings', icon: Settings }
 	];
 
-	function isActive(href: String) {
-		// For SvelteKit, use: $page.url.pathname === href
-		// return currentPath === href || (href === '/' && currentPath.startsWith('/#'));
-		return $page.url.pathname === href; // Gunakan $page store untuk
-	}
 	const themes = [
 		'light',
 		'dark',
@@ -166,7 +161,9 @@
 					<li>
 						<a
 							href={item.href}
-							class:active={isActive(item.href)}
+							class:active={item.href === '/'
+								? $page.url.pathname === '/'
+								: $page.url.pathname.startsWith(item.href)}
 							on:click={() => (isSidebarOpen = false)}
 						>
 							<svelte:component this={item.icon} size={20} class="opacity-75" />

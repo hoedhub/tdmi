@@ -4,7 +4,7 @@ import { userHasPermission } from '$lib/server/accessControl';
 import { db } from '$lib/drizzle';
 import { muridTable, propTable } from '$lib/drizzle/schema';
 import { uploadFile } from '$lib/server/cloudinary';
-import { type InferInsertModel } from 'drizzle-orm';
+import { type InferInsertModel, eq } from 'drizzle-orm';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	console.log('Memasuki fungsi load untuk /member/pendataan/new');
