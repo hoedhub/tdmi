@@ -13,7 +13,18 @@
 		LinearScale,
 		ArcElement
 	} from 'chart.js';
-	import { Calendar, TrendingUp, Users, Edit, Trash2, PlusCircle, Download, LayoutDashboard, Table } from 'lucide-svelte';
+	import PieChart from '$lib/components/PieChart.svelte';
+	import {
+		Calendar,
+		TrendingUp,
+		Users,
+		Edit,
+		Trash2,
+		PlusCircle,
+		Download,
+		LayoutDashboard,
+		Table
+	} from 'lucide-svelte';
 	import { toHindi } from '$lib/utils/toHindi';
 	import type { PageData } from './$types';
 	import SuperTable from '$lib/components/SuperTable/SuperTable.svelte';
@@ -45,39 +56,127 @@
 		}
 	});
 
-
 	// --- DASHBOARD LOGIC ---
 	ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale, ArcElement);
 
 	$: activitiesPerMonth = {
 		labels: data.charts.activitiesPerMonth.map((item) => {
 			const [year, month] = item.month.split('-');
-			return new Date(Number(year), Number(month) - 1).toLocaleString('default', { month: 'short', year: '2-digit' });
+			return new Date(Number(year), Number(month) - 1).toLocaleString('default', {
+				month: 'short',
+				year: '2-digit'
+			});
 		}),
-		datasets: [{
-			label: 'Jumlah Kegiatan',
-			data: data.charts.activitiesPerMonth.map((item) => item.count),
-			backgroundColor: 'rgba(54, 162, 235, 0.6)',
-			borderColor: 'rgba(54, 162, 235, 1)',
-			borderWidth: 1
-		}]
+		datasets: [
+			{
+				label: 'Jumlah Kegiatan',
+				data: data.charts.activitiesPerMonth.map((item) => item.count),
+				backgroundColor: 'rgba(54, 162, 235, 0.6)',
+				borderColor: 'rgba(54, 162, 235, 1)',
+				borderWidth: 1
+			}
+		]
 	};
 
 	$: mostActiveMembers = {
 		labels: data.charts.mostActiveMembers.map((item) => item.muridName || 'Tanpa Nama'),
-		datasets: [{
-			data: data.charts.mostActiveMembers.map((item) => item.activityCount),
-			backgroundColor: ['rgba(255, 99, 132, 0.7)', 'rgba(54, 162, 235, 0.7)', 'rgba(255, 206, 86, 0.7)', 'rgba(75, 192, 192, 0.7)', 'rgba(153, 102, 255, 0.7)', 'rgba(255, 159, 64, 0.7)', 'rgba(199, 199, 199, 0.7)'],
-			hoverOffset: 4
-		}]
+		datasets: [
+			{
+				data: data.charts.mostActiveMembers.map((item) => item.activityCount),
+				backgroundColor: [
+					'#FF6384',
+					'#36A2EB',
+					'#FFCE56',
+					'#4BC0C0',
+					'#9966FF',
+					'#FF9F40',
+					'#C7C7C7'
+				],
+				borderColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#C7C7C7'],
+				borderWidth: 1
+			}
+		]
 	};
 
-	const chartOptions = {
+	const pieChartOptions = {
 		responsive: true,
 		maintainAspectRatio: false,
-		plugins: { legend: { position: 'top' as const } }
+		layout: {
+			padding: {
+				left: 10,
+				right: 10,
+				top: 0,
+				bottom: 0
+			}
+		},
+		plugins: {
+			legend: {
+				position: 'right' as const,
+				rtl: true,
+				labels: {
+					boxWidth: 15,
+					usePointStyle: true,
+					padding: 15,
+					font: {
+						size: 11
+					}
+				}
+			},
+			tooltip: {
+				callbacks: {
+					label: function (context: any) {
+						return `${context.label}: ${toHindi(context.raw)}`;
+					}
+				}
+			}
+		}
 	};
 
+	const barChartOptions = {
+		responsive: true,
+		maintainAspectRatio: false,
+		layout: {
+			padding: {
+				left: 10,
+				right: 10,
+				top: 20,
+				bottom: 10
+			}
+		},
+		scales: {
+			y: {
+				beginAtZero: true,
+				ticks: {
+					font: {
+						size: 11
+					},
+					callback: function (value: any) {
+						return toHindi(value);
+					}
+				}
+			},
+			x: {
+				ticks: {
+					font: {
+						size: 11
+					}
+				}
+			}
+		},
+		plugins: {
+			legend: {
+				position: 'top' as const,
+				labels: {
+					boxWidth: 15,
+					usePointStyle: true,
+					padding: 15,
+					font: {
+						size: 11
+					}
+				}
+			}
+		}
+	};
 
 	// --- TABLE LOGIC ---
 	interface NasyathRow {
@@ -87,7 +186,7 @@
 		tanggalSelesai: string | Date | null;
 		durasi: string | null;
 		tempat: string | null;
-		murid?: { nama: string | null; };
+		murid?: { nama: string | null };
 	}
 
 	let nasyathData: NasyathRow[] = [];
@@ -96,7 +195,10 @@
 	let dbError = false;
 	let pageSize = 10;
 	let currentPage = 1;
-	let currentSort: SortConfig[] | undefined = [{ key: 'murid.nama', direction: 'asc' }, { key: 'tanggalMulai', direction: 'asc' }];
+	let currentSort: SortConfig[] | undefined = [
+		{ key: 'murid.nama', direction: 'asc' },
+		{ key: 'tanggalMulai', direction: 'asc' }
+	];
 	let currentFilters: FilterState = { global: '', columns: {} };
 	let dateFilter: { start: string; end: string } = { start: '', end: '' };
 	let isExporting = false;
@@ -104,25 +206,61 @@
 	$: columns = (() => {
 		const baseColumns: ColumnDef[] = [
 			{ key: 'kegiatan', label: 'النشاط', sortable: true, filterable: 'text' },
-			{ key: 'tanggalMulai', label: 'تاريخ البدء', sortable: true, formatter: (value: any) => value ? toHindi(new Date(value).toLocaleDateString('ar-EG-u-nu-arab')) : '-' },
-			{ key: 'tanggalSelesai', label: 'تاريخ الانتهاء', sortable: true, formatter: (value: any) => value ? toHindi(new Date(value).toLocaleDateString('ar-EG-u-nu-arab')) : '-' },
-			{ key: 'durasi', label: 'المدة', sortable: true, filterable: 'text', formatter: (value: any) => toHindi(value) },
+			{
+				key: 'tanggalMulai',
+				label: 'تاريخ البدء',
+				sortable: true,
+				formatter: (value: any) =>
+					value ? toHindi(new Date(value).toLocaleDateString('ar-EG-u-nu-arab')) : '-'
+			},
+			{
+				key: 'tanggalSelesai',
+				label: 'تاريخ الانتهاء',
+				sortable: true,
+				formatter: (value: any) =>
+					value ? toHindi(new Date(value).toLocaleDateString('ar-EG-u-nu-arab')) : '-'
+			},
+			{
+				key: 'durasi',
+				label: 'المدة',
+				sortable: true,
+				filterable: 'text',
+				formatter: (value: any) => toHindi(value)
+			},
 			{ key: 'tempat', label: 'المكان', sortable: true, filterable: 'text' }
 		];
 		if (data && data.canReadAll) {
-			return [{ key: 'murid.nama', label: 'الاسم', sortable: true, filterable: 'text', formatter: (value: any, row: NasyathRow) => row.murid?.nama || 'N/A' } as ColumnDef<NasyathRow>, ...baseColumns];
+			return [
+				{
+					key: 'murid.nama',
+					label: 'الاسم',
+					sortable: true,
+					filterable: 'text',
+					formatter: (value: any, row: NasyathRow) => row.murid?.nama || 'N/A'
+				} as ColumnDef<NasyathRow>,
+				...baseColumns
+			];
 		}
 		return baseColumns;
 	})();
 
-	async function fetchNasyathData(sort?: SortConfig[] | null, filters?: FilterState, page: number = 1) {
+	async function fetchNasyathData(
+		sort?: SortConfig[] | null,
+		filters?: FilterState,
+		page: number = 1
+	) {
 		loading = true;
 		dbError = false;
 		try {
 			const response = await fetch('/member/nasyath_mun/table', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ sort, filters: { ...filters, dateRange: dateFilter }, page, pageSize })
+				body: JSON.stringify({
+					sort,
+					filters: { ...filters, dateRange: dateFilter },
+					page,
+					pageSize
+				})
 			});
 			if (!response.ok) throw new Error('Gagal memuat data nasyath');
 			const result = await response.json();
@@ -138,16 +276,51 @@
 		}
 	}
 
-	function applyDateFilter() { fetchNasyathData(currentSort, currentFilters, 1); }
-	function resetDateFilter() { dateFilter.start = ''; dateFilter.end = ''; applyDateFilter(); }
-	async function handleSort(event: CustomEvent<SortConfig[] | null>) { currentSort = event.detail ?? undefined; await fetchNasyathData(currentSort, currentFilters, currentPage); }
-	async function handleFilter(event: CustomEvent<FilterState>) { currentFilters = event.detail; await fetchNasyathData(currentSort, currentFilters, 1); }
-	async function handlePageChange(event: CustomEvent<number>) { currentPage = event.detail; await fetchNasyathData(currentSort, currentFilters, currentPage); }
-	async function handleItemsPerPageChange(event: CustomEvent<number>) { pageSize = event.detail; await fetchNasyathData(currentSort, currentFilters, 1); }
-	function handleEdit(id: number) { goto(`/member/nasyath_mun/${id}/edit`); }
-	function handleDeleteSubmit() { return async ({ result }: { result: ActionResult }) => { if (result.type === 'redirect') { success('Data berhasil dihapus.'); await fetchNasyathData(currentSort, currentFilters, currentPage); } else if (result.type === 'error' && result.error) { error(result.error.message || 'Gagal menghapus data.'); } }; }
-	const handleSubmit = (e: Event) => { if (!confirm('Apakah Anda yakin ingin menghapus data ini?')) { e.preventDefault(); } };
-	async function handleExport() { /* ... (export logic remains the same) ... */ }
+	function applyDateFilter() {
+		fetchNasyathData(currentSort, currentFilters, 1);
+	}
+	function resetDateFilter() {
+		dateFilter.start = '';
+		dateFilter.end = '';
+		applyDateFilter();
+	}
+	async function handleSort(event: CustomEvent<SortConfig[] | null>) {
+		currentSort = event.detail ?? undefined;
+		await fetchNasyathData(currentSort, currentFilters, currentPage);
+	}
+	async function handleFilter(event: CustomEvent<FilterState>) {
+		currentFilters = event.detail;
+		await fetchNasyathData(currentSort, currentFilters, 1);
+	}
+	async function handlePageChange(event: CustomEvent<number>) {
+		currentPage = event.detail;
+		await fetchNasyathData(currentSort, currentFilters, currentPage);
+	}
+	async function handleItemsPerPageChange(event: CustomEvent<number>) {
+		pageSize = event.detail;
+		await fetchNasyathData(currentSort, currentFilters, 1);
+	}
+	function handleEdit(id: number) {
+		goto(`/member/nasyath_mun/${id}/edit`);
+	}
+	function handleDeleteSubmit() {
+		return async ({ result }: { result: ActionResult }) => {
+			if (result.type === 'redirect') {
+				success('Data berhasil dihapus.');
+				await fetchNasyathData(currentSort, currentFilters, currentPage);
+			} else if (result.type === 'error' && result.error) {
+				error(result.error.message || 'Gagal menghapus data.');
+			}
+		};
+	}
+	const handleSubmit = (e: Event) => {
+		if (!confirm('Apakah Anda yakin ingin menghapus data ini?')) {
+			e.preventDefault();
+		}
+	};
+	async function handleExport() {
+		/* ... (export logic remains the same) ... */
+	}
 
 	onMount(() => {
 		const today = new Date();
@@ -155,7 +328,12 @@
 		const month = today.getMonth();
 		const startDate = new Date(year, month, 1);
 		const endDate = new Date(year, month + 1, 0);
-		const formatDate = (d: Date) => { const y = d.getFullYear(); const m = (d.getMonth() + 1).toString().padStart(2, '0'); const day = d.getDate().toString().padStart(2, '0'); return `${y}-${m}-${day}`; };
+		const formatDate = (d: Date) => {
+			const y = d.getFullYear();
+			const m = (d.getMonth() + 1).toString().padStart(2, '0');
+			const day = d.getDate().toString().padStart(2, '0');
+			return `${y}-${m}-${day}`;
+		};
 		dateFilter.start = formatDate(startDate);
 		dateFilter.end = formatDate(endDate);
 		fetchNasyathData(currentSort, currentFilters, currentPage);
@@ -169,10 +347,18 @@
 			{currentView === 'dashboard' ? 'لوحة معلومات النشاط' : 'قائمة نشاط الأعضاء'}
 		</h1>
 		<div class="btn-group">
-			<button class="btn btn-sm" class:btn-active={currentView === 'dashboard'} on:click={() => setView('dashboard')}>
+			<button
+				class="btn btn-sm"
+				class:btn-active={currentView === 'dashboard'}
+				on:click={() => setView('dashboard')}
+			>
 				<LayoutDashboard class="h-4 w-4" /> Dashboard
 			</button>
-			<button class="btn btn-sm" class:btn-active={currentView === 'table'} on:click={() => setView('table')}>
+			<button
+				class="btn btn-sm"
+				class:btn-active={currentView === 'table'}
+				on:click={() => setView('table')}
+			>
 				<Table class="h-4 w-4" /> Tabel
 			</button>
 		</div>
@@ -184,28 +370,134 @@
 		<div class="space-y-6">
 			<!-- KPI Cards -->
 			<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-				<div class="stat bg-base-200 rounded-lg shadow"><div class="stat-figure text-primary"><Calendar class="h-8 w-8" /></div><div class="stat-title">نشاط هذا الشهر</div><div class="stat-value text-primary">{toHindi(data.kpi.totalThisMonth)}</div></div>
-				<div class="stat bg-base-200 rounded-lg shadow"><div class="stat-figure text-secondary"><Calendar class="h-8 w-8" /></div><div class="stat-title">نشاط هذا العام</div><div class="stat-value text-secondary">{toHindi(data.kpi.totalThisYear)}</div></div>
-				<div class="stat bg-base-200 rounded-lg shadow"><div class="stat-figure text-accent"><TrendingUp class="h-8 w-8" /></div><div class="stat-title">النشاط الأكثر شيوعًا</div><div class="stat-value text-accent truncate">{data.kpi.mostFrequentActivity}</div></div>
+				<div class="stat rounded-lg bg-base-200 shadow">
+					<div class="stat-figure text-primary"><Calendar class="h-8 w-8" /></div>
+					<div class="stat-title">نشاط هذا الشهر</div>
+					<div class="stat-value text-primary">{toHindi(data.kpi.totalThisMonth)}</div>
+				</div>
+				<div class="stat rounded-lg bg-base-200 shadow">
+					<div class="stat-figure text-secondary"><Calendar class="h-8 w-8" /></div>
+					<div class="stat-title">نشاط هذا العام</div>
+					<div class="stat-value text-secondary">{toHindi(data.kpi.totalThisYear)}</div>
+				</div>
+				<div class="stat rounded-lg bg-base-200 shadow">
+					<div class="stat-figure text-accent"><TrendingUp class="h-8 w-8" /></div>
+					<div class="stat-title">النشاط الأكثر شيوعًا</div>
+					<div class="stat-value truncate text-accent">{data.kpi.mostFrequentActivity}</div>
+				</div>
 			</div>
 			<!-- Charts -->
 			<div class="grid grid-cols-1 gap-6 lg:grid-cols-5">
-				<div class="card bg-base-200 shadow-lg lg:col-span-3"><div class="card-body"><h2 class="card-title">النشاط الشهري (آخر 6 أشهر)</h2><div class="h-64"><Bar data={activitiesPerMonth} options={chartOptions} /></div></div></div>
-				<div class="card bg-base-200 shadow-lg lg:col-span-2"><div class="card-body"><h2 class="card-title">الأعضاء الأكثر نشاطًا</h2>{#if data.canReadAll}{#if data.charts.mostActiveMembers.length > 0}<div class="h-64">{#key data.charts.mostActiveMembers}<Pie data={mostActiveMembers} options={chartOptions} />{/key}</div>{:else}<div class="flex h-full flex-col items-center justify-center text-center"><Users class="h-12 w-12 text-base-content/30" /><p class="mt-2 text-sm text-base-content/60">Belum ada data aktivitas anggota untuk ditampilkan.</p></div>{/if}{:else}<div class="flex h-full flex-col items-center justify-center text-center"><Users class="h-12 w-12 text-base-content/30" /><p class="mt-2 text-sm text-base-content/60">Tampilan ini hanya tersedia untuk admin.</p></div>{/if}</div></div>
+				<div class="card bg-base-200 shadow-lg lg:col-span-3">
+					<div class="card-body">
+						<h2 class="card-title mb-4">النشاط الشهري (آخر 6 أشهر)</h2>
+						<div class="h-80">
+							<Bar data={activitiesPerMonth} options={barChartOptions} />
+						</div>
+					</div>
+				</div>
+				<div class="card bg-base-200 shadow-lg lg:col-span-2">
+					<div class="card-body">
+						<h2 class="card-title mb-4">الأعضاء الأكثر نشاطًا</h2>
+						<div class="flex h-80 items-center justify-center">
+							<Pie data={mostActiveMembers} options={pieChartOptions} />
+						</div>
+					</div>
+				</div>
 			</div>
 			<!-- Recent Activities Table -->
-			<div class="card bg-base-200 shadow-lg"><div class="card-body"><h2 class="card-title mb-4">أحدث 5 أنشطة</h2><div class="overflow-x-auto"><table class="table w-full"><thead><tr><th>النشاط</th><th>تاريخ البدء</th><th>المكان</th></tr></thead><tbody>{#each data.recentActivities as activity}<tr><td>{activity.kegiatan}</td><td>{#if activity.tanggalMulai}{new Date(activity.tanggalMulai).toLocaleDateString('ar-EG')}{:else}-{/if}</td><td>{activity.tempat || '-'}</td></tr>{:else}<tr><td colspan="3" class="text-center">لا توجد أنشطة حديثة.</td></tr>{/each}</tbody></table></div></div></div>
+			<div class="card bg-base-200 shadow-lg">
+				<div class="card-body">
+					<h2 class="card-title mb-4">أحدث 5 أنشطة</h2>
+					<div class="overflow-x-auto">
+						<table class="table w-full">
+							<thead><tr><th>النشاط</th><th>تاريخ البدء</th><th>المكان</th></tr></thead><tbody
+								>{#each data.recentActivities as activity}<tr
+										><td>{activity.kegiatan}</td><td
+											>{#if activity.tanggalMulai}{new Date(
+													activity.tanggalMulai
+												).toLocaleDateString('ar-EG')}{:else}-{/if}</td
+										><td>{activity.tempat || '-'}</td></tr
+									>{:else}<tr><td colspan="3" class="text-center">لا توجد أنشطة حديثة.</td></tr
+									>{/each}</tbody
+							>
+						</table>
+					</div>
+				</div>
+			</div>
 		</div>
 	{:else if currentView === 'table'}
 		<!-- TABLE VIEW -->
 		<div class="space-y-4">
 			<div class="flex items-center justify-end gap-2">
-				<button class="btn btn-secondary btn-sm" on:click={handleExport} disabled={isExporting}><Download class="h-4 w-4" />{#if isExporting}Mengekspor...{:else}Export{/if}</button>
-				<a href="/member/nasyath_mun/new" class="btn btn-primary btn-sm"><PlusCircle class="h-4 w-4" /> Tambah Baru</a>
+				<button class="btn btn-secondary btn-sm" on:click={handleExport} disabled={isExporting}
+					><Download class="h-4 w-4" />{#if isExporting}Mengekspor...{:else}Export{/if}</button
+				>
+				<a href="/member/nasyath_mun/new" class="btn btn-primary btn-sm"
+					><PlusCircle class="h-4 w-4" /> Tambah Baru</a
+				>
 			</div>
-			<SuperTable data={nasyathData} {columns} rowKey="id" serverSide={true} isSelectable={true} isLoadingProp={loading} {dbError} itemsPerPageProp={pageSize} totalItemsProp={totalItems} sort={currentSort} on:sort={handleSort} on:filter={handleFilter} on:pageChange={handlePageChange} on:itemsPerPageChange={handleItemsPerPageChange}>
-				<svelte:fragment slot="custom-filters"><div class="flex flex-col md:flex-row md:items-end gap-2 pt-2"><div class="form-control w-full md:w-auto"><label for="startDate" class="label pb-1"><span class="label-text">Dari Tanggal</span></label><input type="date" id="startDate" bind:value={dateFilter.start} class="input input-sm input-bordered w-full" /></div><div class="form-control w-full md:w-auto"><label for="endDate" class="label pb-1"><span class="label-text">Hingga Tanggal</span></label><input type="date" id="endDate" bind:value={dateFilter.end} class="input input-sm input-bordered w-full" /></div><div class="flex items-center gap-1 pt-4 md:pt-0"><button class="btn btn-primary btn-sm" on:click={applyDateFilter}>Filter</button><button class="btn btn-ghost btn-sm" on:click={resetDateFilter}>Reset</button></div></div></svelte:fragment>
-				<div slot="row-actions" let:row class="flex items-center gap-1"><button class="btn btn-ghost btn-xs" aria-label="Edit item" on:click={() => handleEdit(row.id)}><Edit class="h-4 w-4" /></button><form method="POST" action={`/member/nasyath_mun/${row.id}/delete`} use:enhance={handleDeleteSubmit} on:submit|preventDefault={handleSubmit}><button type="submit" class="btn btn-ghost btn-xs text-error" aria-label="Delete item"><Trash2 class="h-4 w-4" /></button></form></div>
+			<SuperTable
+				data={nasyathData}
+				{columns}
+				rowKey="id"
+				serverSide={true}
+				isSelectable={true}
+				isLoadingProp={loading}
+				{dbError}
+				itemsPerPageProp={pageSize}
+				totalItemsProp={totalItems}
+				sort={currentSort}
+				on:sort={handleSort}
+				on:filter={handleFilter}
+				on:pageChange={handlePageChange}
+				on:itemsPerPageChange={handleItemsPerPageChange}
+			>
+				<svelte:fragment slot="custom-filters"
+					><div class="flex flex-col gap-2 pt-2 md:flex-row md:items-end">
+						<div class="form-control w-full md:w-auto">
+							<label for="startDate" class="label pb-1"
+								><span class="label-text">Dari Tanggal</span></label
+							><input
+								type="date"
+								id="startDate"
+								bind:value={dateFilter.start}
+								class="input input-sm input-bordered w-full"
+							/>
+						</div>
+						<div class="form-control w-full md:w-auto">
+							<label for="endDate" class="label pb-1"
+								><span class="label-text">Hingga Tanggal</span></label
+							><input
+								type="date"
+								id="endDate"
+								bind:value={dateFilter.end}
+								class="input input-sm input-bordered w-full"
+							/>
+						</div>
+						<div class="flex items-center gap-1 pt-4 md:pt-0">
+							<button class="btn btn-primary btn-sm" on:click={applyDateFilter}>Filter</button
+							><button class="btn btn-ghost btn-sm" on:click={resetDateFilter}>Reset</button>
+						</div>
+					</div></svelte:fragment
+				>
+				<div slot="row-actions" let:row class="flex items-center gap-1">
+					<button
+						class="btn btn-ghost btn-xs"
+						aria-label="Edit item"
+						on:click={() => handleEdit(row.id)}><Edit class="h-4 w-4" /></button
+					>
+					<form
+						method="POST"
+						action={`/member/nasyath_mun/${row.id}/delete`}
+						use:enhance={handleDeleteSubmit}
+						on:submit|preventDefault={handleSubmit}
+					>
+						<button type="submit" class="btn btn-ghost btn-xs text-error" aria-label="Delete item"
+							><Trash2 class="h-4 w-4" /></button
+						>
+					</form>
+				</div>
 			</SuperTable>
 		</div>
 	{/if}
