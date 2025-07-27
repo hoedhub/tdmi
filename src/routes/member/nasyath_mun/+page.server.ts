@@ -99,8 +99,15 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	// --- Table Data Query ---
 	const recentActivities = await db
-		.select()
+		.select({
+			id: nasyathTable.id,
+			kegiatan: nasyathTable.kegiatan,
+			tanggalMulai: nasyathTable.tanggalMulai,
+			tempat: nasyathTable.tempat,
+			muridNama: muridTable.namaArab
+		})
 		.from(nasyathTable)
+		.leftJoin(muridTable, eq(nasyathTable.muridId, muridTable.id))
 		.where(and(...baseConditions))
 		.orderBy(desc(nasyathTable.tanggalMulai))
 		.limit(5);

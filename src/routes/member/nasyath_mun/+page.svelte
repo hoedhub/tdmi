@@ -52,18 +52,10 @@
 		canReadAll: boolean;
 		recentActivities: {
 			id: number;
-			muridId: number;
 			kegiatan: string;
 			tanggalMulai: string | null;
-			tanggalSelesai: string | null;
-			durasi: string | null;
 			tempat: string | null;
-			jarak: string | null;
-			keterangan: string | null;
-			createdAt: string;
-			updatedAt: string;
-			creatorId: string;
-			updaterId: string;
+			muridNama: string | null;
 		}[];
 	};
 
@@ -467,16 +459,36 @@
 					<h2 class="card-title mb-4">أحدث 5 أنشطة</h2>
 					<div class="overflow-x-auto">
 						<table class="table w-full">
-							<thead><tr><th>النشاط</th><th>تاريخ البدء</th><th>المكان</th></tr></thead><tbody
-								>{#each data.recentActivities as activity}<tr
-										><td>{activity.kegiatan}</td><td
-											>{#if activity.tanggalMulai}{new Date(
-													activity.tanggalMulai
-												).toLocaleDateString('ar-EG')}{:else}-{/if}</td
-										><td>{activity.tempat || '-'}</td></tr
-									>{:else}<tr><td colspan="3" class="text-center">لا توجد أنشطة حديثة.</td></tr
-									>{/each}</tbody
-							>
+							<thead>
+								<tr>
+									{#if data.canReadAll}<th>الاسم</th>{/if}
+									<th>النشاط</th>
+									<th>تاريخ البدء</th>
+									<th>المكان</th>
+								</tr>
+							</thead>
+							<tbody>
+								{#each data.recentActivities as activity}
+									<tr>
+										{#if data.canReadAll}
+											<td>{activity.muridNama || '-'}</td>
+										{/if}
+										<td>{activity.kegiatan}</td>
+										<td>
+											{#if activity.tanggalMulai}
+												{new Date(Date.parse(activity.tanggalMulai)).toLocaleDateString('ar-EG')}
+											{:else}-{/if}
+										</td>
+										<td>{activity.tempat || '-'}</td>
+									</tr>
+								{:else}
+									<tr>
+										<td colspan={data.canReadAll ? 4 : 3} class="text-center">
+											لا توجد أنشطة حديثة.
+										</td>
+									</tr>
+								{/each}
+							</tbody>
 						</table>
 					</div>
 				</div>
