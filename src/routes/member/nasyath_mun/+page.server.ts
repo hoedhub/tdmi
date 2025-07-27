@@ -78,18 +78,23 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	// --- **QUERY BARU UNTUK PIE CHART** ---
 	// Menghitung anggota teraktif. Hanya relevan untuk admin.
-	let mostActiveMembers: { muridName: string | null; activityCount: number }[] = [];
+	let mostActiveMembers: { murid: { nama: string | null } | null; activityCount: number }[] = [];
 	if (canReadAll) {
-		mostActiveMembers = await db
+		const results = await db
 			.select({
-				muridName: muridTable.nama,
-				activityCount: count()
+				namaArab: muridTable.namaArab,
+				activityCount: count(nasyathTable.id)
 			})
 			.from(nasyathTable)
 			.leftJoin(muridTable, eq(nasyathTable.muridId, muridTable.id))
-			.groupBy(muridTable.nama)
-			.orderBy(desc(count()))
-			.limit(7); // Ambil 7 anggota teraktif
+			.groupBy(muridTable.namaArab)
+			.orderBy(desc(sql`count(${nasyathTable.id})`))
+			.limit(7);
+
+		mostActiveMembers = results.map(result => ({
+			murid: result.namaArab ? { nama: result.namaArab } : null,
+			activityCount: Number(result.activityCount)
+		}));
 	}
 
 	// --- Table Data Query ---

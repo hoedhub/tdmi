@@ -35,7 +35,39 @@
 	import type { ActionResult } from '@sveltejs/kit';
 
 	// 2. PROPS
-	export let data: PageData;
+	interface ChartData {
+		activitiesPerMonth: { month: string; count: number }[];
+		mostActiveMembers: MemberActivity[];
+	}
+
+	interface KPIData {
+		totalThisMonth: number;
+		totalThisYear: number;
+		mostFrequentActivity: string;
+	}
+
+	type PageDataExtended = PageData & {
+		charts: ChartData;
+		kpi: KPIData;
+		canReadAll: boolean;
+		recentActivities: {
+			id: number;
+			muridId: number;
+			kegiatan: string;
+			tanggalMulai: string | null;
+			tanggalSelesai: string | null;
+			durasi: string | null;
+			tempat: string | null;
+			jarak: string | null;
+			keterangan: string | null;
+			createdAt: string;
+			updatedAt: string;
+			creatorId: string;
+			updaterId: string;
+		}[];
+	};
+
+	export let data: PageDataExtended;
 
 	// 3. STATE MANAGEMENT FOR VIEW TOGGLE
 	let currentView: 'dashboard' | 'table' = 'dashboard'; // Default view
@@ -59,8 +91,18 @@
 	// --- DASHBOARD LOGIC ---
 	ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale, ArcElement);
 
+	interface ActivitySummary {
+		month: string;
+		count: number;
+	}
+
+	interface MemberActivity {
+		murid: { nama: string | null } | null;
+		activityCount: number;
+	}
+
 	$: activitiesPerMonth = {
-		labels: data.charts.activitiesPerMonth.map((item) => {
+		labels: data.charts.activitiesPerMonth.map((item: { month: string; count: number }) => {
 			const [year, month] = item.month.split('-');
 			return new Date(Number(year), Number(month) - 1).toLocaleString('default', {
 				month: 'short',
@@ -79,10 +121,12 @@
 	};
 
 	$: mostActiveMembers = {
-		labels: data.charts.mostActiveMembers.map((item) => item.muridName || 'Tanpa Nama'),
+		labels: data.charts.mostActiveMembers.map(
+			(item: MemberActivity) => item.murid?.nama || 'بدون اسم'
+		),
 		datasets: [
 			{
-				data: data.charts.mostActiveMembers.map((item) => item.activityCount),
+				data: data.charts.mostActiveMembers.map((item: MemberActivity) => item.activityCount),
 				backgroundColor: [
 					'#FF6384',
 					'#36A2EB',
@@ -105,21 +149,26 @@
 			padding: {
 				left: 10,
 				right: 10,
-				top: 0,
+				top: 20,
 				bottom: 0
 			}
 		},
 		plugins: {
 			legend: {
-				position: 'right' as const,
+				position: 'bottom' as const,
 				rtl: true,
+				align: 'end' as const, // Mengatur rata kanan (karena RTL)
+				maxHeight: 80, // Maksimum tinggi legend
 				labels: {
-					boxWidth: 15,
+					boxWidth: 12,
 					usePointStyle: true,
-					padding: 15,
+					padding: 8,
 					font: {
 						size: 11
 					}
+				},
+				overflow: {
+					y: 'scroll' // Membuat legend bisa di-scroll vertikal
 				}
 			},
 			tooltip: {
@@ -399,8 +448,15 @@
 				<div class="card bg-base-200 shadow-lg lg:col-span-2">
 					<div class="card-body">
 						<h2 class="card-title mb-4">الأعضاء الأكثر نشاطًا</h2>
-						<div class="flex h-80 items-center justify-center">
-							<Pie data={mostActiveMembers} options={pieChartOptions} />
+						<div class="flex h-[400px] items-center justify-center">
+							<div class="h-full w-full overflow-hidden">
+								<div class="h-[320px]">
+									<Pie data={mostActiveMembers} options={pieChartOptions} />
+								</div>
+								<div class="legend-container h-[80px] overflow-y-auto px-4">
+									<!-- Legend akan muncul di sini -->
+								</div>
+							</div>
 						</div>
 					</div>
 				</div>
