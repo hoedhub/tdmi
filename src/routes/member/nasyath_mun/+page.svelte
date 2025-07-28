@@ -62,7 +62,7 @@
 	export let data: PageDataExtended;
 
 	// 3. STATE MANAGEMENT FOR VIEW TOGGLE
-	let currentView: 'dashboard' | 'table' = 'dashboard'; // Default view
+	let currentView: 'dashboard' | 'table' = 'table'; // Default view
 
 	function setView(view: 'dashboard' | 'table') {
 		currentView = view;
