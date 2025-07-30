@@ -27,6 +27,13 @@
 	let userButtonEl: HTMLButtonElement;
 	let themeButtonEl: HTMLButtonElement;
 
+	$: if (typeof window !== 'undefined') {
+		localStorage.setItem(
+			`${$page.data.user?.id || 'default'}-sidebar-collapsed`,
+			JSON.stringify(isSidebarCollapsed)
+		);
+	}
+
 	async function logout() {
 		if (!confirm("You're about to logout... Are you sure?")) return;
 		const response = await fetch('/api/logout', { method: 'POST' });
@@ -106,10 +113,16 @@
 
 	onMount(() => {
 		if (typeof window !== 'undefined') {
-			const savedTheme = localStorage.getItem(`${$page.data.user?.id || 'default'}-theme`);
+			const userId = $page.data.user?.id || 'default';
+			const savedTheme = localStorage.getItem(`${userId}-theme`);
 			if (savedTheme && currentTheme !== savedTheme) {
 				currentTheme = savedTheme;
 				document.documentElement.setAttribute('data-theme', savedTheme);
+			}
+
+			const savedSidebarState = localStorage.getItem(`${userId}-sidebar-collapsed`);
+			if (savedSidebarState) {
+				isSidebarCollapsed = JSON.parse(savedSidebarState);
 			}
 		}
 	});
