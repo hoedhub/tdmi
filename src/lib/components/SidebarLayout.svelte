@@ -14,7 +14,8 @@
 		Users,
 		Menu as MenuIcon,
 		LogOut,
-		UserCircle
+		UserCircle,
+		Palette
 	} from 'lucide-svelte';
 	// For SvelteKit, you might use: import { page } from '$app/stores';
 
@@ -86,7 +87,7 @@
 		absoluteDropdownStore.toggle(rect, 'user', 'up');
 	}
 
-	function handleThemeMenuClick() {
+		function handleThemeMenuClick() {
 		const rect = themeButtonEl.getBoundingClientRect();
 		absoluteDropdownStore.toggle(rect, 'theme', 'up');
 	}
@@ -219,18 +220,18 @@
 					class:md:items-center={isSidebarCollapsed}
 				>
 					<!-- Theme Picker -->
-					<label class="form-control flex w-full flex-row items-center" class:md:justify-center={isSidebarCollapsed}>
-						<div class="label pt-[0.75rem]">
-							<span class="label-text" class:md:hidden={isSidebarCollapsed}>Theme</span>
-						</div>
-						<button
-							bind:this={themeButtonEl}
-							on:click={handleThemeMenuClick}
-							class="btn btn-xs"
-						>
-							{currentTheme}
-						</button>
-					</label>
+					<button
+						bind:this={themeButtonEl}
+						on:click={handleThemeMenuClick}
+						class="btn btn-ghost"
+						class:w-full={!isSidebarCollapsed}
+						class:md:justify-center={isSidebarCollapsed}
+						class:md:px-0={isSidebarCollapsed}
+						class:md:btn-circle={isSidebarCollapsed}
+					>
+						<Palette size={24} />
+						<span class:md:hidden={isSidebarCollapsed} class="truncate">Theme: {currentTheme}</span>
+					</button>
 
 					<!-- User Profile Dropdown -->
 					{#if $page.data.user}
