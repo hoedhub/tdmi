@@ -110,7 +110,8 @@
 		bind:this={menuElement}
 		style={menuStyle}
 		class="menu fixed z-50 rounded-box bg-base-300 p-2 shadow-lg"
-		class:w-52={$absoluteDropdownStore.content === 'user'}
+		class:w-52={$absoluteDropdownStore.content === 'user' ||
+			$absoluteDropdownStore.content === 'theme'}
 		class:h-96={$absoluteDropdownStore.content === 'theme'}
 		class:overflow-y-auto={$absoluteDropdownStore.content === 'theme'}
 	>

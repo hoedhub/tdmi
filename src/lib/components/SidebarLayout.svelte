@@ -225,6 +225,7 @@
 						on:click={handleThemeMenuClick}
 						class="btn btn-ghost"
 						class:w-full={!isSidebarCollapsed}
+						class:justify-start={!isSidebarCollapsed}
 						class:md:justify-center={isSidebarCollapsed}
 						class:md:px-0={isSidebarCollapsed}
 						class:md:btn-circle={isSidebarCollapsed}
@@ -240,6 +241,7 @@
 							on:click={handleUserMenuClick}
 							class="btn btn-ghost"
 							class:w-full={!isSidebarCollapsed}
+							class:justify-start={!isSidebarCollapsed}
 							class:md:justify-center={isSidebarCollapsed}
 							class:md:px-0={isSidebarCollapsed}
 							class:md:btn-circle={isSidebarCollapsed}
