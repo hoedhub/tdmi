@@ -5,6 +5,7 @@
 	import { ChartNoAxesGantt, User, ChevronsLeft } from 'lucide-svelte'; // Import User icon
 	import logo from '$lib/assets/TDMI-Logo-0002.jpg'; // Import your logo if needed
 	import { absoluteDropdownStore } from '$lib/stores/absoluteDropdown';
+	import { tooltipStore } from '$lib/stores/tooltipStore';
 
 	// Import Lucide icons
 	import {
@@ -87,9 +88,20 @@
 		absoluteDropdownStore.toggle(rect, 'user', 'up');
 	}
 
-		function handleThemeMenuClick() {
+	function handleThemeMenuClick() {
 		const rect = themeButtonEl.getBoundingClientRect();
 		absoluteDropdownStore.toggle(rect, 'theme', 'up');
+	}
+
+	function showTooltip(event: MouseEvent, content: string) {
+		if (isSidebarCollapsed) {
+			const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+			tooltipStore.show(content, rect);
+		}
+	}
+
+	function hideTooltip() {
+		tooltipStore.hide();
 	}
 
 	onMount(() => {
@@ -176,7 +188,11 @@
 				<div class="divider my-0"></div>
 
 				<!-- Main Navigation Menu -->
-				<ul class="menu flex-grow flex-col space-y-1 overflow-y-auto px-4">
+				<ul
+					class="menu flex-grow flex-col space-y-1 px-4"
+					class:overflow-y-auto={!isSidebarCollapsed}
+					class:overflow-visible={isSidebarCollapsed}
+				>
 					{#each menuItems as item}
 						<li>
 							<a
@@ -187,6 +203,8 @@
 									? $page.url.pathname === '/'
 									: $page.url.pathname.startsWith(item.href)}
 								on:click={() => (isSidebarOpen = false)}
+								on:mouseenter={(e) => showTooltip(e, item.label)}
+								on:mouseleave={hideTooltip}
 								title={item.label}
 							>
 								<svelte:component this={item.icon} size={20} class="opacity-75" />
@@ -205,6 +223,8 @@
 								class:md:justify-center={isSidebarCollapsed}
 								class:active={$page.url.pathname.startsWith('/admin')}
 								on:click={() => (isSidebarOpen = false)}
+								on:mouseenter={(e) => showTooltip(e, 'Admin')}
+								on:mouseleave={hideTooltip}
 								title="Admin"
 							>
 								<ChartNoAxesGantt size={20} class="opacity-75" />
@@ -229,6 +249,8 @@
 						class:md:justify-center={isSidebarCollapsed}
 						class:md:px-0={isSidebarCollapsed}
 						class:md:btn-circle={isSidebarCollapsed}
+						on:mouseenter={(e) => showTooltip(e, 'Change Theme')}
+						on:mouseleave={hideTooltip}
 					>
 						<Palette size={24} />
 						<span class:md:hidden={isSidebarCollapsed} class="truncate">Theme: {currentTheme}</span>
@@ -245,6 +267,8 @@
 							class:md:justify-center={isSidebarCollapsed}
 							class:md:px-0={isSidebarCollapsed}
 							class:md:btn-circle={isSidebarCollapsed}
+							on:mouseenter={(e) => showTooltip(e, 'User Options')}
+							on:mouseleave={hideTooltip}
 						>
 							<UserCircle size={24} />
 							<span class:md:hidden={isSidebarCollapsed} class="truncate"
@@ -296,3 +320,4 @@
 		}
 	}
 </style>
+
