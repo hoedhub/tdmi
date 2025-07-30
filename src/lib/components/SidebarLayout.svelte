@@ -4,6 +4,7 @@
 	import { page } from '$app/stores';
 	import { ChartNoAxesGantt, User, ChevronsLeft } from 'lucide-svelte'; // Import User icon
 	import logo from '$lib/assets/TDMI-Logo-0002.jpg'; // Import your logo if needed
+	import { absoluteDropdownStore } from '$lib/stores/absoluteDropdown';
 
 	// Import Lucide icons
 	import {
@@ -21,6 +22,8 @@
 	let isSidebarCollapsed = false; // For desktop collapsed state
 	let currentPath = '';
 	let isDarkMode = false; // Simple state for theme toggle example
+	let userButtonEl: HTMLButtonElement;
+	let themeButtonEl: HTMLButtonElement;
 
 	async function logout() {
 		if (!confirm("You're about to logout... Are you sure?")) return;
@@ -78,15 +81,14 @@
 	];
 	let currentTheme = 'cupcake'; // Default theme
 
-	function toggleTheme(theme: string) {
-		if (currentTheme === theme) return;
-		document.documentElement.setAttribute('data-theme', theme);
-		currentTheme = theme;
-		localStorage.setItem(`${$page.data.user?.id || 'default'}-theme`, theme);
+	function handleUserMenuClick() {
+		const rect = userButtonEl.getBoundingClientRect();
+		absoluteDropdownStore.toggle(rect, 'user', 'up');
 	}
 
-	function previewTheme(theme: string) {
-		document.documentElement.setAttribute('data-theme', theme);
+	function handleThemeMenuClick() {
+		const rect = themeButtonEl.getBoundingClientRect();
+		absoluteDropdownStore.toggle(rect, 'theme', 'up');
 	}
 
 	onMount(() => {
@@ -94,6 +96,7 @@
 			const savedTheme = localStorage.getItem(`${$page.data.user?.id || 'default'}-theme`);
 			if (savedTheme && currentTheme !== savedTheme) {
 				currentTheme = savedTheme;
+				document.documentElement.setAttribute('data-theme', savedTheme);
 			}
 		}
 	});
@@ -220,68 +223,31 @@
 						<div class="label pt-[0.75rem]">
 							<span class="label-text" class:md:hidden={isSidebarCollapsed}>Theme</span>
 						</div>
-						<div class="dropdown dropdown-top">
-							<button tabindex="0" class="btn btn-xs" on:click|preventDefault={() => null}>
-								{currentTheme}
-							</button>
-							<ul
-								class="menu dropdown-content z-[1] h-96 w-52 overflow-y-auto rounded-box bg-base-100 p-2 shadow"
-							>
-								{#each themes as theme}
-									<li>
-										<button
-											class:active={currentTheme === theme}
-											on:click|preventDefault={() => {
-												toggleTheme(theme);
-											}}
-											on:mouseover|preventDefault={() => previewTheme(theme)}
-											on:focus|preventDefault={() => previewTheme(theme)}
-											on:mouseleave|preventDefault={() => previewTheme(currentTheme)}
-											on:blur|preventDefault={() => previewTheme(currentTheme)}
-										>
-											{theme}
-										</button>
-									</li>
-								{/each}
-							</ul>
-						</div>
+						<button
+							bind:this={themeButtonEl}
+							on:click={handleThemeMenuClick}
+							class="btn btn-xs"
+						>
+							{currentTheme}
+						</button>
 					</label>
 
 					<!-- User Profile Dropdown -->
 					{#if $page.data.user}
-						<div class="dropdown dropdown-top" class:w-full={!isSidebarCollapsed}>
-							<button
-								tabindex="0"
-								class="btn btn-ghost"
-								class:w-full={!isSidebarCollapsed}
-								class:md:justify-center={isSidebarCollapsed}
-								class:md:px-0={isSidebarCollapsed}
-								class:md:btn-circle={isSidebarCollapsed}
+						<button
+							bind:this={userButtonEl}
+							on:click={handleUserMenuClick}
+							class="btn btn-ghost"
+							class:w-full={!isSidebarCollapsed}
+							class:md:justify-center={isSidebarCollapsed}
+							class:md:px-0={isSidebarCollapsed}
+							class:md:btn-circle={isSidebarCollapsed}
+						>
+							<UserCircle size={24} />
+							<span class:md:hidden={isSidebarCollapsed} class="truncate"
+								>Halo, {$page.data.user.username}</span
 							>
-								<UserCircle size={24} />
-								<span class:md:hidden={isSidebarCollapsed} class="truncate"
-									>Halo, {$page.data.user.username}</span
-								>
-							</button>
-							<ul
-								tabindex="0"
-								role="menu"
-								class="menu dropdown-content z-[1] w-full rounded-box bg-base-300 p-2 shadow"
-							>
-								<li class="menu-title text-xs">Signed in as {$page.data.user.username}</li>
-								<div class="divider my-0"></div>
-								<li>
-									<a href="/member/profile" on:click={() => (isSidebarOpen = false)}>
-										<UserPen size={16} /> Edit Profile
-									</a>
-								</li>
-								<li>
-									<a href="/logout" on:click|preventDefault={logout}>
-										<LogOut size={16} /> Logout
-									</a>
-								</li>
-							</ul>
-						</div>
+						</button>
 					{/if}
 				</div>
 			</div>
