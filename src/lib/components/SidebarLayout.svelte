@@ -145,14 +145,13 @@
 	>
 		<label for="sidebar-drawer-toggle" aria-label="close sidebar" class="drawer-overlay"></label>
 
-		<!-- STRUKTUR UTAMA SIDEBAR YANG DIROMBAK -->
+		<!-- Responsive Sidebar Structure -->
 		<div
-			class="relative flex h-full flex-col bg-base-200 text-base-content transition-all duration-300"
-			class:w-16={isSidebarCollapsed}
-			class:w-64={!isSidebarCollapsed}
+			class="relative flex h-full flex-col bg-base-200 text-base-content transition-all duration-300 w-64"
+			class:md:w-14={isSidebarCollapsed}
 			class:md:w-72={!isSidebarCollapsed}
 		>
-			<!-- Tombol Toggle Collapse untuk Desktop -->
+			<!-- Toggle Button (Desktop Only) -->
 			<button
 				on:click={() => (isSidebarCollapsed = !isSidebarCollapsed)}
 				class="btn btn-circle btn-ghost absolute -right-4 top-8 z-50 hidden md:flex"
@@ -163,34 +162,32 @@
 				/>
 			</button>
 
-			<!-- 1. Logo/Header -->
+			<!-- Logo/Header -->
 			<div class="mb-4 mt-2 flex items-center justify-center p-2">
 				<a
 					href="/"
 					class="block transition-transform duration-300"
-					class:hover:scale-125={!isSidebarCollapsed}
+					class:md:hover:scale-125={!isSidebarCollapsed}
 				>
 					<img
 						alt="The project logo"
-						class="rounded-full border-2 border-white transition-all duration-300"
-						class:h-10={isSidebarCollapsed}
-						class:w-10={isSidebarCollapsed}
-						class:h-20={!isSidebarCollapsed}
-						class:w-20={!isSidebarCollapsed}
+						class="rounded-full border-2 border-white transition-all duration-300 h-20 w-20"
+						class:md:h-10={isSidebarCollapsed}
+						class:md:w-10={isSidebarCollapsed}
 						src={logo}
 					/>
 				</a>
 			</div>
 			<div class="divider my-0"></div>
 
-			<!-- 2. Menu Navigasi Utama (Scrollable) -->
+			<!-- Main Navigation Menu -->
 			<ul class="menu flex-grow flex-col space-y-1 overflow-y-auto px-4">
 				{#each menuItems as item}
 					<li>
 						<a
 							href={item.href}
 							class="flex"
-							class:justify-center={isSidebarCollapsed}
+							class:md:justify-center={isSidebarCollapsed}
 							class:active={item.href === '/'
 								? $page.url.pathname === '/'
 								: $page.url.pathname.startsWith(item.href)}
@@ -198,42 +195,38 @@
 							title={item.label}
 						>
 							<svelte:component this={item.icon} size={20} class="opacity-75" />
-							{#if !isSidebarCollapsed}
-								<span class="ml-2">{item.label}</span>
-							{/if}
+							<span class:md:hidden={isSidebarCollapsed}>{item.label}</span>
 						</a>
 					</li>
 				{/each}
 
-				<!-- Tautan Admin (Bagian dari Navigasi Utama) -->
+				<!-- Admin Link -->
 				{#if $page.data.canAccessAdmin}
 					<div class="divider my-1 text-xs">Admin Area</div>
 					<li>
 						<a
 							href={'/admin'}
 							class="flex"
-							class:justify-center={isSidebarCollapsed}
+							class:md:justify-center={isSidebarCollapsed}
 							class:active={$page.url.pathname.startsWith('/admin')}
 							on:click={() => (isSidebarOpen = false)}
 							title="Admin"
 						>
 							<ChartNoAxesGantt size={20} class="opacity-75" />
-							{#if !isSidebarCollapsed}
-								<span class="ml-2">{'Admin'}</span>
-							{/if}
+							<span class:md:hidden={isSidebarCollapsed}>{'Admin'}</span>
 						</a>
 					</li>
 				{/if}
 			</ul>
 
-			<!-- 3. Bagian Bawah (Fixed): Aksi Pengguna & Sesi -->
+			<!-- Bottom User/Session Actions -->
 			<div
 				class="mt-auto flex flex-col space-y-2 p-4 pt-4"
-				class:items-center={isSidebarCollapsed}
-				class:overflow-hidden={isSidebarCollapsed}
-				class:h-0={isSidebarCollapsed}
+				class:md:items-center={isSidebarCollapsed}
+				class:md:overflow-hidden={isSidebarCollapsed}
+				class:md:h-0={isSidebarCollapsed}
 			>
-				<!-- Pemilih Tema yang Lebih Baik -->
+				<!-- Theme Picker -->
 				<label class="form-control flex w-full flex-row items-center">
 					<div class="label pt-[0.75rem]">
 						<span class="label-text">Theme</span>
@@ -265,20 +258,19 @@
 					</div>
 				</label>
 
-				<!-- Dropdown Profil Pengguna -->
+				<!-- User Profile Dropdown -->
 				{#if $page.data.user}
 					<div class="dropdown dropdown-top w-full">
 						<button
 							tabindex="0"
 							class="btn btn-ghost w-full"
-							class:justify-center={isSidebarCollapsed}
-							class:justify-start={!isSidebarCollapsed}
-							class:px-0={isSidebarCollapsed}
+							class:md:justify-center={isSidebarCollapsed}
+							class:md:px-0={isSidebarCollapsed}
 						>
 							<UserCircle size={24} />
-							{#if !isSidebarCollapsed}
-								<span class="truncate">Halo, {$page.data.user.username}</span>
-							{/if}
+							<span class:md:hidden={isSidebarCollapsed} class="truncate"
+								>Halo, {$page.data.user.username}</span
+							>
 						</button>
 						<ul
 							tabindex="0"
@@ -310,17 +302,22 @@
 		font-weight: 600;
 	}
 
-	/* When sidebar is collapsed, make the menu items square */
-	:global(.drawer-side.collapsed .menu li a) {
-		width: 3rem; /* 48px */
-		height: 3rem; /* 48px */
-		padding: 0;
-		justify-content: center;
-		align-items: center;
-	}
+	/* Desktop-only styles for the collapsed sidebar */
+	@media (min-width: 768px) {
+		:global(.drawer-side.collapsed .menu li a) {
+			width: 2.5rem; /* 40px */
+			height: 2.5rem; /* 40px */
+			padding: 0;
+			align-items: center;
+		}
 
-	/* Adjust the main menu container's padding when collapsed */
-	:global(.drawer-side.collapsed .menu) {
-		padding-inline: 0.5rem; /* 8px */
+		:global(.drawer-side.collapsed .menu) {
+			padding-inline: 0.5rem; /* 8px */
+		}
+
+		/* Hide text span inside links when collapsed */
+		:global(.drawer-side.collapsed .menu li a span) {
+			display: none;
+		}
 	}
 </style>
