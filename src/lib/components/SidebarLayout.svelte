@@ -193,7 +193,7 @@
 
 					<!-- Admin Link -->
 					{#if $page.data.canAccessAdmin}
-						<div class="divider my-1 text-xs">Admin Area</div>
+						<div class="divider my-1 text-xs">{isSidebarCollapsed ? '' : 'Admin Area'}</div>
 						<li>
 							<a
 								href={'/admin'}
