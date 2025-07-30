@@ -214,13 +214,11 @@
 				<div
 					class="mt-auto flex flex-col space-y-2 p-4 pt-4"
 					class:md:items-center={isSidebarCollapsed}
-					class:md:overflow-hidden={isSidebarCollapsed}
-					class:md:h-0={isSidebarCollapsed}
 				>
 					<!-- Theme Picker -->
-					<label class="form-control flex w-full flex-row items-center">
+					<label class="form-control flex w-full flex-row items-center" class:md:justify-center={isSidebarCollapsed}>
 						<div class="label pt-[0.75rem]">
-							<span class="label-text">Theme</span>
+							<span class="label-text" class:md:hidden={isSidebarCollapsed}>Theme</span>
 						</div>
 						<div class="dropdown dropdown-top">
 							<button tabindex="0" class="btn btn-xs" on:click|preventDefault={() => null}>
@@ -251,12 +249,14 @@
 
 					<!-- User Profile Dropdown -->
 					{#if $page.data.user}
-						<div class="dropdown dropdown-top w-full">
+						<div class="dropdown dropdown-top" class:w-full={!isSidebarCollapsed}>
 							<button
 								tabindex="0"
-								class="btn btn-ghost w-full"
+								class="btn btn-ghost"
+								class:w-full={!isSidebarCollapsed}
 								class:md:justify-center={isSidebarCollapsed}
 								class:md:px-0={isSidebarCollapsed}
+								class:md:btn-circle={isSidebarCollapsed}
 							>
 								<UserCircle size={24} />
 								<span class:md:hidden={isSidebarCollapsed} class="truncate"
