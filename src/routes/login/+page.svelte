@@ -6,38 +6,34 @@
 	import { Eye, EyeOff, CheckCircle2 } from 'lucide-svelte';
 	import { error, success } from '$lib/components/toast';
 
-	export let form: ActionResult;
+	
 	let rememberMe = false;
 	let showPassword = false;
 	let isLoading = false;
 
-	// --- Reactive Toast Logic ---
-	// This block automatically runs whenever the 'form' prop changes.
-	$: {
-		// We check if the form is NOT valid and if it's not currently loading.
-		// The isLoading check prevents the toast from showing on initial page load.
-		if ((form as any)?.valid === false && !isLoading) {
-			// Show the error toast with the message from the server.
-			error((form as any).data?.msg || 'Invalid username or password.', { duration: 5000 });
-		}
-	}
-
-	// --- Simplified Enhance Function ---
-	// This function's only job is to manage the loading state.
+	// --- Direct Feedback on Submit ---
+	// We handle success and failure cases directly inside the submission handler
+	// for immediate and reliable feedback.
 	const handleSubmit: SubmitFunction = () => {
 		isLoading = true;
 
 		return async ({ result }) => {
 			isLoading = false; // Reset loading state after the server responds.
 
-			// On successful redirect, show the success toast.
+			// On successful redirect, show a success toast.
 			if (result.type === 'redirect') {
 				success('Login successful!', {
 					duration: 3000,
 					icon: CheckCircle2
 				});
 			}
-			// Let SvelteKit handle everything else.
+
+			// On failure, show an error toast with the message from the server.
+			if (result.type === 'failure') {
+				error(result.data?.msg || 'Invalid username or password.', { duration: 5000 });
+			}
+
+			// Let SvelteKit handle the rest (like updating the `form` prop).
 			await applyAction(result);
 		};
 	};
