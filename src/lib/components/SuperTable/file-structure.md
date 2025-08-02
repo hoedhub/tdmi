@@ -1,10 +1,10 @@
 src/
 └── lib/
-    └── components/
-        └── SuperTable/
-            // --- Core Component Files ---
-            ├── SuperTable.svelte             // Main component UI, event handling, composition
-            ├── index.ts                      // Exports SuperTable and related types/interfaces for easy import
+└── components/
+└── SuperTable/
+// --- Core Component Files ---
+├── SuperTable.svelte // Main component UI, event handling, composition
+├── index.ts // Exports SuperTable and related types/interfaces for easy import
 
             // --- Type Definitions ---
             ├── types.ts                      // All TypeScript interfaces (ColumnDef, SortConfig, FilterState, etc.)

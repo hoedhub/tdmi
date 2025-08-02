@@ -4,21 +4,20 @@ import type { SuperTableComponent } from './types';
 export { SuperTable };
 export type { SuperTableComponent };
 
-
 // Main component
 // export { default as SuperTable } from './SuperTable.svelte';
 
 // Types
 export type {
-    SortDirection,
-    FilterType,
-    MobileViewType,
-    ResponsiveShow,
-    SortConfig,
-    FilterState,
-    ColumnDef,
-    SuperTableProps,
-    SuperTableEvents
+	SortDirection,
+	FilterType,
+	MobileViewType,
+	ResponsiveShow,
+	SortConfig,
+	FilterState,
+	ColumnDef,
+	SuperTableProps,
+	SuperTableEvents
 } from './types';
 
 // Utility functions

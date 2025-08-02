@@ -48,7 +48,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 				for (const key in filters.columns) {
 					const value = filters.columns[key];
 					if (value) {
-						if (key === 'murid.nama') { // Keep key for frontend compatibility
+						if (key === 'murid.nama') {
+							// Keep key for frontend compatibility
 							allConditions.push(like(muridTable.namaArab, `%${value}%`));
 						} else if (key in nasyathTable) {
 							allConditions.push(like((nasyathTable as any)[key], `%${value}%`));
@@ -80,8 +81,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 		const orderByClauses = [];
 		if (sort && Array.isArray(sort) && sort.length > 0) {
-			sort.forEach(sortConfig => {
-				if (sortConfig.key === 'murid.nama') { // Keep key for frontend
+			sort.forEach((sortConfig) => {
+				if (sortConfig.key === 'murid.nama') {
+					// Keep key for frontend
 					orderByClauses.push(
 						sortConfig.direction === 'asc' ? asc(muridTable.namaArab) : desc(muridTable.namaArab)
 					);

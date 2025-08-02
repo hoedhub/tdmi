@@ -22,8 +22,7 @@ export async function canUserAccessNasyath(
 	accessType: 'read' | 'write'
 ): Promise<boolean> {
 	// 1. Periksa izin global berbasis peran (RBAC)
-	const requiredPermission =
-		accessType === 'write' ? 'perm-nasyath-write' : 'perm-nasyath-read';
+	const requiredPermission = accessType === 'write' ? 'perm-nasyath-write' : 'perm-nasyath-read';
 	const hasGlobalPermission = await userHasPermission(userId, requiredPermission);
 
 	if (hasGlobalPermission) {

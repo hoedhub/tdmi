@@ -1,5 +1,5 @@
 import { lucia } from '$lib/server/auth'; // Adjust path
-import { db } from '$lib/drizzle';      // Adjust path
+import { db } from '$lib/drizzle'; // Adjust path
 import { usersTable, sessionTable } from '$lib/drizzle/schema';
 import { eq } from 'drizzle-orm';
 import { error, json } from '@sveltejs/kit';

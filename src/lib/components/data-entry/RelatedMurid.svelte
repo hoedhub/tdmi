@@ -86,4 +86,9 @@
 	{/if}
 </div>
 
-<MuridModal {showModal} {editedMuridId} on:select={handleSelect} on:close={() => (showModal = false)} />
+<MuridModal
+	{showModal}
+	{editedMuridId}
+	on:select={handleSelect}
+	on:close={() => (showModal = false)}
+/>

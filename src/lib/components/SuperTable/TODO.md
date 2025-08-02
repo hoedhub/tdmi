@@ -1,32 +1,33 @@
 # TODO: SuperTable Component Development
 
 ## Phase 0: Project Setup & Initial Files (Pre-computation)
+
 - [ ] **Verify Environment:** Confirm SvelteKit, DaisyUI, Lucide-Svelte, TailwindCSS, and testing libraries are correctly installed and configured.
 - [ ] **Create Directory Structure:**
-    - [ ] `src/lib/components/SuperTable/`
-    - [ ] `src/lib/components/SuperTable/actions/`
-    - [ ] `src/lib/components/SuperTable/features/`
-    - [ ] `src/lib/components/SuperTable/subcomponents/` (can be populated as needed)
-    - [ ] `src/lib/components/SuperTable/tests/`
-    - [ ] `src/lib/components/SuperTable/tests/actions/`
-    - [ ] `src/lib/components/SuperTable/tests/features/`
+  - [ ] `src/lib/components/SuperTable/`
+  - [ ] `src/lib/components/SuperTable/actions/`
+  - [ ] `src/lib/components/SuperTable/features/`
+  - [ ] `src/lib/components/SuperTable/subcomponents/` (can be populated as needed)
+  - [ ] `src/lib/components/SuperTable/tests/`
+  - [ ] `src/lib/components/SuperTable/tests/actions/`
+  - [ ] `src/lib/components/SuperTable/tests/features/`
 
 ## Phase 1: Foundations - Types, Stores, Basic Component Shell
 
 1.  **`SuperTable/types.ts` - Define Core Data Structures:**
     - [ ] Define `RowData<T = any>` generic type.
     - [ ] Define `ColumnDef<T = any>` interface:
-        - [ ] `key: keyof T | string`
-        - [ ] `label: string`
-        - [ ] `sortable?: boolean`
-        - [ ] `filterable?: boolean | 'text' | 'select' | 'date'` (initially `boolean | 'text' | 'select'`)
-        - [ ] `filterOptions?: string[] | { label: string; value: any }[]`
-        - [ ] `formatter?: (value: any, row: T, column: ColumnDef<T>) => string | ComponentType`
-        - [ ] `headerClass?: string`
-        - [ ] `cellClass?: string | ((value: any, row: T) => string)`
-        - [ ] `responsiveShow?: 'always' | 'md' | 'lg'`
-        - [ ] `cardPriority?: number`
-        - [ ] `hidden?: boolean`
+      - [ ] `key: keyof T | string`
+      - [ ] `label: string`
+      - [ ] `sortable?: boolean`
+      - [ ] `filterable?: boolean | 'text' | 'select' | 'date'` (initially `boolean | 'text' | 'select'`)
+      - [ ] `filterOptions?: string[] | { label: string; value: any }[]`
+      - [ ] `formatter?: (value: any, row: T, column: ColumnDef<T>) => string | ComponentType`
+      - [ ] `headerClass?: string`
+      - [ ] `cellClass?: string | ((value: any, row: T) => string)`
+      - [ ] `responsiveShow?: 'always' | 'md' | 'lg'`
+      - [ ] `cardPriority?: number`
+      - [ ] `hidden?: boolean`
     - [ ] Define `SortDirection` type: `'asc' | 'desc'`.
     - [ ] Define `SortConfig` type: `{ key: string; direction: SortDirection } | null`.
     - [ ] Define `ColumnFilterValue` type (e.g., `string | number | null`).
@@ -65,10 +66,10 @@
     - [ ] Synchronize props with their respective stores (e.g., `$: dataStore.set(data)`).
     - [ ] Implement `bind:clientWidth` on a wrapper div.
     - [ ] Basic markup:
-        - [ ] Main wrapper div.
-        - [ ] Loading state slot: `{#if $isLoading} <slot name="loading-state">...</slot> {/if}` (default DaisyUI spinner).
-        - [ ] Empty state slot: `{#if !$isLoading && $data.length === 0} <slot name="empty-state">...</slot> {/if}` (default "No data").
-        - [ ] Conditional rendering for main content: `{#if !$isLoading && $data.length > 0}`.
+      - [ ] Main wrapper div.
+      - [ ] Loading state slot: `{#if $isLoading} <slot name="loading-state">...</slot> {/if}` (default DaisyUI spinner).
+      - [ ] Empty state slot: `{#if !$isLoading && $data.length === 0} <slot name="empty-state">...</slot> {/if}` (default "No data").
+      - [ ] Conditional rendering for main content: `{#if !$isLoading && $data.length > 0}`.
     - [ ] `onMount` / `onDestroy` for any setup/teardown if needed.
 
 5.  **`SuperTable/tests/SuperTable.spec.ts` - Basic Render Tests:**
@@ -84,9 +85,9 @@
     - [ ] Markup: `<thead><tr> ... </tr></thead>`.
     - [ ] Render "Select All" checkbox (DaisyUI `checkbox`) if `showSelectionCheckbox` is true. Bind its `checked` and `indeterminate` state.
     - [ ] Loop `$columns` (`{#each $columns as column}`):
-        - [ ] Render `<th>` for each visible column (`!column.hidden`).
-        - [ ] Apply `column.headerClass`.
-        - [ ] Display `column.label`.
+      - [ ] Render `<th>` for each visible column (`!column.hidden`).
+      - [ ] Apply `column.headerClass`.
+      - [ ] Display `column.label`.
     - [ ] Add `<th>` for actions column if planned.
 
 7.  **`SuperTable/subcomponents/TableRowDesktop.svelte` - Static Row:**
@@ -94,20 +95,20 @@
     - [ ] Markup: `<tr> ... </tr>`. Apply `class:active={$isSelected}`.
     - [ ] Render selection checkbox (DaisyUI `checkbox`) if `showSelectionCheckbox`. Bind `checked` to `$isSelected`.
     - [ ] Loop `$columns`:
-        - [ ] Render `<td>` for each visible column.
-        - [ ] Apply `column.cellClass` (handle function or string).
-        - [ ] Display cell content:
-            - [ ] If `column.formatter`, use `{@html column.formatter(row[column.key], row, column)}` or `<svelte:component this={...} />`.
-            - [ ] Else, display `row[column.key]`.
+      - [ ] Render `<td>` for each visible column.
+      - [ ] Apply `column.cellClass` (handle function or string).
+      - [ ] Display cell content:
+        - [ ] If `column.formatter`, use `{@html column.formatter(row[column.key], row, column)}` or `<svelte:component this={...} />`.
+        - [ ] Else, display `row[column.key]`.
     - [ ] Add `<td>` for row actions slot placeholder: `<slot name="row-actions" {row}></slot>`.
 
 8.  **Update `SuperTable/SuperTable.svelte` - Integrate Table View:**
     - [ ] Inside the main content conditional block:
-        - [ ] Add responsive logic: `{#if !$isMobileView || ($isMobileView && $mobileViewSetting === 'table')}`.
-        - [ ] Render `<div class="overflow-x-auto"> <table class="table table-zebra w-full"> ... </table> </div>`.
-        - [ ] Integrate `<TableHeader ... />`, passing props.
-        - [ ] `<tbody> {#each $paginatedData as row (row[$rowKeyStore])} <TableRowDesktop ... /> {/each} </tbody>`.
-        - [ ] Ensure correct props are passed to `TableHeader` and `TableRowDesktop` (e.g., `$selectedRowIds.has(row[$rowKeyStore])` for `isSelected`).
+      - [ ] Add responsive logic: `{#if !$isMobileView || ($isMobileView && $mobileViewSetting === 'table')}`.
+      - [ ] Render `<div class="overflow-x-auto"> <table class="table table-zebra w-full"> ... </table> </div>`.
+      - [ ] Integrate `<TableHeader ... />`, passing props.
+      - [ ] `<tbody> {#each $paginatedData as row (row[$rowKeyStore])} <TableRowDesktop ... /> {/each} </tbody>`.
+      - [ ] Ensure correct props are passed to `TableHeader` and `TableRowDesktop` (e.g., `$selectedRowIds.has(row[$rowKeyStore])` for `isSelected`).
 
 9.  **`SuperTable/tests/SuperTable.spec.ts` & New Subcomponent Tests:**
     - [ ] Create `TableHeader.spec.ts`: Test rendering of labels, select-all checkbox.
@@ -128,12 +129,12 @@
 13. **Update `SuperTable/subcomponents/TableHeader.svelte` - Sorting UI & Events:**
     - [ ] Import Lucide icons: `ChevronUp`, `ChevronDown`, `ChevronsUpDown`.
     - [ ] For each sortable column (`column.sortable`):
-        - [ ] Make `<th>` clickable: `on:click={() => dispatch('sort', column.key)}`.
-        - [ ] Display appropriate sort icon based on `$currentSort` and `column.key`.
+      - [ ] Make `<th>` clickable: `on:click={() => dispatch('sort', column.key)}`.
+      - [ ] Display appropriate sort icon based on `$currentSort` and `column.key`.
     - [ ] `createEventDispatcher` to dispatch `sort` event with `column.key`.
 14. **Update `SuperTable/SuperTable.svelte` - Handle Sort Events:**
     - [ ] Add `handleSort(columnKey: string)` method:
-        - [ ] Logic to update `$currentSort` store (toggle direction, change key).
+      - [ ] Logic to update `$currentSort` store (toggle direction, change key).
     - [ ] Listen to `sort` event from `<TableHeader on:sort={(e) => handleSort(e.detail)} />`.
     - [ ] Pass `$currentSort` to `TableHeader`.
     - [ ] Handle `initialSort` prop to set `$currentSort` on mount.
@@ -161,8 +162,8 @@
 20. **Update `SuperTable/subcomponents/TableHeader.svelte` - Filter UI & Events:**
     - [ ] If using a filter row, add it below headers.
     - [ ] For each filterable column (`column.filterable`):
-        - [ ] Render filter input (direct or via `<FilterInput />`).
-        - [ ] Connect input changes to update the `$columnFilters` store (e.g., dispatch event to `SuperTable`).
+      - [ ] Render filter input (direct or via `<FilterInput />`).
+      - [ ] Connect input changes to update the `$columnFilters` store (e.g., dispatch event to `SuperTable`).
 21. **Update `SuperTable/SuperTable.svelte` - Global Filter & Handle Column Filter Events:**
     - [ ] Implement `slot="global-filter" let:searchTerm let:updateSearchTerm`. Connect to `$globalSearchTerm`.
     - [ ] If `TableHeader` dispatches column filter events, handle them to update `$columnFilters`.
@@ -176,8 +177,8 @@
 23. **Update `SuperTable/SuperTable.svelte` (or stores.ts) - Selection Logic:**
     - [ ] `toggleSelectRow(rowId: any)` function: updates `$selectedRowIds` set.
     - [ ] `toggleSelectAll()` function:
-        - [ ] If all selected, deselect all (from current `$paginatedData` or `$sortedData` based on UX decision).
-        - [ ] Else, select all visible/filterable items.
+      - [ ] If all selected, deselect all (from current `$paginatedData` or `$sortedData` based on UX decision).
+      - [ ] Else, select all visible/filterable items.
 24. **Update `SuperTable/subcomponents/TableHeader.svelte` - Select All Checkbox:**
     - [ ] `on:change` on "Select All" checkbox calls `dispatch('selectAllToggle')`.
     - [ ] Pass `$isAllSelected` and `$isIndeterminate` to the checkbox.
@@ -189,10 +190,10 @@
     - [ ] Implement `slot="bulk-actions" let:selectedIds`. Pass `Array.from($selectedRowIds)`.
 27. **Update Tests for Selection:**
     - [ ] `SuperTable.spec.ts`:
-        - [ ] Test selecting/deselecting single row.
-        - [ ] Test select all/deselect all.
-        - [ ] Test "Select All" checkbox indeterminate state.
-        - [ ] Test `bulk-actions` slot receives correct `selectedIds`.
+      - [ ] Test selecting/deselecting single row.
+      - [ ] Test select all/deselect all.
+      - [ ] Test "Select All" checkbox indeterminate state.
+      - [ ] Test `bulk-actions` slot receives correct `selectedIds`.
 
 ## Phase 6: Pagination
 
@@ -286,6 +287,7 @@
     - [ ] Notes on responsive behavior and customization.
 
 ## Phase 10: Final Review & Cleanup
+
 - [ ] **Code Review:** If working in a team, get a thorough code review.
 - [ ] **Linting & Formatting:** Ensure code adheres to project standards.
 - [ ] **Test Coverage Check:** Aim for high test coverage.

@@ -326,7 +326,10 @@
 
 					<!-- Sort Modal Button -->
 					<div class="tooltip tooltip-bottom" data-tip="Manage sort">
-						<button class="btn btn-sm btn-ghost btn-circle" on:click={() => (isSortModalOpen = true)}>
+						<button
+							class="btn btn-circle btn-ghost btn-sm"
+							on:click={() => (isSortModalOpen = true)}
+						>
 							<ArrowUpDown class="h-4 w-4" />
 						</button>
 					</div>
@@ -355,7 +358,9 @@
 
 					<!-- Bulk Selection Actions -->
 					{#if selectionMode === 'multiple' && $selectedIds.size > 0}
-						<div class="flex flex-grow flex-wrap items-center justify-end gap-x-4 gap-y-2 rtl:justify-start">
+						<div
+							class="flex flex-grow flex-wrap items-center justify-end gap-x-4 gap-y-2 rtl:justify-start"
+						>
 							<div class="flex items-center gap-1">
 								<span class="text-sm text-base-content/70">{$selectedIds.size} selected</span>
 								<div class="tooltip tooltip-bottom" data-tip="Clear selection">

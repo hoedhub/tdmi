@@ -11,9 +11,7 @@
 		"sourceMap": true,
 		"strict": true,
 		"moduleResolution": "bundler",
-		"types": [
-			"node"
-		],
+		"types": ["node"],
 		"target": "ESNext",
 		"useDefineForClassFields": true,
 		"module": "ESNext",
@@ -23,21 +21,12 @@
 		"verbatimModuleSyntax": true,
 		"baseUrl": ".",
 		"paths": {
-			"$lib": [
-				"src/lib"
-			],
-			"$lib/*": [
-				"src/lib/*"
-			]
+			"$lib": ["src/lib"],
+			"$lib/*": ["src/lib/*"]
 			// SvelteKit's internal types like $app/* are usually handled by the ./.svelte-kit/tsconfig.json
 		}
 	},
-	"include": [
-		"src/**/*.d.ts",
-		"src/**/*.ts",
-		"src/**/*.js",
-		"src/**/*.svelte"
-	],
+	"include": ["src/**/*.d.ts", "src/**/*.ts", "src/**/*.js", "src/**/*.svelte"],
 	"env": {
 		"browser": true,
 		"node": true,
@@ -46,9 +35,7 @@
 	"parser": "svelte-eslint-parser", // <-- you might say typescript here
 	"parserOptions": {
 		"sourceType": "module",
-		"extraFileExtensions": [
-			".svelte"
-		],
+		"extraFileExtensions": [".svelte"],
 		"parser": {
 			// Specify a parser for each lang.
 			"ts": "@typescript-eslint/parser",
@@ -56,14 +43,10 @@
 			"typescript": "@typescript-eslint/parser"
 		}
 	},
-	"plugins": [
-		"@typescript-eslint"
-	],
+	"plugins": ["@typescript-eslint"],
 	"overrides": [
 		{
-			"files": [
-				"*.svelte"
-			],
+			"files": ["*.svelte"],
 			"parser": "svelte-eslint-parser",
 			"parserOptions": {
 				"parser": "@typescript-eslint/parser" // <-- you HAVE TO say typescript here again

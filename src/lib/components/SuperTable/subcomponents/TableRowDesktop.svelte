@@ -55,7 +55,7 @@
 <tr
 	class="group relative cursor-pointer hover:bg-base-200 [&_tbody_tr:nth-child(even)]:bg-base-200/50 {className} {isSelected
 		? 'bg-base-200'
-		: ''} {disabled ? 'disabled opacity-50 cursor-not-allowed' : ''}"
+		: ''} {disabled ? 'disabled cursor-not-allowed opacity-50' : ''}"
 	use:swipe
 	use:longPress
 	on:swipe={handleSwipe}

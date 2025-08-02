@@ -14,14 +14,18 @@ export const GET: RequestHandler = async ({ url }) => {
 		const page = Number(queryParams.get('page')) || 1;
 
 		// Parse filterBy and sortBy if they exist
-		const filterBy = queryParams.get('filterBy') ? JSON.parse(queryParams.get('filterBy') || '[]') : undefined;
-		const sortBy = queryParams.get('sortBy') ? JSON.parse(queryParams.get('sortBy') || '[]') : undefined;
+		const filterBy = queryParams.get('filterBy')
+			? JSON.parse(queryParams.get('filterBy') || '[]')
+			: undefined;
+		const sortBy = queryParams.get('sortBy')
+			? JSON.parse(queryParams.get('sortBy') || '[]')
+			: undefined;
 
 		const result = await fetchMuridData({
 			page,
 			pageSize,
 			filterBy,
-			sortBy,
+			sortBy
 		});
 
 		return json({

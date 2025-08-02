@@ -14,7 +14,9 @@
 			<label for="muhrim">Muhrim</label>
 			<RelatedMurid
 				placeholder="Pilih murid terkait"
-				initialData={formData.muhrimId && formData.muhrimData ? { id: formData.muhrimId, nama: formData.muhrimData.nama } : undefined}
+				initialData={formData.muhrimId && formData.muhrimData
+					? { id: formData.muhrimId, nama: formData.muhrimData.nama }
+					: undefined}
 				{editedMuridId}
 				on:change={({ detail }) => {
 					formData.muhrimId = detail.selectedId;
@@ -37,7 +39,9 @@
 		<label for="mursyid">Mursyid{formData.gender ? '' : 'ah'}</label>
 		<RelatedMurid
 			placeholder="Pilih murid terkait"
-			initialData={formData.mursyidId && formData.mursyidData ? { id: formData.mursyidId, nama: formData.mursyidData.nama } : undefined}
+			initialData={formData.mursyidId && formData.mursyidData
+				? { id: formData.mursyidId, nama: formData.mursyidData.nama }
+				: undefined}
 			{editedMuridId}
 			on:change={({ detail }) => {
 				formData.mursyidId = detail.selectedId;
@@ -59,7 +63,9 @@
 		<label for="baiat">Baiat</label>
 		<RelatedMurid
 			placeholder="Pilih murid terkait"
-			initialData={formData.baiatId && formData.baiatData ? { id: formData.baiatId, nama: formData.baiatData.nama } : undefined}
+			initialData={formData.baiatId && formData.baiatData
+				? { id: formData.baiatId, nama: formData.baiatData.nama }
+				: undefined}
 			{editedMuridId}
 			on:change={({ detail }) => {
 				formData.baiatId = detail.selectedId;
@@ -81,7 +87,9 @@
 		<label for="wirid">Wirid</label>
 		<RelatedMurid
 			placeholder="Pilih murid terkait"
-			initialData={formData.wiridId && formData.wiridData ? { id: formData.wiridId, nama: formData.wiridData.nama } : undefined}
+			initialData={formData.wiridId && formData.wiridData
+				? { id: formData.wiridId, nama: formData.wiridData.nama }
+				: undefined}
 			{editedMuridId}
 			on:change={({ detail }) => {
 				formData.wiridId = detail.selectedId;

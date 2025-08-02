@@ -109,13 +109,7 @@
 			sortable: true,
 			filterable: 'text',
 			formatter: (value, row) => {
-				return [
-					value,
-					row.deskelName,
-					row.kecamatanName,
-					row.kokabName,
-					row.propinsiName
-				]
+				return [value, row.deskelName, row.kecamatanName, row.kokabName, row.propinsiName]
 					.filter(Boolean)
 					.join(', ');
 			}

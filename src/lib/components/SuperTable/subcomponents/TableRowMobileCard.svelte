@@ -87,7 +87,7 @@
 
 <div
 	class="card {cardClass} {className} {isSelected ? 'ring-2 ring-primary' : ''} {disabled
-		? 'disabled opacity-50 cursor-not-allowed'
+		? 'disabled cursor-not-allowed opacity-50'
 		: ''}"
 	use:swipe
 	use:longPress

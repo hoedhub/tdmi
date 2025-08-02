@@ -15,9 +15,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const currentYear = new Date().getFullYear();
 
 	// Jika bukan admin, filter berdasarkan muridId dari user yang login
-	const baseConditions = canReadAll
-		? []
-		: [eq(nasyathTable.muridId, locals.user.muridId || 0)];
+	const baseConditions = canReadAll ? [] : [eq(nasyathTable.muridId, locals.user.muridId || 0)];
 
 	// --- KPI Queries ---
 	const startOfMonth = new Date();
@@ -70,9 +68,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			count: count()
 		})
 		.from(nasyathTable)
-		.where(
-			and(...baseConditions, gte(nasyathTable.tanggalMulai, sixMonthsAgo.toISOString()))
-		)
+		.where(and(...baseConditions, gte(nasyathTable.tanggalMulai, sixMonthsAgo.toISOString())))
 		.groupBy(sql`strftime('%Y-%m', ${nasyathTable.tanggalMulai})`)
 		.orderBy(sql`strftime('%Y-%m', ${nasyathTable.tanggalMulai})`);
 
@@ -91,7 +87,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			.orderBy(desc(sql`count(${nasyathTable.id})`))
 			.limit(7);
 
-		mostActiveMembers = results.map(result => ({
+		mostActiveMembers = results.map((result) => ({
 			murid: result.namaArab ? { nama: result.namaArab } : null,
 			activityCount: Number(result.activityCount)
 		}));

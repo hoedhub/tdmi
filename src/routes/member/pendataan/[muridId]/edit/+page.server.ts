@@ -1,7 +1,13 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 import { db } from '$lib/drizzle';
-import { muridTable, deskelTable, kecamatanTable, kokabTable, propTable } from '$lib/drizzle/schema';
+import {
+	muridTable,
+	deskelTable,
+	kecamatanTable,
+	kokabTable,
+	propTable
+} from '$lib/drizzle/schema';
 import { eq, sql } from 'drizzle-orm';
 import { userHasPermission } from '$lib/server/accessControl';
 import { getPublicFileUrl, uploadFile, deleteFile } from '$lib/server/cloudinary';
@@ -130,7 +136,11 @@ export const actions: Actions = {
 			const fotoFile = formData.get('foto') as File | null;
 			const removeFoto = formData.get('removeFoto')?.toString() === 'true';
 
-			const oldMuridData = await db.select({ fotoPublicId: muridTable.fotoPublicId }).from(muridTable).where(eq(muridTable.id, muridId)).get();
+			const oldMuridData = await db
+				.select({ fotoPublicId: muridTable.fotoPublicId })
+				.from(muridTable)
+				.where(eq(muridTable.id, muridId))
+				.get();
 			const oldFileId = oldMuridData?.fotoPublicId;
 
 			if (removeFoto) {

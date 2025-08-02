@@ -27,11 +27,15 @@
 	let userButtonEl: HTMLButtonElement;
 	let themeButtonEl: HTMLButtonElement;
 
-	$: if (typeof window !== 'undefined') {
-		localStorage.setItem(
-			`${$page.data.user?.id || 'default'}-sidebar-collapsed`,
-			JSON.stringify(isSidebarCollapsed)
-		);
+	// Reload state when user changes
+	$: if (typeof window !== 'undefined' && $page.data.user) {
+		const userId = $page.data.user.id;
+		const savedSidebarState = localStorage.getItem(`${userId}-sidebar-collapsed`);
+		if (savedSidebarState) {
+			isSidebarCollapsed = JSON.parse(savedSidebarState);
+		} else {
+			isSidebarCollapsed = false;
+		}
 	}
 
 	async function logout() {
@@ -100,6 +104,14 @@
 		absoluteDropdownStore.toggle(rect, 'theme', 'up');
 	}
 
+	function toggleSidebar() {
+		isSidebarCollapsed = !isSidebarCollapsed;
+		if (typeof window !== 'undefined') {
+			const userId = $page.data.user?.id || 'default';
+			localStorage.setItem(`${userId}-sidebar-collapsed`, JSON.stringify(isSidebarCollapsed));
+		}
+	}
+
 	function showTooltip(event: MouseEvent, content: string) {
 		if (isSidebarCollapsed) {
 			const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
@@ -128,7 +140,7 @@
 	});
 </script>
 
-<div class="drawer md:drawer-open relative">
+<div class="drawer relative md:drawer-open">
 	<input
 		id="sidebar-drawer-toggle"
 		type="checkbox"
@@ -168,15 +180,12 @@
 	</div>
 
 	<!-- Sidebar -->
-	<aside
-		class="drawer-side z-30 transition-all duration-300"
-		class:collapsed={isSidebarCollapsed}
-	>
+	<aside class="drawer-side z-30 transition-all duration-300" class:collapsed={isSidebarCollapsed}>
 		<label for="sidebar-drawer-toggle" aria-label="close sidebar" class="drawer-overlay"></label>
 
 		<!-- Responsive Sidebar Structure -->
 		<div
-			class="h-full bg-base-200 text-base-content transition-all duration-300 w-64"
+			class="h-full w-64 bg-base-200 text-base-content transition-all duration-300"
 			class:md:w-14={isSidebarCollapsed}
 			class:md:w-72={!isSidebarCollapsed}
 		>
@@ -191,7 +200,7 @@
 					>
 						<img
 							alt="The project logo"
-							class="rounded-full border-2 border-white transition-all duration-300 h-20 w-20"
+							class="h-20 w-20 rounded-full border-2 border-white transition-all duration-300"
 							class:md:h-10={isSidebarCollapsed}
 							class:md:w-10={isSidebarCollapsed}
 							src={logo}
@@ -296,14 +305,15 @@
 
 	<!-- Toggle Button (Desktop Only) -->
 	<button
-		on:click={() => (isSidebarCollapsed = !isSidebarCollapsed)}
-		class="btn btn-circle btn-ghost absolute z-40 hidden md:flex transition-all duration-300"
+		on:click={toggleSidebar}
+		class="btn btn-sm btn-circle btn-ghost absolute z-40 hidden transition-all duration-300 md:flex"
 		style="top: {isSidebarCollapsed ? '2.25rem' : '3.5rem'}; transform: translateY(-50%);"
 		class:left-14={isSidebarCollapsed}
 		class:left-72={!isSidebarCollapsed}
 		aria-label="Toggle sidebar"
 	>
 		<ChevronsLeft
+			size={20}
 			class="transform transition-transform duration-300 {isSidebarCollapsed ? 'rotate-180' : ''}"
 		/>
 	</button>
@@ -333,4 +343,3 @@
 		}
 	}
 </style>
-

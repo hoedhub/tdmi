@@ -1,39 +1,47 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { applyAction, enhance } from '$app/forms';
-	import type { ActionResult } from '@sveltejs/kit';
-	import { Eye, EyeOff, CheckCircle2 } from 'lucide-svelte'; // Using lucide-svelte for icons
-	import { error, success } from '$lib/components/toast'; // Import toast functions
+	import { page } from '$app/stores';
+	import type { ActionResult, SubmitFunction } from '@sveltejs/kit';
+	import { Eye, EyeOff, CheckCircle2 } from 'lucide-svelte';
+	import { error, success } from '$lib/components/toast';
 
+	export let form: ActionResult;
 	let rememberMe = false;
 	let showPassword = false;
 	let isLoading = false;
 
-	async function handleSubmit() {
-		if (isLoading) return;
+	// --- Reactive Toast Logic ---
+	// This block automatically runs whenever the 'form' prop changes.
+	$: {
+		// We check if the form is NOT valid and if it's not currently loading.
+		// The isLoading check prevents the toast from showing on initial page load.
+		if ((form as any)?.valid === false && !isLoading) {
+			// Show the error toast with the message from the server.
+			error((form as any).data?.msg || 'Invalid username or password.', { duration: 5000 });
+		}
+	}
+
+	// --- Simplified Enhance Function ---
+	// This function's only job is to manage the loading state.
+	const handleSubmit: SubmitFunction = () => {
 		isLoading = true;
 
-		return async ({ result }: { result: ActionResult }) => {
-			if (result.type === 'error') {
-				isLoading = false;
-				// Display error toast
-				error(result.error?.msg || 'An unknown error occurred during login.', { duration: 5000 });
-				return;
-			}
+		return async ({ result }) => {
+			isLoading = false; // Reset loading state after the server responds.
 
-			// Show success toast before redirecting
+			// On successful redirect, show the success toast.
 			if (result.type === 'redirect') {
-				console.log('Login successful:', result);
 				success('Login successful!', {
 					duration: 3000,
 					icon: CheckCircle2
 				});
 			}
-
-			// If result.type is 'success' or 'redirect', applyAction will handle it
+			// Let SvelteKit handle everything else.
 			await applyAction(result);
 		};
-	}
+	};
+
 	onMount(() => {
 		document.documentElement.setAttribute('data-theme', 'dark');
 	});
@@ -97,29 +105,16 @@
 							<span class="label-text">Password</span>
 						</label>
 						<div class="join w-full">
-							{#if showPassword}
-								<input
-									type="text"
-									id="password-input"
-									name="password"
-									placeholder="••••••••"
-									class="input join-item input-bordered w-full"
-									required
-									minlength="6"
-									disabled={isLoading}
-								/>
-							{:else}
-								<input
-									type="password"
-									id="password-input"
-									name="password"
-									placeholder="••••••••"
-									class="input join-item input-bordered w-full"
-									required
-									minlength="6"
-									disabled={isLoading}
-								/>
-							{/if}
+							<input
+								type={showPassword ? 'text' : 'password'}
+								id="password-input"
+								name="password"
+								placeholder="••••••••"
+								class="input join-item input-bordered w-full"
+								required
+								minlength="6"
+								disabled={isLoading}
+							/>
 							<button
 								type="button"
 								class="btn btn-ghost join-item"

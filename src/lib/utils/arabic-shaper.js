@@ -61,20 +61,47 @@ const letters = {
 	0x0647: [0xfee9, 0xfeea, 0xfeeb, 0xfeec], // HEH
 	0x0648: [0xfeed, 0xfeee, 0xfeed, 0xfeee], // WAW
 	0x0649: [0xfeef, 0xfef0, 0xfeef, 0xfef0], // ALEF MAKSURA
-	0x064a: [0xfef1, 0xfef2, 0xfef3, 0xfef4]  // YEH
+	0x064a: [0xfef1, 0xfef2, 0xfef3, 0xfef4] // YEH
 };
 
 /** @type {ConnectingMap} */
 const connecting = {
-	0x0621: [false, false], 0x0622: [true, false], 0x0623: [true, false], 0x0624: [true, false],
-	0x0625: [true, false], 0x0626: [true, true], 0x0627: [true, false], 0x0628: [true, true],
-	0x0629: [true, false], 0x062a: [true, true], 0x062b: [true, true], 0x062c: [true, true],
-	0x062d: [true, true], 0x062e: [true, true], 0x062f: [true, false], 0x0630: [true, false],
-	0x0631: [true, false], 0x0632: [true, false], 0x0633: [true, true], 0x0634: [true, true],
-	0x0635: [true, true], 0x0636: [true, true], 0x0637: [true, true], 0x0638: [true, true],
-	0x0639: [true, true], 0x063a: [true, true], 0x0640: [true, true], 0x0641: [true, true],
-	0x0642: [true, true], 0x0643: [true, true], 0x0644: [true, true], 0x0645: [true, true],
-	0x0646: [true, true], 0x0647: [true, true], 0x0648: [true, false], 0x0649: [true, false],
+	0x0621: [false, false],
+	0x0622: [true, false],
+	0x0623: [true, false],
+	0x0624: [true, false],
+	0x0625: [true, false],
+	0x0626: [true, true],
+	0x0627: [true, false],
+	0x0628: [true, true],
+	0x0629: [true, false],
+	0x062a: [true, true],
+	0x062b: [true, true],
+	0x062c: [true, true],
+	0x062d: [true, true],
+	0x062e: [true, true],
+	0x062f: [true, false],
+	0x0630: [true, false],
+	0x0631: [true, false],
+	0x0632: [true, false],
+	0x0633: [true, true],
+	0x0634: [true, true],
+	0x0635: [true, true],
+	0x0636: [true, true],
+	0x0637: [true, true],
+	0x0638: [true, true],
+	0x0639: [true, true],
+	0x063a: [true, true],
+	0x0640: [true, true],
+	0x0641: [true, true],
+	0x0642: [true, true],
+	0x0643: [true, true],
+	0x0644: [true, true],
+	0x0645: [true, true],
+	0x0646: [true, true],
+	0x0647: [true, true],
+	0x0648: [true, false],
+	0x0649: [true, false],
 	0x064a: [true, true]
 };
 
@@ -110,7 +137,7 @@ function shape(text) {
 		}
 
 		if (nextCode !== null && charCode === LAM && nextCode === ALEF) {
-			const ligatureShape = (shape === FINAL || shape === ISOLATED) ? 1 : 0;
+			const ligatureShape = shape === FINAL || shape === ISOLATED ? 1 : 0;
 			result += String.fromCharCode(ligatures[LAM][ALEF][ligatureShape]);
 			i++;
 		} else {

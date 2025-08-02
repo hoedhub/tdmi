@@ -78,7 +78,7 @@
 		<!-- Tombol kembali ke beranda untuk error lainnya -->
 		<a href="/">Kembali ke Beranda</a>
 	{/if}
-</div> 
+</div>
 
 <style>
 	.error-container {
@@ -115,4 +115,3 @@
 		opacity: 0.6;
 	}
 </style>
-

@@ -15,7 +15,11 @@ import { eq } from 'drizzle-orm';
 // =================================================================
 
 const rolesData = [
-	{ id: 'SUPERADMIN', name: 'Super Administrator', description: 'Full access to all system features.' },
+	{
+		id: 'SUPERADMIN',
+		name: 'Super Administrator',
+		description: 'Full access to all system features.'
+	},
 	{ id: 'ADMIN', name: 'Administrator', description: 'Manages users and system settings.' },
 	{ id: 'PENDATAAN', name: 'Petugas Pendataan', description: 'Manages member data.' },
 	{ id: 'NASYATH', name: 'Petugas Nasyath', description: 'Manages activity data.' },
@@ -23,30 +27,77 @@ const rolesData = [
 ];
 
 const permissionsData = [
-    // Admin Permissions
-    { id: 'perm-admin-access', name: 'Akses Panel Admin', description: 'Bisa mengakses halaman /admin' },
-    { id: 'perm-user-read', name: 'Lihat Pengguna', description: 'Bisa melihat daftar pengguna' },
-    { id: 'perm-user-write', name: 'Kelola Pengguna', description: 'Bisa membuat, mengedit, dan menghapus pengguna' },
-    { id: 'perm-role-read', name: 'Lihat Peran', description: 'Bisa melihat daftar peran dan izinnya' },
-    { id: 'perm-role-write', name: 'Kelola Peran', description: 'Bisa membuat, mengedit, dan menghapus peran' },
+	// Admin Permissions
+	{
+		id: 'perm-admin-access',
+		name: 'Akses Panel Admin',
+		description: 'Bisa mengakses halaman /admin'
+	},
+	{ id: 'perm-user-read', name: 'Lihat Pengguna', description: 'Bisa melihat daftar pengguna' },
+	{
+		id: 'perm-user-write',
+		name: 'Kelola Pengguna',
+		description: 'Bisa membuat, mengedit, dan menghapus pengguna'
+	},
+	{
+		id: 'perm-role-read',
+		name: 'Lihat Peran',
+		description: 'Bisa melihat daftar peran dan izinnya'
+	},
+	{
+		id: 'perm-role-write',
+		name: 'Kelola Peran',
+		description: 'Bisa membuat, mengedit, dan menghapus peran'
+	},
 
-    // Pendataan Permissions
-    { id: 'perm-pendataan-access', name: 'Akses Pendataan', description: 'Bisa mengakses halaman /member/pendataan' },
-    { id: 'perm-murid-read', name: 'Lihat Data Murid', description: 'Bisa melihat data semua murid' },
-    { id: 'perm-murid-write', name: 'Kelola Data Murid', description: 'Bisa membuat, mengedit, dan menghapus data murid' },
-    { id: 'perm-murid-export', name: 'Ekspor Data Murid', description: 'Bisa mengekspor data murid ke file' },
+	// Pendataan Permissions
+	{
+		id: 'perm-pendataan-access',
+		name: 'Akses Pendataan',
+		description: 'Bisa mengakses halaman /member/pendataan'
+	},
+	{ id: 'perm-murid-read', name: 'Lihat Data Murid', description: 'Bisa melihat data semua murid' },
+	{
+		id: 'perm-murid-write',
+		name: 'Kelola Data Murid',
+		description: 'Bisa membuat, mengedit, dan menghapus data murid'
+	},
+	{
+		id: 'perm-murid-export',
+		name: 'Ekspor Data Murid',
+		description: 'Bisa mengekspor data murid ke file'
+	},
 
-    // Nasyath Permissions
-    { id: 'perm-nasyath-access', name: 'Akses Nasyath', description: 'Bisa mengakses halaman /member/nasyath' },
-    { id: 'perm-nasyath-read', name: 'Lihat Data Nasyath', description: 'Bisa melihat data nasyath' },
-    { id: 'perm-nasyath-write', name: 'Kelola Data Nasyath', description: 'Bisa membuat, mengedit, dan menghapus data nasyath' },
-    { id: 'perm-nasyath-export', name: 'Ekspor Data Nasyath', description: 'Bisa mengekspor data nasyath' },
+	// Nasyath Permissions
+	{
+		id: 'perm-nasyath-access',
+		name: 'Akses Nasyath',
+		description: 'Bisa mengakses halaman /member/nasyath'
+	},
+	{ id: 'perm-nasyath-read', name: 'Lihat Data Nasyath', description: 'Bisa melihat data nasyath' },
+	{
+		id: 'perm-nasyath-write',
+		name: 'Kelola Data Nasyath',
+		description: 'Bisa membuat, mengedit, dan menghapus data nasyath'
+	},
+	{
+		id: 'perm-nasyath-export',
+		name: 'Ekspor Data Nasyath',
+		description: 'Bisa mengekspor data nasyath'
+	},
 
-    // General Member Permissions
-    { id: 'perm-profile-read', name: 'Lihat Profil Sendiri', description: 'Bisa melihat halaman profil sendiri' },
-    { id: 'perm-profile-write', name: 'Edit Profil Sendiri', description: 'Bisa mengedit profil sendiri' },
+	// General Member Permissions
+	{
+		id: 'perm-profile-read',
+		name: 'Lihat Profil Sendiri',
+		description: 'Bisa melihat halaman profil sendiri'
+	},
+	{
+		id: 'perm-profile-write',
+		name: 'Edit Profil Sendiri',
+		description: 'Bisa mengedit profil sendiri'
+	}
 ];
-
 
 const roleHierarchyData = [
 	{ parent: 'SUPERADMIN', child: 'ADMIN' },
@@ -89,31 +140,30 @@ export async function seedRbacData() {
 		await db.insert(rolePermissionsTable).values(superAdminPermissions).onConflictDoNothing();
 		console.log('SUPERADMIN permissions seeded.');
 
-        // 5. Tetapkan izin spesifik untuk peran lain
-        const otherRolePermissions = [
-            // ADMIN
-            { roleId: 'ADMIN', permissionId: 'perm-admin-access' },
-            { roleId: 'ADMIN', permissionId: 'perm-user-read' },
-            { roleId: 'ADMIN', permissionId: 'perm-user-write' },
-            { roleId: 'ADMIN', permissionId: 'perm-role-read' },
-            { roleId: 'ADMIN', permissionId: 'perm-role-write' },
-            // PENDATAAN
-            { roleId: 'PENDATAAN', permissionId: 'perm-pendataan-access' },
-            { roleId: 'PENDATAAN', permissionId: 'perm-murid-read' },
-            { roleId: 'PENDATAAN', permissionId: 'perm-murid-write' },
-            { roleId: 'PENDATAAN', permissionId: 'perm-murid-export' },
-            // NASYATH
-            { roleId: 'NASYATH', permissionId: 'perm-nasyath-access' },
-            { roleId: 'NASYATH', permissionId: 'perm-nasyath-read' },
-            { roleId: 'NASYATH', permissionId: 'perm-nasyath-write' },
-            { roleId: 'NASYATH', permissionId: 'perm-nasyath-export' },
-            // MEMBER
-            { roleId: 'MEMBER', permissionId: 'perm-profile-read' },
-            { roleId: 'MEMBER', permissionId: 'perm-profile-write' },
-        ];
-        await db.insert(rolePermissionsTable).values(otherRolePermissions).onConflictDoNothing();
-        console.log('Other role permissions seeded.');
-
+		// 5. Tetapkan izin spesifik untuk peran lain
+		const otherRolePermissions = [
+			// ADMIN
+			{ roleId: 'ADMIN', permissionId: 'perm-admin-access' },
+			{ roleId: 'ADMIN', permissionId: 'perm-user-read' },
+			{ roleId: 'ADMIN', permissionId: 'perm-user-write' },
+			{ roleId: 'ADMIN', permissionId: 'perm-role-read' },
+			{ roleId: 'ADMIN', permissionId: 'perm-role-write' },
+			// PENDATAAN
+			{ roleId: 'PENDATAAN', permissionId: 'perm-pendataan-access' },
+			{ roleId: 'PENDATAAN', permissionId: 'perm-murid-read' },
+			{ roleId: 'PENDATAAN', permissionId: 'perm-murid-write' },
+			{ roleId: 'PENDATAAN', permissionId: 'perm-murid-export' },
+			// NASYATH
+			{ roleId: 'NASYATH', permissionId: 'perm-nasyath-access' },
+			{ roleId: 'NASYATH', permissionId: 'perm-nasyath-read' },
+			{ roleId: 'NASYATH', permissionId: 'perm-nasyath-write' },
+			{ roleId: 'NASYATH', permissionId: 'perm-nasyath-export' },
+			// MEMBER
+			{ roleId: 'MEMBER', permissionId: 'perm-profile-read' },
+			{ roleId: 'MEMBER', permissionId: 'perm-profile-write' }
+		];
+		await db.insert(rolePermissionsTable).values(otherRolePermissions).onConflictDoNothing();
+		console.log('Other role permissions seeded.');
 
 		// 6. Bangun Hierarki Peran
 		const hierarchyToInsert = roleHierarchyData.map((h) => ({

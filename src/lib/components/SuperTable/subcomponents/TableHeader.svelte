@@ -56,7 +56,11 @@
 					? 'cursor-pointer select-none'
 					: ''} {sortConfig ? 'text-primary' : ''}"
 				on:click={(e) => handleSort(column, e)}
-				aria-sort={sortConfig ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
+				aria-sort={sortConfig
+					? sortConfig.direction === 'asc'
+						? 'ascending'
+						: 'descending'
+					: 'none'}
 				role="columnheader"
 				aria-label={`${column.label}${column.sortable ? '. Click to sort' : ''}`}
 			>

@@ -61,7 +61,9 @@ export async function GET({ url, locals }) {
 		const tableLeftX = 40;
 		const tableRightX = width - 40;
 
-		const headers = ['المكان', 'المدة', 'تاريخ الانتهاء', 'تاريخ البدء', 'النشاط'].map(processArabicText);
+		const headers = ['المكان', 'المدة', 'تاريخ الانتهاء', 'تاريخ البدء', 'النشاط'].map(
+			processArabicText
+		);
 		const colKeys = ['tempat', 'durasi', 'tanggalSelesai', 'tanggalMulai', 'kegiatan'] as const;
 		const colWidths = [150, 80, 100, 100, width - 2 * tableLeftX - 430];
 
@@ -83,7 +85,7 @@ export async function GET({ url, locals }) {
 			start: { x: tableLeftX, y: tableTopY - rowHeight },
 			end: { x: tableRightX, y: tableTopY - rowHeight },
 			thickness: 1,
-			color: rgb(0.7, 0.7, 0.7),
+			color: rgb(0.7, 0.7, 0.7)
 		});
 
 		let currentY = tableTopY - rowHeight;
@@ -96,7 +98,7 @@ export async function GET({ url, locals }) {
 				currentY = page.getSize().height - 70;
 			}
 
-			const rowData = colKeys.map(key => {
+			const rowData = colKeys.map((key) => {
 				const value = row[key];
 
 				// PERBAIKAN: Periksa null terlebih dahulu, lalu format tanggalnya
@@ -133,7 +135,6 @@ export async function GET({ url, locals }) {
 				'Content-Disposition': `inline; filename="laporan-nasyath.pdf"`
 			}
 		});
-
 	} catch (e) {
 		console.error('Failed to generate PDF:', e);
 		throw error(500, 'Gagal membuat laporan PDF.');

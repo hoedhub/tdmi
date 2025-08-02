@@ -72,7 +72,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 		const orderByClauses = [];
 		if (sort && Array.isArray(sort) && sort.length > 0) {
-			sort.forEach(sortConfig => {
+			sort.forEach((sortConfig) => {
 				if (sortConfig.key === 'murid.nama') {
 					orderByClauses.push(
 						sortConfig.direction === 'asc' ? asc(muridTable.namaArab) : desc(muridTable.namaArab)
@@ -108,9 +108,24 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		worksheet.views = [{ rightToLeft: true }];
 
 		const headers: Partial<ExcelJS.Column>[] = [
-			{ header: 'النشاط', key: 'kegiatan', width: 40, style: { alignment: { horizontal: 'right' } } },
-			{ header: 'تاريخ البدء', key: 'tanggalMulai', width: 15, style: { alignment: { horizontal: 'center' } } },
-			{ header: 'تاريخ الانتهاء', key: 'tanggalSelesai', width: 15, style: { alignment: { horizontal: 'center' } } },
+			{
+				header: 'النشاط',
+				key: 'kegiatan',
+				width: 40,
+				style: { alignment: { horizontal: 'right' } }
+			},
+			{
+				header: 'تاريخ البدء',
+				key: 'tanggalMulai',
+				width: 15,
+				style: { alignment: { horizontal: 'center' } }
+			},
+			{
+				header: 'تاريخ الانتهاء',
+				key: 'tanggalSelesai',
+				width: 15,
+				style: { alignment: { horizontal: 'center' } }
+			},
 			{ header: 'المدة', key: 'durasi', width: 15, style: { alignment: { horizontal: 'center' } } },
 			{ header: 'المكان', key: 'tempat', width: 30, style: { alignment: { horizontal: 'right' } } }
 		];
@@ -138,8 +153,12 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 			const dataRow = {
 				kegiatan: row.kegiatan,
-				tanggalMulai: row.tanggalMulai ? toHindi(new Date(row.tanggalMulai).toLocaleDateString('id-ID')) : '-',
-				tanggalSelesai: row.tanggalSelesai ? toHindi(new Date(row.tanggalSelesai).toLocaleDateString('id-ID')) : '-',
+				tanggalMulai: row.tanggalMulai
+					? toHindi(new Date(row.tanggalMulai).toLocaleDateString('id-ID'))
+					: '-',
+				tanggalSelesai: row.tanggalSelesai
+					? toHindi(new Date(row.tanggalSelesai).toLocaleDateString('id-ID'))
+					: '-',
 				durasi: toHindi(row.durasi),
 				tempat: row.tempat
 			};

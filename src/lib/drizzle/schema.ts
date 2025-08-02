@@ -13,32 +13,53 @@ import {
 // BAGIAN 1: TABEL DATA DASAR (TERITORI & MURID)
 // ==================================================================
 
-export const propTable = sqliteTable('prop', {
-	id: integer('id').primaryKey(),
-	propinsi: text('propinsi').unique().notNull(),
-}, (table) => ([ // <-- DIPERBAIKI: Menggunakan array []
-	index('prop_idx').on(table.propinsi)
-]));
+export const propTable = sqliteTable(
+	'prop',
+	{
+		id: integer('id').primaryKey(),
+		propinsi: text('propinsi').unique().notNull()
+	},
+	(table) => [
+		// <-- DIPERBAIKI: Menggunakan array []
+		index('prop_idx').on(table.propinsi)
+	]
+);
 
-export const kokabTable = sqliteTable('kokab', {
-	id: integer('id').primaryKey(),
-	idProp: integer('id_prop').notNull().references(() => propTable.id),
-	kokab: text('kokab').notNull()
-}, (table) => ([ // <-- DIPERBAIKI: Menggunakan array []
-	index('kokab_idx').on(table.kokab)
-]));
+export const kokabTable = sqliteTable(
+	'kokab',
+	{
+		id: integer('id').primaryKey(),
+		idProp: integer('id_prop')
+			.notNull()
+			.references(() => propTable.id),
+		kokab: text('kokab').notNull()
+	},
+	(table) => [
+		// <-- DIPERBAIKI: Menggunakan array []
+		index('kokab_idx').on(table.kokab)
+	]
+);
 
-export const kecamatanTable = sqliteTable('kecamatan', {
-	id: integer('id').primaryKey(),
-	idKokab: integer('id_kokab').notNull().references(() => kokabTable.id),
-	kecamatan: text('kecamatan').notNull()
-}, (table) => ([ // <-- DIPERBAIKI: Menggunakan array []
-	index('kecamatan_idx').on(table.kecamatan)
-]));
+export const kecamatanTable = sqliteTable(
+	'kecamatan',
+	{
+		id: integer('id').primaryKey(),
+		idKokab: integer('id_kokab')
+			.notNull()
+			.references(() => kokabTable.id),
+		kecamatan: text('kecamatan').notNull()
+	},
+	(table) => [
+		// <-- DIPERBAIKI: Menggunakan array []
+		index('kecamatan_idx').on(table.kecamatan)
+	]
+);
 
 export const deskelTable = sqliteTable('deskel', {
 	id: integer('id').primaryKey(),
-	idKecamatan: integer('id_kecamatan').notNull().references(() => kecamatanTable.id),
+	idKecamatan: integer('id_kecamatan')
+		.notNull()
+		.references(() => kecamatanTable.id),
 	deskel: text('deskel').notNull()
 });
 
@@ -49,7 +70,9 @@ export const muridTable = sqliteTable(
 	'murid',
 	{
 		id: integer('id').primaryKey(),
-		updatedAt: text('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+		updatedAt: text('updated_at')
+			.notNull()
+			.default(sql`CURRENT_TIMESTAMP`),
 		updaterId: text('updater_id').notNull(),
 		nama: text('nama').notNull(),
 		namaArab: text('nama_arab'),
@@ -57,10 +80,18 @@ export const muridTable = sqliteTable(
 		deskelId: integer('deskel_id').references(() => deskelTable.id),
 		alamat: text('alamat'),
 		nomorTelepon: text('nomor_telepon'),
-		muhrimId: integer('muhrim_id').references((): AnySQLiteColumn => muridTable.id, { onDelete: 'set null' }),
-		mursyidId: integer('mursyid_id').references((): AnySQLiteColumn => muridTable.id, { onDelete: 'set null' }),
-		baiatId: integer('baiat_id').references((): AnySQLiteColumn => muridTable.id, { onDelete: 'set null' }),
-		wiridId: integer('wirid_id').references((): AnySQLiteColumn => muridTable.id, { onDelete: 'set null' }),
+		muhrimId: integer('muhrim_id').references((): AnySQLiteColumn => muridTable.id, {
+			onDelete: 'set null'
+		}),
+		mursyidId: integer('mursyid_id').references((): AnySQLiteColumn => muridTable.id, {
+			onDelete: 'set null'
+		}),
+		baiatId: integer('baiat_id').references((): AnySQLiteColumn => muridTable.id, {
+			onDelete: 'set null'
+		}),
+		wiridId: integer('wirid_id').references((): AnySQLiteColumn => muridTable.id, {
+			onDelete: 'set null'
+		}),
 		qari: integer('qari', { mode: 'boolean' }).notNull().default(true),
 		marhalah: integer('marhalah').$type<(typeof marhalah)[number]>().notNull().default(1),
 		tglLahir: text('tgl_lahir'),
@@ -69,10 +100,11 @@ export const muridTable = sqliteTable(
 		nik: text('nik', { length: 16 }).unique(),
 		fotoPublicId: text('foto_public_id')
 	},
-	(table) => ([ // <-- BENAR
+	(table) => [
+		// <-- BENAR
 		index('nama_idx').on(table.nama),
 		index('nama_arab_idx').on(table.namaArab)
-	])
+	]
 );
 
 // ==================================================================
@@ -87,20 +119,25 @@ export const usersTable = sqliteTable(
 		passwordHash: text('password_hash', { length: 255 }),
 		active: integer('active', { mode: 'boolean' }).default(true),
 		muridId: integer('murid_id').references(() => muridTable.id, { onDelete: 'set null' }),
-		createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`)
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`CURRENT_TIMESTAMP`)
 	},
-	(table) => ([ // <-- BENAR
+	(table) => [
+		// <-- BENAR
 		index('username_idx').on(table.username),
 		index('created_at_idx').on(table.createdAt)
-	])
+	]
 );
 
 export type SelectUser = typeof usersTable.$inferSelect;
 
-export const sessionTable = sqliteTable("session", {
-	id: text("id").notNull().primaryKey(),
-	userId: text("user_id").notNull().references(() => usersTable.id, { onDelete: 'cascade' }),
-	expiresAt: integer("expires_at").notNull()
+export const sessionTable = sqliteTable('session', {
+	id: text('id').notNull().primaryKey(),
+	userId: text('user_id')
+		.notNull()
+		.references(() => usersTable.id, { onDelete: 'cascade' }),
+	expiresAt: integer('expires_at').notNull()
 });
 
 // ==================================================================
@@ -120,49 +157,79 @@ export const permissionsTable = sqliteTable('permissions', {
 });
 
 // Tabel Penghubung
-export const userRolesTable = sqliteTable('user_roles', {
-	userId: text('user_id').notNull().references(() => usersTable.id, { onDelete: 'cascade' }),
-	roleId: text('role_id').notNull().references(() => rolesTable.id, { onDelete: 'cascade' }),
-}, (table) => ([
-	index('user_idx').on(table.userId),
-	index('role_idx').on(table.roleId)
-])
+export const userRolesTable = sqliteTable(
+	'user_roles',
+	{
+		userId: text('user_id')
+			.notNull()
+			.references(() => usersTable.id, { onDelete: 'cascade' }),
+		roleId: text('role_id')
+			.notNull()
+			.references(() => rolesTable.id, { onDelete: 'cascade' })
+	},
+	(table) => [index('user_idx').on(table.userId), index('role_idx').on(table.roleId)]
 );
 
-export const rolePermissionsTable = sqliteTable('role_permissions', {
-	roleId: text('role_id').notNull().references(() => rolesTable.id, { onDelete: 'cascade' }),
-	permissionId: text('permission_id').notNull().references(() => permissionsTable.id, { onDelete: 'cascade' }),
-}, (table) => ([index('role_permission_idx').on(table.roleId, table.permissionId)]));
-
-export const roleHierarchyTable = sqliteTable('role_hierarchy', {
-	parentRoleId: text('parent_role_id').notNull().references(() => rolesTable.id, { onDelete: 'cascade' }),
-	childRoleId: text('child_role_id').notNull().references(() => rolesTable.id, { onDelete: 'cascade' }),
-}, (table) => ([index('role_hierarchy_idx').on(table.parentRoleId, table.childRoleId)])
+export const rolePermissionsTable = sqliteTable(
+	'role_permissions',
+	{
+		roleId: text('role_id')
+			.notNull()
+			.references(() => rolesTable.id, { onDelete: 'cascade' }),
+		permissionId: text('permission_id')
+			.notNull()
+			.references(() => permissionsTable.id, { onDelete: 'cascade' })
+	},
+	(table) => [index('role_permission_idx').on(table.roleId, table.permissionId)]
 );
 
+export const roleHierarchyTable = sqliteTable(
+	'role_hierarchy',
+	{
+		parentRoleId: text('parent_role_id')
+			.notNull()
+			.references(() => rolesTable.id, { onDelete: 'cascade' }),
+		childRoleId: text('child_role_id')
+			.notNull()
+			.references(() => rolesTable.id, { onDelete: 'cascade' })
+	},
+	(table) => [index('role_hierarchy_idx').on(table.parentRoleId, table.childRoleId)]
+);
 
 // ==================================================================
 // BAGIAN 4: TABEL NASYATH (KEGIATAN)
 // ==================================================================
-export const nasyathTable = sqliteTable('nasyath', {
-	id: integer('id').primaryKey({ autoIncrement: true }),
-	muridId: integer('murid_id').notNull().references(() => muridTable.id, { onDelete: 'cascade' }),
-	kegiatan: text('kegiatan').notNull(),
-	tanggalMulai: text('tanggal_mulai'),
-	tanggalSelesai: text('tanggal_selesai'),
-	durasi: text('durasi'),
-	tempat: text('tempat'),
-	jarak: text('jarak'),
-	keterangan: text('keterangan'),
-	namaKontak: text('nama_kontak'),
-	teleponKontak: text('telepon_kontak'),
-	createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
-	updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`).notNull(),
-	updaterId: text('updater_id').notNull().references(() => usersTable.id, { onDelete: 'no action' })
-}, (table) => ([index('nasyath_murid_idx').on(table.muridId),
-index('nasyath_kegiatan_idx').on(table.kegiatan)]
-));
-
+export const nasyathTable = sqliteTable(
+	'nasyath',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		muridId: integer('murid_id')
+			.notNull()
+			.references(() => muridTable.id, { onDelete: 'cascade' }),
+		kegiatan: text('kegiatan').notNull(),
+		tanggalMulai: text('tanggal_mulai'),
+		tanggalSelesai: text('tanggal_selesai'),
+		durasi: text('durasi'),
+		tempat: text('tempat'),
+		jarak: text('jarak'),
+		keterangan: text('keterangan'),
+		namaKontak: text('nama_kontak'),
+		teleponKontak: text('telepon_kontak'),
+		createdAt: text('created_at')
+			.default(sql`CURRENT_TIMESTAMP`)
+			.notNull(),
+		updatedAt: text('updated_at')
+			.default(sql`CURRENT_TIMESTAMP`)
+			.notNull(),
+		updaterId: text('updater_id')
+			.notNull()
+			.references(() => usersTable.id, { onDelete: 'no action' })
+	},
+	(table) => [
+		index('nasyath_murid_idx').on(table.muridId),
+		index('nasyath_kegiatan_idx').on(table.kegiatan)
+	]
+);
 
 // ==================================================================
 // BAGIAN 5: RELATIONS (DEFINISIKAN SEMUA DI AKHIR)
@@ -176,12 +243,23 @@ export const userRolesRelations = relations(userRolesTable, ({ one }) => ({
 
 export const rolePermissionsRelations = relations(rolePermissionsTable, ({ one }) => ({
 	role: one(rolesTable, { fields: [rolePermissionsTable.roleId], references: [rolesTable.id] }),
-	permission: one(permissionsTable, { fields: [rolePermissionsTable.permissionId], references: [permissionsTable.id] })
+	permission: one(permissionsTable, {
+		fields: [rolePermissionsTable.permissionId],
+		references: [permissionsTable.id]
+	})
 }));
 
 export const roleHierarchyRelations = relations(roleHierarchyTable, ({ one }) => ({
-	parent: one(rolesTable, { fields: [roleHierarchyTable.parentRoleId], references: [rolesTable.id], relationName: 'parentRoles' }),
-	child: one(rolesTable, { fields: [roleHierarchyTable.childRoleId], references: [rolesTable.id], relationName: 'childRoles' })
+	parent: one(rolesTable, {
+		fields: [roleHierarchyTable.parentRoleId],
+		references: [rolesTable.id],
+		relationName: 'parentRoles'
+	}),
+	child: one(rolesTable, {
+		fields: [roleHierarchyTable.childRoleId],
+		references: [rolesTable.id],
+		relationName: 'childRoles'
+	})
 }));
 
 // 5.2 Relasi untuk Tabel UTAMA (Many-to-Many & Lainnya)

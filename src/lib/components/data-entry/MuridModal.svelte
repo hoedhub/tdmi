@@ -126,7 +126,7 @@
 {#if showModal}
 	<div class="modal modal-open">
 		<div class="modal-box w-11/12 max-w-5xl">
-			<h3 class="font-bold text-lg">Pilih Murid</h3>
+			<h3 class="text-lg font-bold">Pilih Murid</h3>
 			<div class="py-4">
 				<SuperTable
 					{columns}

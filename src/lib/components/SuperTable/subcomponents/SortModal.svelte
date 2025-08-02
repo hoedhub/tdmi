@@ -162,7 +162,7 @@
 					</select>
 
 					<button
-						class="btn btn-ghost btn-sm btn-circle"
+						class="btn btn-circle btn-ghost btn-sm"
 						on:click={() => toggleDirection(index)}
 						aria-label="Toggle sort direction"
 					>

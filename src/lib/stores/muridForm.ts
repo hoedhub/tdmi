@@ -11,7 +11,7 @@ export type RelatedMuridData = {
 	id: number;
 	nama: string;
 	nomorTelepon: string | null;
-}
+};
 export interface FormData {
 	nama: string;
 	namaArab?: string;

@@ -42,7 +42,9 @@ export async function deleteRole(roleId: string): Promise<void> {
 		// 3. Hapus dari role_hierarchy (baik sebagai parent maupun child)
 		await tx
 			.delete(roleHierarchyTable)
-			.where(or(eq(roleHierarchyTable.parentRoleId, roleId), eq(roleHierarchyTable.childRoleId, roleId)));
+			.where(
+				or(eq(roleHierarchyTable.parentRoleId, roleId), eq(roleHierarchyTable.childRoleId, roleId))
+			);
 		// 4. Hapus peran itu sendiri
 		await tx.delete(rolesTable).where(eq(rolesTable.id, roleId));
 	});

@@ -53,7 +53,9 @@ export const actions: Actions = {
 		}
 		const canWrite = await userHasPermission(locals.user.id, 'perm-user-write');
 		if (!canWrite) {
-			return fail(403, { message: 'Akses ditolak. Anda tidak memiliki izin untuk mengubah peran pengguna.' });
+			return fail(403, {
+				message: 'Akses ditolak. Anda tidak memiliki izin untuk mengubah peran pengguna.'
+			});
 		}
 
 		const formData = await request.formData();
@@ -85,7 +87,8 @@ export const actions: Actions = {
 
 		const errors: { [key: string]: string[] } = {};
 		if (!id || id.length < 3) errors.id = ['ID harus minimal 3 karakter'];
-		if (id && !/^[a-z0-9-]+$/.test(id)) errors.id = ['ID hanya boleh berisi huruf kecil, angka, dan tanda hubung.'];
+		if (id && !/^[a-z0-9-]+$/.test(id))
+			errors.id = ['ID hanya boleh berisi huruf kecil, angka, dan tanda hubung.'];
 		if (!name || name.length < 3) errors.name = ['Nama harus minimal 3 karakter'];
 
 		if (Object.keys(errors).length > 0) {
@@ -149,7 +152,9 @@ export const actions: Actions = {
 		}
 		const canWrite = await userHasPermission(locals.user.id, 'perm-role-write');
 		if (!canWrite) {
-			return fail(403, { message: 'Akses ditolak. Anda tidak memiliki izin untuk mengubah izin peran.' });
+			return fail(403, {
+				message: 'Akses ditolak. Anda tidak memiliki izin untuk mengubah izin peran.'
+			});
 		}
 
 		const formData = await request.formData();

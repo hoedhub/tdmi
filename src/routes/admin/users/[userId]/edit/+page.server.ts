@@ -5,42 +5,47 @@ import { eq } from 'drizzle-orm';
 import { fail, redirect, error } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { userHasPermission } from '$lib/server/accessControl';
-import { getAllRoles, getUserRoles, updateUserRoles, getRoleHierarchy } from '$lib/server/accessControlDB'; // <-- Impor fungsi RBAC
+import {
+	getAllRoles,
+	getUserRoles,
+	updateUserRoles,
+	getRoleHierarchy
+} from '$lib/server/accessControlDB'; // <-- Impor fungsi RBAC
 
 export const load: PageServerLoad = async ({ locals, params, url }) => {
-    // --- Pengecekan izin ---
-    if (!locals.user) throw redirect(302, `/login?redirectTo=${url.pathname}`);
-    const canWriteUsers = await userHasPermission(locals.user.id, 'perm-user-write');
-    if (!canWriteUsers) {
-        throw error(403, 'Akses Ditolak');
-    }
+	// --- Pengecekan izin ---
+	if (!locals.user) throw redirect(302, `/login?redirectTo=${url.pathname}`);
+	const canWriteUsers = await userHasPermission(locals.user.id, 'perm-user-write');
+	if (!canWriteUsers) {
+		throw error(403, 'Akses Ditolak');
+	}
 
-    const userIdToEdit = params.userId;
-    if (!userIdToEdit) {
-        throw error(400, 'User ID dibutuhkan');
-    }
+	const userIdToEdit = params.userId;
+	if (!userIdToEdit) {
+		throw error(400, 'User ID dibutuhkan');
+	}
 
-    const [userToEdit, allRoles, allMurids, assignedRoleIds, roleHierarchy] = await Promise.all([
-        db.query.usersTable.findFirst({
-            where: eq(usersTable.id, userIdToEdit),
-            columns: { id: true, username: true, active: true, muridId: true }
-        }),
-        getAllRoles(),
-        db.select({ id: muridTable.id, nama: muridTable.nama }).from(muridTable),
-        getUserRoles(userIdToEdit),
-        getRoleHierarchy()
-    ]);
+	const [userToEdit, allRoles, allMurids, assignedRoleIds, roleHierarchy] = await Promise.all([
+		db.query.usersTable.findFirst({
+			where: eq(usersTable.id, userIdToEdit),
+			columns: { id: true, username: true, active: true, muridId: true }
+		}),
+		getAllRoles(),
+		db.select({ id: muridTable.id, nama: muridTable.nama }).from(muridTable),
+		getUserRoles(userIdToEdit),
+		getRoleHierarchy()
+	]);
 
-    if (!userToEdit) {
-        throw error(404, 'User tidak ditemukan');
-    }
+	if (!userToEdit) {
+		throw error(404, 'User tidak ditemukan');
+	}
 
-    return {
-        userToEdit: { ...userToEdit, assignedRoles: assignedRoleIds },
-        allAvailableRoles: allRoles,
-        allMurids,
-        roleHierarchy
-    };
+	return {
+		userToEdit: { ...userToEdit, assignedRoles: assignedRoleIds },
+		allAvailableRoles: allRoles,
+		allMurids,
+		roleHierarchy
+	};
 };
 
 export const actions: Actions = {
@@ -88,7 +93,10 @@ export const actions: Actions = {
 				});
 			}
 			if (!active) {
-				return fail(400, { ...formState, message: "Admin tidak bisa menonaktifkan akunnya sendiri." });
+				return fail(400, {
+					...formState,
+					message: 'Admin tidak bisa menonaktifkan akunnya sendiri.'
+				});
 			}
 		}
 

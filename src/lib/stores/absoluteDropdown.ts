@@ -38,11 +38,7 @@ function createDropdownStore() {
 				direction: 'down'
 			});
 		},
-		toggle: (
-			position: DOMRect,
-			content: 'user' | 'theme',
-			direction: 'up' | 'down' = 'down'
-		) => {
+		toggle: (position: DOMRect, content: 'user' | 'theme', direction: 'up' | 'down' = 'down') => {
 			update((state) => {
 				if (state.isOpen && state.content === content) {
 					return { ...state, isOpen: false };

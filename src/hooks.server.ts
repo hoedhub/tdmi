@@ -1,38 +1,38 @@
 // src/hooks.server.ts
-import { lucia } from "$lib/server/auth";
-import type { Handle } from "@sveltejs/kit";
+import { lucia } from '$lib/server/auth';
+import type { Handle } from '@sveltejs/kit';
 
 export const handle: Handle = async ({ event, resolve }) => {
-    const sessionId = event.cookies.get(lucia.sessionCookieName);
-    if (!sessionId) {
-        event.locals.user = null;
-        event.locals.session = null;
-        return resolve(event);
-    }
+	const sessionId = event.cookies.get(lucia.sessionCookieName);
+	if (!sessionId) {
+		event.locals.user = null;
+		event.locals.session = null;
+		return resolve(event);
+	}
 
-    const { session, user } = await lucia.validateSession(sessionId);
-    if (session && session.fresh) {
-        const sessionCookie = lucia.createSessionCookie(session.id);
-        event.cookies.set(sessionCookie.name, sessionCookie.value, {
-            path: ".",
-            ...sessionCookie.attributes
-        });
-    }
-    if (!session) {
-        const sessionCookie = lucia.createBlankSessionCookie();
-        event.cookies.set(sessionCookie.name, sessionCookie.value, {
-            path: ".",
-            ...sessionCookie.attributes
-        });
-    }
-    event.locals.user = user;
-    event.locals.session = session;
+	const { session, user } = await lucia.validateSession(sessionId);
+	if (session && session.fresh) {
+		const sessionCookie = lucia.createSessionCookie(session.id);
+		event.cookies.set(sessionCookie.name, sessionCookie.value, {
+			path: '.',
+			...sessionCookie.attributes
+		});
+	}
+	if (!session) {
+		const sessionCookie = lucia.createBlankSessionCookie();
+		event.cookies.set(sessionCookie.name, sessionCookie.value, {
+			path: '.',
+			...sessionCookie.attributes
+		});
+	}
+	event.locals.user = user;
+	event.locals.session = session;
 
-    return resolve(event, {
-        transformPageChunk: ({ html, done }) => {
-            if (done) {
-                const userId = event.locals.user?.id || 'default';
-                const script = `
+	return resolve(event, {
+		transformPageChunk: ({ html, done }) => {
+			if (done) {
+				const userId = event.locals.user?.id || 'default';
+				const script = `
                     <script>
                         window.currentUserThemeId = '${userId}';
                         const savedTheme = localStorage.getItem(window.currentUserThemeId + '-theme');
@@ -41,9 +41,9 @@ export const handle: Handle = async ({ event, resolve }) => {
                         }
                     </script>
                 `;
-                return html.replace('</head>', `${script}</head>`);
-            }
-            return html;
-        }
-    });
+				return html.replace('</head>', `${script}</head>`);
+			}
+			return html;
+		}
+	});
 };
