@@ -12,7 +12,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		throw error(401, 'Unauthorized');
 	}
 
-	const { sort, filters } = await request.json();
+	const { sort, filters, periodType, dateInfo } = await request.json();
 	const dateRange = filters?.dateRange;
 
 	try {
@@ -101,6 +101,23 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			.orderBy(...orderByClauses)
 			.all();
 
+		// --- Dynamic Filename Generation ---
+		let periodString = '';
+		const monthNames = [
+			'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+			'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+		];
+
+		if (periodType === 'bulan' && dateInfo) {
+			periodString = `${monthNames[dateInfo.month]}_${dateInfo.year}`;
+		} else if (periodType === 'rentang' && dateInfo) {
+			periodString = `${dateInfo.start}_hingga_${dateInfo.end}`;
+		} else {
+			periodString = `Export_${new Date().toISOString().split('T')[0]}`;
+		}
+		const fileName = `Nasyath_MUN_${periodString}.xlsx`;
+
+
 		// --- Excel Generation ---
 		const workbook = new ExcelJS.Workbook();
 		const worksheet = workbook.addWorksheet('Nasyath MUN');
@@ -170,7 +187,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			status: 200,
 			headers: {
 				'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-				'Content-Disposition': `attachment; filename="Nasyath_MUN_Export_${new Date().toISOString().split('T')[0]}.xlsx"`
+				'Content-Disposition': `attachment; filename="${fileName}"`
 			}
 		});
 	} catch (e) {

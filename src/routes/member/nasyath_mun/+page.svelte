@@ -33,7 +33,7 @@
 	import type { ColumnDef, SortConfig, FilterState } from '$lib/components/SuperTable/types';
 	import { goto } from '$app/navigation';
 	import { enhance } from '$app/forms';
-	import { success, error } from '$lib/components/toast';
+	import { loading as showLoadingToast, update, success, error } from '$lib/components/toast';
 	import type { ActionResult } from '@sveltejs/kit';
 
 	// 2. PROPS
@@ -385,8 +385,85 @@
 			e.preventDefault();
 		}
 	};
+
 	async function handleExport() {
-		/* ... (export logic remains the same) ... */
+		const toastId = showLoadingToast('Memulai proses ekspor...', { duration: 0 });
+		isExporting = true;
+
+		try {
+			// Give a moment for the toast to appear
+			await new Promise((resolve) => setTimeout(resolve, 100));
+
+			let finalDateFilter = {};
+			if (periodType === 'bulan') {
+				const year = selectedDate.getFullYear();
+				const month = selectedDate.getMonth();
+				const startDate = new Date(year, month, 1);
+				const endDate = new Date(year, month + 1, 0);
+				const formatDate = (d: Date) => {
+					const y = d.getFullYear();
+					const m = (d.getMonth() + 1).toString().padStart(2, '0');
+					const day = d.getDate().toString().padStart(2, '0');
+					return `${y}-${m}-${day}`;
+				};
+				finalDateFilter = { start: formatDate(startDate), end: formatDate(endDate) };
+			} else {
+				finalDateFilter = { ...dateFilter };
+			}
+
+			const response = await fetch('/member/nasyath_mun/export', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					filters: { ...currentFilters, dateRange: finalDateFilter },
+					sort: currentSort,
+					periodType: periodType,
+					// Kirim tanggal yang relevan untuk pembuatan nama file di server
+					dateInfo: periodType === 'bulan' ? { month: selectedDate.getMonth(), year: selectedDate.getFullYear() } : finalDateFilter
+				})
+			});
+
+			if (response.ok) {
+				const blob = await response.blob();
+				const url = window.URL.createObjectURL(blob);
+				const a = document.createElement('a');
+				a.href = url;
+				const contentDisposition = response.headers.get('content-disposition');
+				let fileName = 'export.xlsx';
+				if (contentDisposition) {
+					const match = contentDisposition.match(/filename="?([^"]+)"?/);
+					if (match && match[1]) {
+						fileName = match[1];
+					}
+				}
+				a.download = fileName;
+				document.body.appendChild(a);
+				a.click();
+				window.URL.revokeObjectURL(url);
+				a.remove();
+				update(toastId, {
+					type: 'success',
+					message: 'Ekspor berhasil! File sedang diunduh.',
+					duration: 5000
+				});
+			} else {
+				const errorText = await response.text();
+				update(toastId, {
+					type: 'error',
+					message: `Gagal mengekspor: ${errorText}`,
+					duration: 8000
+				});
+			}
+		} catch (err: any) {
+			update(toastId, {
+				type: 'error',
+				message: `Terjadi kesalahan: ${err.message}`,
+				duration: 8000
+			});
+			console.error('Export error:', err);
+		} finally {
+			isExporting = false;
+		}
 	}
 
 	onMount(() => {
@@ -557,9 +634,15 @@
 		<!-- TABLE VIEW -->
 		<div class="space-y-4">
 			<div class="flex items-center justify-end gap-2">
-				<button class="btn btn-secondary btn-sm" on:click={handleExport} disabled={isExporting}
-					><Download class="h-4 w-4" />{#if isExporting}Mengekspor...{:else}Export{/if}</button
+				<button
+					class="btn btn-secondary btn-sm"
+					on:click={handleExport}
+					disabled={isExporting || nasyathData.length === 0 || loading}
+					title={nasyathData.length === 0 ? 'Tidak ada data untuk diekspor' : 'Ekspor data'}
 				>
+					<Download class="h-4 w-4" />
+					{#if isExporting}Mengekspor...{:else}Export ke XLSX{/if}
+				</button>
 				<a href="/member/nasyath_mun/new" class="btn btn-primary btn-sm"
 					><PlusCircle class="h-4 w-4" /> Tambah Baru</a
 				>
