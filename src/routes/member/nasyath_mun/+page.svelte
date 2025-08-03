@@ -74,12 +74,27 @@
 	}
 
 	onMount(() => {
+		// Initialize view from localStorage
 		if (typeof window !== 'undefined') {
 			const savedView = localStorage.getItem(`${$page.data.user?.id || 'default'}-nasyathView`);
 			if (savedView === 'table' || savedView === 'dashboard') {
 				currentView = savedView;
 			}
 		}
+
+		// Initialize filters from URL on first load
+		const searchParams = $page.url.searchParams;
+		const start = searchParams.get('start');
+		const end = searchParams.get('end');
+
+		if (start && end) {
+			periodType = 'rentang';
+			dateFilter.start = start;
+			dateFilter.end = end;
+		}
+
+		// Fetch initial table data
+		fetchNasyathData(currentSort, currentFilters, 1);
 	});
 
 	// --- DASHBOARD LOGIC ---
@@ -341,15 +356,54 @@
 		}
 	}
 
-	function applyDateFilter() {
-		fetchNasyathData(currentSort, currentFilters, 1);
+	async function applyFilters() {
+		// This function updates both the dashboard (by reloading page data) and the table.
+		const params = new URLSearchParams($page.url.searchParams);
+
+		let finalDateFilter: { start: string; end: string } = { start: '', end: '' };
+
+		if (periodType === 'bulan') {
+			const year = selectedDate.getFullYear();
+			const month = selectedDate.getMonth();
+			const startDate = new Date(year, month, 1);
+			const endDate = new Date(year, month + 1, 0);
+			const formatDate = (d: Date) => {
+				const y = d.getFullYear();
+				const m = (d.getMonth() + 1).toString().padStart(2, '0');
+				const day = d.getDate().toString().padStart(2, '0');
+				return `${y}-${m}-${day}`;
+			};
+			finalDateFilter = { start: formatDate(startDate), end: formatDate(endDate) };
+		} else {
+			finalDateFilter = { ...dateFilter };
+		}
+
+		// Set params for server `load` function
+		if (finalDateFilter.start) params.set('start', finalDateFilter.start);
+		else params.delete('start');
+		if (finalDateFilter.end) params.set('end', finalDateFilter.end);
+		else params.delete('end');
+
+		// Only navigate if params have changed to avoid unnecessary reloads
+		if (params.toString() !== $page.url.searchParams.toString()) {
+			await goto(`?${params.toString()}`, { keepfocus: true, noscroll: true });
+		}
+
+		// Always refetch table data with the correct filters
+		await fetchNasyathData(currentSort, currentFilters, 1);
 	}
-	function resetDateFilter() {
+
+	async function resetFilters() {
 		periodType = 'bulan';
 		selectedDate = new Date();
 		dateFilter.start = '';
 		dateFilter.end = '';
-		applyDateFilter();
+
+		// Navigate to clear URL params, then apply default filters
+		if ($page.url.searchParams.toString() !== '') {
+			await goto('?', { keepfocus: true, noscroll: true });
+		}
+		await applyFilters();
 	}
 	async function handleSort(event: CustomEvent<SortConfig[] | null>) {
 		currentSort = event.detail ?? undefined;
@@ -466,9 +520,7 @@
 		}
 	}
 
-	onMount(() => {
-		applyDateFilter();
-	});
+	
 
 	import { absoluteDropdownStore } from '$lib/stores/absoluteDropdown';
 
@@ -549,7 +601,7 @@
 			<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
 				<div class="stat rounded-lg bg-base-200 shadow">
 					<div class="stat-figure text-primary"><Calendar class="h-8 w-8" /></div>
-					<div class="stat-title">نشاط هذا الشهر</div>
+					<div class="stat-title">{data.kpi.kpiTitle}</div>
 					<div class="stat-value text-primary">{toHindi(data.kpi.totalThisMonth)}</div>
 				</div>
 				<div class="stat rounded-lg bg-base-200 shadow">
@@ -715,8 +767,8 @@
 						{/if}
 
 						<div class="flex items-center gap-1">
-							<button class="btn btn-primary btn-sm" on:click={applyDateFilter}>تصفية</button
-							><button class="btn btn-ghost btn-sm" on:click={resetDateFilter}>إعادة تعيين</button>
+							<button class="btn btn-primary btn-sm" on:click={applyFilters}>تصفية</button
+							><button class="btn btn-ghost btn-sm" on:click={resetFilters}>إعادة تعيين</button>
 						</div>
 					</div></svelte:fragment
 				>

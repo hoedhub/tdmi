@@ -5,37 +5,53 @@ import { nasyathTable, muridTable } from '$lib/drizzle/schema';
 import { sql, and, eq, gte, lte, desc, count } from 'drizzle-orm';
 import { userHasPermission } from '$lib/server/accessControl';
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: PageServerLoad = async ({ locals, url }) => {
 	if (!locals.user) {
 		throw redirect(302, '/login');
 	}
 
-	// Logika `canReadAll` menentukan apakah dashboard bersifat global atau personal
 	const canReadAll = await userHasPermission(locals.user.id, 'perm-nasyath-read');
-	const currentYear = new Date().getFullYear();
-
-	// Jika bukan admin, filter berdasarkan muridId dari user yang login
 	const baseConditions = canReadAll ? [] : [eq(nasyathTable.muridId, locals.user.muridId || 0)];
 
-	// --- KPI Queries ---
-	const startOfMonth = new Date();
-	startOfMonth.setDate(1);
-	startOfMonth.setHours(0, 0, 0, 0);
-	const endOfMonth = new Date(startOfMonth);
-	endOfMonth.setMonth(endOfMonth.getMonth() + 1);
+	// --- Date Filter ---
+	const startDateParam = url.searchParams.get('start');
+	const endDateParam = url.searchParams.get('end');
 
-	const totalThisMonthResult = await db
+	let queryStartDate: Date;
+	let queryEndDate: Date;
+	let kpiTitle = 'نشاط هذا الشهر';
+
+	if (startDateParam && endDateParam) {
+		queryStartDate = new Date(startDateParam);
+		queryEndDate = new Date(endDateParam);
+		queryEndDate.setHours(23, 59, 59, 999); // Include the whole end day
+		kpiTitle = 'نشاط في النطاق المحدد';
+	} else {
+		// Default to current month
+		queryStartDate = new Date();
+		queryStartDate.setDate(1);
+		queryStartDate.setHours(0, 0, 0, 0);
+		queryEndDate = new Date(queryStartDate);
+		queryEndDate.setMonth(queryEndDate.getMonth() + 1);
+		queryEndDate.setDate(0); // Last day of current month
+		queryEndDate.setHours(23, 59, 59, 999);
+	}
+
+	const dateConditions = [
+		gte(nasyathTable.tanggalMulai, queryStartDate.toISOString()),
+		lte(nasyathTable.tanggalMulai, queryEndDate.toISOString())
+	];
+
+	const allConditions = [...baseConditions, ...dateConditions];
+
+	// --- KPI Queries ---
+	const totalInRangeResult = await db
 		.select({ count: count() })
 		.from(nasyathTable)
-		.where(
-			and(
-				...baseConditions,
-				gte(nasyathTable.tanggalMulai, startOfMonth.toISOString()),
-				lte(nasyathTable.tanggalMulai, endOfMonth.toISOString())
-			)
-		);
-	const totalThisMonth = totalThisMonthResult[0].count;
+		.where(and(...allConditions));
+	const totalInRange = totalInRangeResult[0].count;
 
+	const currentYear = new Date().getFullYear();
 	const startOfYear = new Date(currentYear, 0, 1);
 	const endOfYear = new Date(currentYear, 11, 31, 23, 59, 59, 999);
 	const totalThisYearResult = await db
@@ -53,27 +69,29 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const mostFrequentResult = await db
 		.select({ kegiatan: nasyathTable.kegiatan, count: count() })
 		.from(nasyathTable)
-		.where(and(...baseConditions))
+		.where(and(...allConditions))
 		.groupBy(nasyathTable.kegiatan)
 		.orderBy(desc(count()))
 		.limit(1);
 	const mostFrequentActivity = mostFrequentResult[0]?.kegiatan || 'N/A';
 
 	// --- Chart Data Queries ---
-	const sixMonthsAgo = new Date();
-	sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+	// For bar chart, if a filter is applied, group by month within that range.
+	// If not, show the last 6 months.
+	const chartDateConditions = startDateParam
+		? dateConditions
+		: [gte(nasyathTable.tanggalMulai, new Date(new Date().setMonth(new Date().getMonth() - 6)).toISOString())];
+
 	const activitiesPerMonthResult = await db
 		.select({
 			month: sql<string>`strftime('%Y-%m', ${nasyathTable.tanggalMulai})`,
 			count: count()
 		})
 		.from(nasyathTable)
-		.where(and(...baseConditions, gte(nasyathTable.tanggalMulai, sixMonthsAgo.toISOString())))
+		.where(and(...baseConditions, ...chartDateConditions))
 		.groupBy(sql`strftime('%Y-%m', ${nasyathTable.tanggalMulai})`)
 		.orderBy(sql`strftime('%Y-%m', ${nasyathTable.tanggalMulai})`);
 
-	// --- **QUERY BARU UNTUK PIE CHART** ---
-	// Menghitung anggota teraktif. Hanya relevan untuk admin.
 	let mostActiveMembers: { murid: { nama: string | null } | null; activityCount: number }[] = [];
 	if (canReadAll) {
 		const results = await db
@@ -83,6 +101,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			})
 			.from(nasyathTable)
 			.leftJoin(muridTable, eq(nasyathTable.muridId, muridTable.id))
+			.where(and(...allConditions))
 			.groupBy(muridTable.namaArab)
 			.orderBy(desc(sql`count(${nasyathTable.id})`))
 			.limit(7);
@@ -93,7 +112,6 @@ export const load: PageServerLoad = async ({ locals }) => {
 		}));
 	}
 
-	// --- Table Data Query ---
 	const recentActivities = await db
 		.select({
 			id: nasyathTable.id,
@@ -104,21 +122,23 @@ export const load: PageServerLoad = async ({ locals }) => {
 		})
 		.from(nasyathTable)
 		.leftJoin(muridTable, eq(nasyathTable.muridId, muridTable.id))
-		.where(and(...baseConditions))
+		.where(and(...allConditions))
 		.orderBy(desc(nasyathTable.tanggalMulai))
 		.limit(5);
 
 	return {
 		canReadAll,
 		kpi: {
-			totalThisMonth,
+			totalThisMonth: totalInRange,
 			totalThisYear,
-			mostFrequentActivity
+			mostFrequentActivity,
+			kpiTitle
 		},
 		charts: {
 			activitiesPerMonth: activitiesPerMonthResult,
-			mostActiveMembers: mostActiveMembers // Kirim data baru ke frontend
+			mostActiveMembers: mostActiveMembers
 		},
-		recentActivities
+		recentActivities,
+		isFiltered: !!(startDateParam && endDateParam)
 	};
 };
