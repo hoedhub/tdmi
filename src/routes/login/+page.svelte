@@ -6,7 +6,6 @@
 	import { Eye, EyeOff, CheckCircle2 } from 'lucide-svelte';
 	import { error, success } from '$lib/components/toast';
 
-	
 	let rememberMe = false;
 	let showPassword = false;
 	let isLoading = false;
@@ -45,7 +44,7 @@
 
 <svelte:head>
 	<title>Login | TDMI</title>
-	<meta name="description" content="Login to your MyApp account" />
+	<meta name="description" content="Login to your TDMI account" />
 </svelte:head>
 
 <div class="flex min-h-screen flex-col items-center justify-center bg-base-200 p-4">
