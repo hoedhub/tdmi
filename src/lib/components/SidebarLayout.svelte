@@ -16,7 +16,8 @@
 		Menu as MenuIcon,
 		LogOut,
 		UserCircle,
-		Palette
+		Palette,
+		CalendarRange
 	} from 'lucide-svelte';
 	// For SvelteKit, you might use: import { page } from '$app/stores';
 
@@ -53,7 +54,7 @@
 	const menuItems = [
 		{ href: '/', label: 'Dashboard', icon: Home },
 		{ href: '/member/pendataan', label: 'Pendataan', icon: Users },
-		{ href: '/member/nasyath_mun', label: 'Nasyath MUN', icon: ChartNoAxesGantt },
+		{ href: '/member/nasyath_mun', label: 'Nasyath MUN', icon: CalendarRange },
 		// { href: '/member/profile', label: 'Edit Profile', icon: UserPen },
 		{ href: '/settings', label: 'Settings', icon: Settings }
 	];

@@ -23,7 +23,9 @@
 		PlusCircle,
 		Download,
 		LayoutDashboard,
-		Table
+		Table,
+		ChevronLeft,
+		ChevronRight
 	} from 'lucide-svelte';
 	import { toHindi } from '$lib/utils/toHindi';
 	import type { PageData } from './$types';
@@ -292,13 +294,35 @@
 	) {
 		loading = true;
 		dbError = false;
+
+		// Determine the date range for the query
+		let finalDateFilter = {};
+		if (periodType === 'bulan') {
+			const year = selectedDate.getFullYear();
+			const month = selectedDate.getMonth();
+			const startDate = new Date(year, month, 1);
+			const endDate = new Date(year, month + 1, 0);
+
+			// Timezone-safe formatting
+			const formatDate = (d: Date) => {
+				const y = d.getFullYear();
+				const m = (d.getMonth() + 1).toString().padStart(2, '0');
+				const day = d.getDate().toString().padStart(2, '0');
+				return `${y}-${m}-${day}`;
+			};
+
+			finalDateFilter = { start: formatDate(startDate), end: formatDate(endDate) };
+		} else {
+			finalDateFilter = { ...dateFilter };
+		}
+
 		try {
 			const response = await fetch('/member/nasyath_mun/table', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					sort,
-					filters: { ...filters, dateRange: dateFilter },
+					filters: { ...filters, dateRange: finalDateFilter },
 					page,
 					pageSize
 				})
@@ -321,6 +345,8 @@
 		fetchNasyathData(currentSort, currentFilters, 1);
 	}
 	function resetDateFilter() {
+		periodType = 'bulan';
+		selectedDate = new Date();
 		dateFilter.start = '';
 		dateFilter.end = '';
 		applyDateFilter();
@@ -364,21 +390,54 @@
 	}
 
 	onMount(() => {
-		const today = new Date();
-		const year = today.getFullYear();
-		const month = today.getMonth();
-		const startDate = new Date(year, month, 1);
-		const endDate = new Date(year, month + 1, 0);
-		const formatDate = (d: Date) => {
-			const y = d.getFullYear();
-			const m = (d.getMonth() + 1).toString().padStart(2, '0');
-			const day = d.getDate().toString().padStart(2, '0');
-			return `${y}-${m}-${day}`;
-		};
-		dateFilter.start = formatDate(startDate);
-		dateFilter.end = formatDate(endDate);
-		fetchNasyathData(currentSort, currentFilters, currentPage);
+		applyDateFilter();
 	});
+
+	import { absoluteDropdownStore } from '$lib/stores/absoluteDropdown';
+
+	// --- MONTH PICKER LOGIC ---
+	let selectedDate = new Date();
+	const monthNames = [
+		'يناير',
+		'فبراير',
+		'مارس',
+		'أبريل',
+		'مايو',
+		'يونيو',
+		'يوليو',
+		'أغسطس',
+		'سبتمبر',
+		'أكتوبر',
+		'نوفمبر',
+		'ديسمبر'
+	];
+	$: monthYearDisplay = `${monthNames[selectedDate.getMonth()]} ${toHindi(
+		selectedDate.getFullYear()
+	)}`;
+
+	// Period Selector
+	let periodType: 'bulan' | 'rentang' = 'bulan';
+
+	function handleMonthChange(newDate: Date) {
+		selectedDate = newDate;
+	}
+
+	function showMonthPicker(event: MouseEvent) {
+		const btn = event.currentTarget as HTMLElement;
+		const rect = btn.getBoundingClientRect();
+		absoluteDropdownStore.toggle(rect, 'monthPicker', 'down', {
+			initialDate: selectedDate,
+			onChange: handleMonthChange
+		});
+	}
+
+	function previousMonth() {
+		selectedDate = new Date(selectedDate.setMonth(selectedDate.getMonth() - 1));
+	}
+
+	function nextMonth() {
+		selectedDate = new Date(selectedDate.setMonth(selectedDate.getMonth() + 1));
+	}
 </script>
 
 <div class="container mx-auto p-4" dir="rtl">
@@ -522,30 +581,59 @@
 				on:itemsPerPageChange={handleItemsPerPageChange}
 			>
 				<svelte:fragment slot="custom-filters"
-					><div class="flex flex-col gap-2 pt-2 md:flex-row md:items-end">
-						<div class="form-control w-full md:w-auto">
-							<label for="startDate" class="label pb-1"
-								><span class="label-text">Dari Tanggal</span></label
-							><input
-								type="date"
-								id="startDate"
-								bind:value={dateFilter.start}
-								class="input input-sm input-bordered w-full"
-							/>
+					><div class="flex flex-col flex-wrap items-start gap-4 pt-2 md:flex-row md:items-end">
+						<!-- Period Selector -->
+						<div class="form-control">
+							<label class="label pb-1"><span class="label-text">تحديد الفترة</span></label>
+							<select class="select select-sm select-bordered" bind:value={periodType}>
+								<option value="bulan">شهري</option>
+								<option value="rentang">نطاق تاريخ</option>
+							</select>
 						</div>
-						<div class="form-control w-full md:w-auto">
-							<label for="endDate" class="label pb-1"
-								><span class="label-text">Hingga Tanggal</span></label
-							><input
-								type="date"
-								id="endDate"
-								bind:value={dateFilter.end}
-								class="input input-sm input-bordered w-full"
-							/>
-						</div>
-						<div class="flex items-center gap-1 pt-4 md:pt-0">
-							<button class="btn btn-primary btn-sm" on:click={applyDateFilter}>Filter</button
-							><button class="btn btn-ghost btn-sm" on:click={resetDateFilter}>Reset</button>
+
+						{#if periodType === 'bulan'}
+							<!-- Month Selector Dropdown -->
+							<div class="form-control">
+								<label class="label pb-1"><span class="label-text">تحديد الشهر</span></label>
+								<div class="join">
+									<button class="btn btn-sm join-item" on:click={previousMonth}>
+										<ChevronRight class="h-4 w-4" />
+									</button>
+									<button class="btn btn-sm join-item w-36 font-normal" on:click={showMonthPicker}>
+										{monthYearDisplay}
+									</button>
+									<button class="btn btn-sm join-item" on:click={nextMonth}>
+										<ChevronLeft class="h-4 w-4" />
+									</button>
+								</div>
+							</div>
+						{:else if periodType === 'rentang'}
+							<!-- Date Range Filter -->
+							<div class="form-control w-full md:w-auto">
+								<label for="startDate" class="label pb-1"
+									><span class="label-text">من تاريخ</span></label
+								><input
+									type="date"
+									id="startDate"
+									bind:value={dateFilter.start}
+									class="input input-sm input-bordered w-full"
+								/>
+							</div>
+							<div class="form-control w-full md:w-auto">
+								<label for="endDate" class="label pb-1"
+									><span class="label-text">إلى تاريخ</span></label
+								><input
+									type="date"
+									id="endDate"
+									bind:value={dateFilter.end}
+									class="input input-sm input-bordered w-full"
+								/>
+							</div>
+						{/if}
+
+						<div class="flex items-center gap-1">
+							<button class="btn btn-primary btn-sm" on:click={applyDateFilter}>تصفية</button
+							><button class="btn btn-ghost btn-sm" on:click={resetDateFilter}>إعادة تعيين</button>
 						</div>
 					</div></svelte:fragment
 				>

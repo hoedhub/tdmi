@@ -4,6 +4,7 @@
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
 	import { UserPen, LogOut } from 'lucide-svelte';
+	import MonthPickerDropdown from './MonthPickerDropdown.svelte';
 
 	let menuElement: HTMLUListElement;
 	let menuStyle = '';
@@ -106,7 +107,7 @@
 		aria-hidden="true"
 		on:click|self={absoluteDropdownStore.close}
 	></div>
-	<ul
+	<div
 		bind:this={menuElement}
 		style={menuStyle}
 		class="menu fixed z-50 rounded-box bg-base-300 p-2 shadow-lg"
@@ -141,6 +142,11 @@
 					</button>
 				</li>
 			{/each}
+		{:else if $absoluteDropdownStore.content === 'monthPicker'}
+			<MonthPickerDropdown
+				initialDate={$absoluteDropdownStore.data.initialDate}
+				onChange={$absoluteDropdownStore.data.onChange}
+			/>
 		{/if}
-	</ul>
+	</div>
 {/if}

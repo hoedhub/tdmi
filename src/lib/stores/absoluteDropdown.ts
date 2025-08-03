@@ -3,8 +3,9 @@ import { writable } from 'svelte/store';
 interface DropdownState {
 	isOpen: boolean;
 	position: { top: number; left: number; right: number; bottom: number };
-	content: 'user' | 'theme' | null;
+	content: 'user' | 'theme' | 'monthPicker' | null;
 	direction: 'up' | 'down';
+	data?: any;
 }
 
 function createDropdownStore() {
@@ -12,12 +13,18 @@ function createDropdownStore() {
 		isOpen: false,
 		position: { top: 0, left: 0, right: 0, bottom: 0 },
 		content: null,
-		direction: 'down'
+		direction: 'down',
+		data: null
 	});
 
 	return {
 		subscribe,
-		open: (position: DOMRect, content: 'user' | 'theme', direction: 'up' | 'down' = 'down') => {
+		open: (
+			position: DOMRect,
+			content: 'user' | 'theme' | 'monthPicker',
+			direction: 'up' | 'down' = 'down',
+			data?: any
+		) => {
 			set({
 				isOpen: true,
 				position: {
@@ -27,7 +34,8 @@ function createDropdownStore() {
 					bottom: position.bottom
 				},
 				content,
-				direction
+				direction,
+				data
 			});
 		},
 		close: () => {
@@ -35,10 +43,16 @@ function createDropdownStore() {
 				isOpen: false,
 				position: { top: 0, left: 0, right: 0, bottom: 0 },
 				content: null,
-				direction: 'down'
+				direction: 'down',
+				data: null
 			});
 		},
-		toggle: (position: DOMRect, content: 'user' | 'theme', direction: 'up' | 'down' = 'down') => {
+		toggle: (
+			position: DOMRect,
+			content: 'user' | 'theme' | 'monthPicker',
+			direction: 'up' | 'down' = 'down',
+			data?: any
+		) => {
 			update((state) => {
 				if (state.isOpen && state.content === content) {
 					return { ...state, isOpen: false };
@@ -52,7 +66,8 @@ function createDropdownStore() {
 						bottom: position.bottom
 					},
 					content,
-					direction
+					direction,
+					data
 				};
 			});
 		}
