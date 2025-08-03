@@ -84,13 +84,33 @@
 
 		// Initialize filters from URL on first load
 		const searchParams = $page.url.searchParams;
-		const start = searchParams.get('start');
-		const end = searchParams.get('end');
+		const startStr = searchParams.get('start');
+		const endStr = searchParams.get('end');
 
-		if (start && end) {
-			periodType = 'rentang';
-			dateFilter.start = start;
-			dateFilter.end = end;
+		if (startStr && endStr) {
+			// Add T00:00:00 to avoid timezone issues when creating Date objects
+			const startDate = new Date(startStr + 'T00:00:00');
+			const endDate = new Date(endStr + 'T00:00:00');
+
+			const firstDayOfMonth = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+			const lastDayOfMonth = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0);
+
+			// Check if the provided date range perfectly matches a single calendar month
+			if (
+				startDate.getTime() === firstDayOfMonth.getTime() &&
+				endDate.getTime() === lastDayOfMonth.getTime()
+			) {
+				periodType = 'bulan';
+				selectedDate = startDate; // Set the month picker to the correct month
+			} else {
+				periodType = 'rentang';
+				dateFilter.start = startStr;
+				dateFilter.end = endStr;
+			}
+		} else {
+			// Default state when no params are present
+			periodType = 'bulan';
+			selectedDate = new Date();
 		}
 
 		// Fetch initial table data
@@ -386,7 +406,7 @@
 
 		// Only navigate if params have changed to avoid unnecessary reloads
 		if (params.toString() !== $page.url.searchParams.toString()) {
-			await goto(`?${params.toString()}`, { keepfocus: true, noscroll: true });
+			await goto(`?${params.toString()}`, { keepFocus: true, noscroll: true });
 		}
 
 		// Always refetch table data with the correct filters
@@ -399,11 +419,13 @@
 		dateFilter.start = '';
 		dateFilter.end = '';
 
-		// Navigate to clear URL params, then apply default filters
+		// Navigate to clear URL params. This will trigger a page data reload for the dashboard.
 		if ($page.url.searchParams.toString() !== '') {
-			await goto('?', { keepfocus: true, noscroll: true });
+			await goto('?', { keepFocus: true, noScroll: true });
 		}
-		await applyFilters();
+
+		// After navigation, fetch the table data for the now-default state.
+		await fetchNasyathData(currentSort, currentFilters, 1);
 	}
 	async function handleSort(event: CustomEvent<SortConfig[] | null>) {
 		currentSort = event.detail ?? undefined;
@@ -745,9 +767,10 @@
 						{:else if periodType === 'rentang'}
 							<!-- Date Range Filter -->
 							<div class="form-control w-full md:w-auto">
-								<label for="startDate" class="label pb-1"
-									><span class="label-text">من تاريخ</span></label
-								><input
+								<label for="startDate" class="label pb-1">
+									<span class="label-text">من تاريخ</span>
+								</label>
+								<input
 									type="date"
 									id="startDate"
 									bind:value={dateFilter.start}
@@ -755,9 +778,10 @@
 								/>
 							</div>
 							<div class="form-control w-full md:w-auto">
-								<label for="endDate" class="label pb-1"
-									><span class="label-text">إلى تاريخ</span></label
-								><input
+								<label for="endDate" class="label pb-1">
+									<span class="label-text">إلى تاريخ</span>
+								</label>
+								<input
 									type="date"
 									id="endDate"
 									bind:value={dateFilter.end}
