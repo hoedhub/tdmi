@@ -4,20 +4,21 @@
 	import type { FormData } from '$lib/stores/muridForm';
 	import Compressor from 'compressorjs';
 	import { UserCircle } from 'lucide-svelte';
+	import SimilarMuridsAlert from '../data-entry/SimilarMuridsAlert.svelte';
 
 	// Props
 	export let formData: FormData;
 	export let handleInput: () => void;
 	export let handleArabicInput: (event: Event) => void;
+	export let similarMurids: any[] = [];
+	export let onclose: () => void;
 
 	// State
 	let compressedFile: File | null = null;
-	let previewUrl = ''; // Untuk pratinjau file baru yang dipilih
+	let previewUrl = '';
 	let compressionError = '';
-	let photoRemoved = false; // Flag untuk menandai foto dihapus
+	let photoRemoved = false;
 
-	// Variabel reaktif untuk menentukan URL gambar yang akan ditampilkan
-	// Prioritas: Pratinjau baru > Foto yang ada > Fallback (null)
 	$: displayUrl = previewUrl || (formData.fotoUrl && !photoRemoved ? formData.fotoUrl : null);
 
 	async function handleFileUpload(originalFile: File) {
@@ -44,10 +45,9 @@
 					}
 
 					compressedFile = finalFile;
-					// Buat URL Object untuk pratinjau
-					if (previewUrl) URL.revokeObjectURL(previewUrl); // Hapus pratinjau lama
+					if (previewUrl) URL.revokeObjectURL(previewUrl);
 					previewUrl = URL.createObjectURL(finalFile);
-					photoRemoved = false; // Jika user memilih file baru, batalkan status 'dihapus'
+					photoRemoved = false;
 					resolve(finalFile);
 				},
 				error(err) {
@@ -60,7 +60,6 @@
 	}
 
 	export function reset() {
-		// Reset state internal komponen ini ke kondisi awal
 		photoRemoved = false;
 		if (previewUrl) {
 			URL.revokeObjectURL(previewUrl);
@@ -102,6 +101,9 @@
 			class="input input-bordered w-full"
 			required
 		/>
+		<div class="mt-2">
+			<SimilarMuridsAlert {similarMurids} {onclose} />
+		</div>
 	</div>
 	<div>
 		<label for="namaArab" class="label">
@@ -177,10 +179,6 @@
 			</div>
 
 			<div class="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-				<!-- 
-                    Tampilan Foto / Fallback 
-                    - Tambahkan `flex-shrink-0` agar gambar tidak gepeng saat ruang terbatas.
-                -->
 				<div
 					class="flex h-32 w-32 flex-shrink-0 items-center justify-center rounded-lg bg-base-200 shadow-sm"
 				>
@@ -192,16 +190,10 @@
 							crossorigin="anonymous"
 						/>
 					{:else}
-						<!-- Fallback Icon -->
 						<UserCircle class="h-16 w-16 text-base-content/30" />
 					{/if}
 				</div>
 
-				<!-- 
-                    Kontainer Tombol 
-                    - `w-full`: Ambil lebar penuh di layout mobile (kolom).
-                    - `sm:grow`: Biarkan ia 'tumbuh' mengisi sisa ruang di layout desktop (baris).
-                -->
 				<div class="flex w-full flex-col gap-2 sm:grow">
 					<input
 						id="foto"
@@ -235,7 +227,6 @@
 				<div class="label-text-alt pt-2 text-error">{compressionError}</div>
 			{/if}
 
-			<!-- Hidden input untuk memberi tahu server jika foto dihapus -->
 			<input type="hidden" name="removeFoto" value={photoRemoved} />
 		</div>
 	{/if}

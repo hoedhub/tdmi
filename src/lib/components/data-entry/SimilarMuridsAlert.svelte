@@ -15,7 +15,7 @@
 	let isCollapsed = false;
 
 	function handleEditMurid(muridId: number) {
-		goto(`/member/pendataan/${muridId}`);
+		goto(`/member/pendataan/${muridId}/edit`);
 	}
 
 	function toggleCollapse() {
@@ -29,7 +29,7 @@
 		transition:slide={{ duration: 200 }}
 	>
 		<div class="card-body p-4">
-			<button class="btn btn-xs btn-ghost absolute top-2 right-2 z-10" on:click={onclose}>✕</button>
+			<button type="button" class="btn btn-xs btn-ghost absolute top-2 right-2 z-10" on:click={onclose}>✕</button>
 
 			<div
 				class="flex items-center cursor-pointer"

@@ -282,9 +282,9 @@
 		formData={internalFormData}
 		{handleInput}
 		{handleArabicInput}
+		{similarMurids}
+		onclose={() => (similarMurids = [])}
 	/>
-
-	<SimilarMuridsAlert {similarMurids} onclose={() => (similarMurids = [])} />
 
 	<ContactForm
 		{propinsiList}
