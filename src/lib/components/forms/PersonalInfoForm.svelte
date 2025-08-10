@@ -1,3 +1,4 @@
+
 <script lang="ts">
 	import { onDestroy } from 'svelte';
 	import { scale } from 'svelte/transition';
@@ -18,6 +19,7 @@
 	let previewUrl = '';
 	let compressionError = '';
 	let photoRemoved = false;
+	let hoveredName: string | null = null; // State untuk visual hover
 
 	$: displayUrl = previewUrl || (formData.fotoUrl && !photoRemoved ? formData.fotoUrl : null);
 
@@ -92,15 +94,24 @@
 		<label for="nama" class="label">
 			<span class="label-text">Nama Lengkap (sesuai KTP, jangan disingkat dan tanpa gelar):</span>
 		</label>
-		<input
-			id="nama"
-			name="nama"
-			type="text"
-			bind:value={formData.nama}
-			on:input={handleInput}
-			class="input input-bordered w-full"
-			required
-		/>
+		<div class="relative">
+			<input
+				id="nama"
+				name="nama"
+				type="text"
+				bind:value={formData.nama}
+				on:input={handleInput}
+				class="input input-bordered w-full {hoveredName ? 'text-transparent' : ''}"
+				required
+			/>
+			{#if hoveredName}
+				<div
+					class="input input-bordered pointer-events-none absolute top-0 left-0 flex w-full items-center bg-base-200/50"
+				>
+					{hoveredName}
+				</div>
+			{/if}
+		</div>
 		<div class="mt-2">
 			<SimilarMuridsAlert
 				{similarMurids}
@@ -109,6 +120,8 @@
 					formData.nama = e.detail;
 					handleInput();
 				}}
+				on:nameHoverStart={(e) => (hoveredName = e.detail)}
+				on:nameHoverEnd={() => (hoveredName = null)}
 			/>
 		</div>
 	</div>
