@@ -33,6 +33,11 @@
 	$: if (form?.message && !form?.success) {
 		error(form.message);
 	}
+
+	// Show success message when form is submitted successfully
+	$: if (form?.success && form?.message) {
+		// Message will be shown by the form component itself
+	}
 </script>
 
 <div class="card bg-base-100 shadow-xl">

@@ -14,6 +14,7 @@
 	import ContactForm from '../forms/ContactForm.svelte';
 	import IrsyadiyahForm from '../forms/IrsyadiyahForm.svelte';
 	import StatusForm from '../forms/StatusForm.svelte';
+	import SimilarMuridsAlert from './SimilarMuridsAlert.svelte';
 
 	type Propinsi = InferSelectModel<typeof propTable>;
 	type Kokab = InferSelectModel<typeof kokabTable>;
@@ -53,15 +54,11 @@
 		foto: undefined
 	};
 
-	// --- Buat state untuk menyimpan data asli ---
-	// 'originalFormData' akan menyimpan snapshot data saat pertama kali dimuat.
 	let originalFormData: FormData;
-	// Snapshot terpisah untuk state wilayah
 	let originalSelectedPropinsi: Propinsi | null = null;
 	let originalSelectedKokab: Kokab | null = null;
 	let originalSelectedKecamatan: Kecamatan | null = null;
 
-	// State aktif form
 	let internalFormData: FormData = { ...defaultFormData };
 	let selectedPropinsi: Propinsi | null = null;
 	let selectedKokab: Kokab | null = null;
@@ -73,68 +70,88 @@
 
 	let personalInfoFormComponent: PersonalInfoForm;
 
+	// --- State untuk Similar Murids Alert ---
+	let similarMurids: any[] = [];
+	let searchTimeout: NodeJS.Timeout;
+
 	// --- SIKLUS HIDUP (LIFECYCLE) ---
 	onMount(() => {
 		if (formData) {
-			// **MODE EDIT**:
-			// Simpan data dari prop ke state internal dan juga ke snapshot data asli.
 			internalFormData = { ...formData };
-			originalFormData = { ...formData }; // Simpan snapshot
+			originalFormData = { ...formData };
 		} else {
-			// **MODE TAMBAH BARU**:
-			// Gunakan data dari store atau default. Data aslinya adalah form kosong.
 			internalFormData = $muridFormStore.isModified
 				? $muridFormStore.formData
 				: { ...defaultFormData };
-			originalFormData = { ...defaultFormData }; // Snapshotnya adalah form kosong
-
-			// Inisialisasi state wilayah dari store juga
+			originalFormData = { ...defaultFormData };
 			selectedPropinsi = $muridFormStore.selectedPropinsi;
 			selectedKokab = $muridFormStore.selectedKokab;
 			selectedKecamatan = $muridFormStore.selectedKecamatan;
 		}
 
-		// Simpan snapshot untuk state wilayah setelah inisialisasi
 		originalSelectedPropinsi = selectedPropinsi;
 		originalSelectedKokab = selectedKokab;
 		originalSelectedKecamatan = selectedKecamatan;
 
 		mounted = true;
-		// Panggil handleInput di akhir untuk set isFormModified ke false pada awalnya.
 		handleInput();
 	});
 
 	// --- FUNGSI-FUNGSI ---
+
+	// --- Fungsi untuk cek nama serupa (dengan debounce) ---
+	function checkSimilarNames(nama: string) {
+		clearTimeout(searchTimeout);
+
+		// Hanya cari jika nama lebih dari 3 karakter dan dalam mode tambah baru
+		if (!formData && nama.trim().length > 3) {
+			console.log(`[Form] Scheduling search for: "${nama}"`);
+			searchTimeout = setTimeout(async () => {
+				console.log(`[Form] Executing search for: "${nama}"`);
+				try {
+					const response = await fetch(`/api/murid/similar?nama=${encodeURIComponent(nama.trim())}`);
+					if (response.ok) {
+						const data = await response.json();
+						console.log('[Form] Received data from API:', data);
+						similarMurids = data;
+					} else {
+						console.error('[Form] API request failed:', response.statusText);
+						similarMurids = [];
+					}
+				} catch (e) {
+					console.error('[Form] Failed to fetch similar murids:', e);
+					similarMurids = [];
+				}
+			}, 500); // debounce 500ms
+		} else {
+			// Kosongkan jika nama pendek atau dalam mode edit
+			if (similarMurids.length > 0) {
+				console.log('[Form] Clearing similar murids.');
+				similarMurids = [];
+			}
+		}
+	}
+
 	function handleInput() {
 		setTimeout(() => {
-			// 1. Bandingkan data form
-			if (!mounted) return; // Pastikan ini hanya berjalan setelah komponen dimount
+			if (!mounted) return;
 			const formChanged = Object.keys(internalFormData).some((key) => {
 				const formKey = key as keyof FormData;
-
-				const internalValue = JSON.stringify(internalFormData[formKey]);
-				const originalValue = JSON.stringify(originalFormData[formKey]);
-
-				// LOGGING: Cek nilai spesifik yang berubah
-				// console.log(`  - Internal: ${internalValue}`);
-				// console.log(`  - Original: ${originalValue}`);
-				// if (internalValue !== originalValue) {
-				// 	console.log(`CHANGE DETECTED in key '${formKey}':`);
-				// }
 				return (
 					JSON.stringify(internalFormData[formKey]) !== JSON.stringify(originalFormData[formKey])
 				);
 			});
 
-			// 2. Bandingkan data wilayah secara terpisah
 			const wilayahChanged =
 				selectedPropinsi?.id !== originalSelectedPropinsi?.id ||
 				selectedKokab?.id !== originalSelectedKokab?.id ||
 				selectedKecamatan?.id !== originalSelectedKecamatan?.id;
 
 			isFormModified = formChanged || wilayahChanged;
-
 			$muridFormStore.isModified = isFormModified;
+
+			// Panggil pengecekan nama serupa
+			checkSimilarNames(internalFormData.nama);
 		}, 0);
 	}
 
@@ -160,10 +177,7 @@
 		internalFormData.deskelId = deskelId;
 		internalFormData.alamat = alamat;
 
-		// Jika snapshot wilayah masih kosong, berarti ini adalah bagian dari
-		// inisialisasi awal di mode EDIT. Jadi, kita update snapshot juga!
 		if (originalSelectedPropinsi === null && newPropinsi !== null) {
-			// console.log('SNAPSHOT WILAYAH DIUPDATE! Ini adalah inisialisasi mode edit.');
 			originalSelectedPropinsi = newPropinsi;
 			originalSelectedKokab = newKokab;
 			originalSelectedKecamatan = newKecamatan;
@@ -175,12 +189,8 @@
 		if (doConfirm && !confirm('Are you sure you want to reset the form? All changes will be lost.'))
 			return;
 
-		// Saat reset, kembalikan ke data asli yang disimpan di snapshot
 		internalFormData = { ...originalFormData };
 
-		// Jika dalam mode 'Tambah Baru' (prop formData tidak ada), selalu reset wilayah ke null.
-		// Ini memastikan 'Simpan & Tambah Lagi' dan tombol 'Reset' membersihkan form sepenuhnya.
-		// Jika dalam mode 'Edit', reset ke snapshot wilayah asli yang diambil saat mount.
 		if (!formData) {
 			selectedPropinsi = null;
 			selectedKokab = null;
@@ -195,12 +205,10 @@
 			personalInfoFormComponent.reset();
 		}
 
-		// Reset state lain yang tidak di-snapshot jika perlu
 		countryId = 'id';
 		countryCode = '+62';
 		phoneNumber = '';
 
-		// Panggil handleInput untuk mengkalkulasi ulang isFormModified (akan jadi false)
 		setTimeout(() => {
 			handleInput();
 			isFormModified = false;
@@ -223,12 +231,11 @@
 			if (result.type === 'success') {
 				const successMessage = result.data?.message || 'Data berhasil disimpan.';
 				success(successMessage);
-				resetForm(false); // Reset form tanpa konfirmasi
+				resetForm(false);
 
 				if (result.data?.redirect) {
 					goto(result.data.redirect);
 				} else {
-					// Setelah sukses, update snapshot ke data yang baru saja disimpan
 					if (result.data?.murid) {
 						originalFormData = { ...result.data.murid };
 					}
@@ -262,9 +269,6 @@
 		$muridFormStore.selectedKokab = selectedKokab;
 		$muridFormStore.selectedKecamatan = selectedKecamatan;
 	}
-
-	// Untuk debugging, opsional
-	// $: console.log('add murid internalFormData', internalFormData);
 </script>
 
 <form
@@ -279,6 +283,8 @@
 		{handleInput}
 		{handleArabicInput}
 	/>
+
+	<SimilarMuridsAlert {similarMurids} onclose={() => (similarMurids = [])} />
 
 	<ContactForm
 		{propinsiList}

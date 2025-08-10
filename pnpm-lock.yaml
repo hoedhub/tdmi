@@ -62,6 +62,9 @@ importers:
       svelte-chartjs:
         specifier: ^3.1.5
         version: 3.1.5(chart.js@4.5.0)(svelte@4.2.20)
+      tiny-levenshtein:
+        specifier: ^1.1.0
+        version: 1.1.0
     devDependencies:
       '@sveltejs/adapter-auto':
         specifier: ^2.1.1
@@ -2757,6 +2760,9 @@ packages:
   tiny-inflate@1.0.3:
     resolution: {integrity: sha512-pkY1fj1cKHb2seWDy0B16HeWyczlJA9/WW3u3c4z/NiWDsO3DOU5D7nhTLE9CF0yXv/QZFY7sEJmj24dK+Rrqw==}
 
+  tiny-levenshtein@1.1.0:
+    resolution: {integrity: sha512-sU4wduNrjb2e51rgPOTy6nx3ag8pQPFA9XQCQQsFmECWEDS23LEoYsZv3fhVuJNIcxzBNMvCDDb7e/PPOP+vxw==}
+
   tmp@0.2.3:
     resolution: {integrity: sha512-nZD7m9iCPC5g0pYmcaxogYKggSfLsdxl8of3Q/oIbqCqLLIO9IAF0GWjX1z9NZRHPiXv8Wex4yDCaZsgEw0Y8w==}
     engines: {node: '>=14.14'}
@@ -5395,6 +5401,8 @@ snapshots:
       globrex: 0.1.2
 
   tiny-inflate@1.0.3: {}
+
+  tiny-levenshtein@1.1.0: {}
 
   tmp@0.2.3: {}
 
