@@ -104,7 +104,7 @@
 		clearTimeout(searchTimeout);
 
 		// Hanya cari jika nama lebih dari 3 karakter dan dalam mode tambah baru
-		if (!formData && nama.trim().length > 3) {
+		if (!formData && nama.trim().length >= 3) {
 			console.log(`[Form] Scheduling search for: "${nama}"`);
 			searchTimeout = setTimeout(async () => {
 				console.log(`[Form] Executing search for: "${nama}"`);

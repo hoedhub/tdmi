@@ -28,7 +28,7 @@ export async function GET({ url }) {
 			.map((murid) => {
 				const normalizedDbName = murid.nama.toLowerCase();
 
-				// --- Metode A: Per Kata (Token-based) ---
+				// Metode A: Per Kata (Token-based)
 				const queryWords = normalizedQuery.split(' ').filter(Boolean);
 				const dbWords = normalizedDbName.split(' ').filter(Boolean);
 				let ratingA = 0;
@@ -40,13 +40,22 @@ export async function GET({ url }) {
 					ratingA = wordScores.reduce((sum, score) => sum + score, 0) / wordScores.length;
 				}
 
-				// --- Metode B: Tanpa Spasi (Space-agnostic) ---
+				// Metode B: Tanpa Spasi (Space-agnostic)
 				const queryNoSpace = normalizedQuery.replace(/\s/g, '');
 				const dbNameNoSpace = normalizedDbName.replace(/\s/g, '');
 				const ratingB = calculateSimilarity(queryNoSpace, dbNameNoSpace);
 
-				// --- Ambil skor terbaik dari kedua metode ---
-				const finalRating = Math.max(ratingA, ratingB);
+				// Skor kemiripan utama adalah yang tertinggi dari A atau B
+				let finalRating = Math.max(ratingA, ratingB);
+
+				// Metode C: Pengecekan Substring
+				const isSubstring = normalizedDbName.includes(normalizedQuery);
+
+				// Jika ini adalah substring tapi skor kemiripannya rendah,
+				// beri skor "cukup" agar tetap lolos filter.
+				if (isSubstring && finalRating < 0.75) {
+					finalRating = 0.75;
+				}
 
 				return {
 					id: murid.id,
@@ -54,7 +63,7 @@ export async function GET({ url }) {
 					rating: finalRating
 				};
 			})
-			.filter((murid) => murid.rating >= 0.75); // Ambang batas diturunkan ke 75%
+			.filter((murid) => murid.rating >= 0.75);
 
 		similarMurids.sort((a, b) => b.rating - a.rating);
 
