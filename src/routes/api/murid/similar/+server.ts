@@ -1,7 +1,8 @@
 
 import { db } from '$lib/drizzle';
-import { muridTable } from '$lib/drizzle/schema';
+import { muridTable, deskelTable, kecamatanTable, kokabTable, propTable } from '$lib/drizzle/schema';
 import { json } from '@sveltejs/kit';
+import { eq } from 'drizzle-orm';
 import levenshtein from 'tiny-levenshtein';
 
 function calculateSimilarity(str1: string, str2: string): number {
@@ -17,7 +18,22 @@ export async function GET({ url }) {
 	}
 
 	try {
-		const allMurids = await db.select({ id: muridTable.id, nama: muridTable.nama }).from(muridTable);
+		const allMurids = await db
+			.select({
+				id: muridTable.id,
+				nama: muridTable.nama,
+				alamat: muridTable.alamat,
+				deskel: deskelTable.deskel,
+				kecamatan: kecamatanTable.kecamatan,
+				kokab: kokabTable.kokab,
+				propinsi: propTable.propinsi
+			})
+			.from(muridTable)
+			.leftJoin(deskelTable, eq(muridTable.deskelId, deskelTable.id))
+			.leftJoin(kecamatanTable, eq(deskelTable.idKecamatan, kecamatanTable.id))
+			.leftJoin(kokabTable, eq(kecamatanTable.idKokab, kokabTable.id))
+			.leftJoin(propTable, eq(kokabTable.idProp, propTable.id));
+
 		if (allMurids.length === 0) {
 			return json([], { status: 200 });
 		}
@@ -28,7 +44,7 @@ export async function GET({ url }) {
 			.map((murid) => {
 				const normalizedDbName = murid.nama.toLowerCase();
 
-				// Metode A: Per Kata (Token-based)
+				// Metode A: Per Kata
 				const queryWords = normalizedQuery.split(' ').filter(Boolean);
 				const dbWords = normalizedDbName.split(' ').filter(Boolean);
 				let ratingA = 0;
@@ -40,27 +56,35 @@ export async function GET({ url }) {
 					ratingA = wordScores.reduce((sum, score) => sum + score, 0) / wordScores.length;
 				}
 
-				// Metode B: Tanpa Spasi (Space-agnostic)
+				// Metode B: Tanpa Spasi
 				const queryNoSpace = normalizedQuery.replace(/\s/g, '');
 				const dbNameNoSpace = normalizedDbName.replace(/\s/g, '');
 				const ratingB = calculateSimilarity(queryNoSpace, dbNameNoSpace);
 
-				// Skor kemiripan utama adalah yang tertinggi dari A atau B
 				let finalRating = Math.max(ratingA, ratingB);
 
-				// Metode C: Pengecekan Substring
+				// Metode C: Substring
 				const isSubstring = normalizedDbName.includes(normalizedQuery);
-
-				// Jika ini adalah substring tapi skor kemiripannya rendah,
-				// beri skor "cukup" agar tetap lolos filter.
 				if (isSubstring && finalRating < 0.75) {
 					finalRating = 0.75;
 				}
 
+				// Gabungkan alamat
+				const alamatLengkap = [
+					murid.alamat,
+					murid.deskel,
+					murid.kecamatan,
+					murid.kokab,
+					murid.propinsi
+				]
+					.filter(Boolean)
+					.join(', ');
+
 				return {
 					id: murid.id,
 					nama: murid.nama,
-					rating: finalRating
+					rating: finalRating,
+					alamatLengkap: alamatLengkap || null
 				};
 			})
 			.filter((murid) => murid.rating >= 0.75);

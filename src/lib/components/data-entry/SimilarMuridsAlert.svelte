@@ -7,6 +7,7 @@
 		id: number;
 		nama: string;
 		rating: number;
+		alamatLengkap: string | null;
 	}
 
 	export let similarMurids: SimilarMurid[] = [];
@@ -34,24 +35,24 @@
 
 {#if similarMurids.length > 0}
 	<div
-		class="card bg-base-200 border border-base-300/50 shadow-sm mb-4 relative"
+		class="card relative mb-4 border border-base-300/50 bg-base-200 shadow-sm"
 		transition:slide={{ duration: 200 }}
 	>
 		<div class="card-body p-4">
 			<button
 				type="button"
-				class="btn btn-xs btn-ghost absolute top-2 right-2 z-10"
+				class="btn btn-ghost btn-xs absolute right-2 top-2 z-10"
 				on:click={onclose}>✕</button
 			>
 
 			<div
-				class="flex items-center cursor-pointer"
+				class="flex cursor-pointer items-center"
 				on:click={toggleCollapse}
 				on:keypress={toggleCollapse}
 				role="button"
 				tabindex="0"
 			>
-				<h3 class="font-semibold text-base flex items-center gap-2">
+				<h3 class="flex items-center gap-2 text-base font-semibold">
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
 						width="18"
@@ -72,13 +73,11 @@
 
 			{#if !isCollapsed}
 				<div transition:slide={{ duration: 200 }}>
-					<p class="text-sm text-base-content/80 mt-2 mb-3">
-						Ada {similarMurids.length} nama yang mirip di database. Mungkin salah satunya adalah
-						orang yang Anda cari?
+					<p class="mb-3 mt-2 text-sm text-base-content/80">
+						Ada {similarMurids.length} nama yang mirip di database. Mungkin salah satunya adalah orang
+						yang Anda cari?
 					</p>
-					<div
-						class="max-h-40 overflow-y-auto rounded-lg bg-base-100/60 border border-base-300/50"
-					>
+					<div class="max-h-40 overflow-y-auto rounded-lg border border-base-300/50 bg-base-100/60">
 						<ul class="divide-y divide-base-300/50">
 							{#each similarMurids as murid (murid.id)}
 								<li
@@ -86,19 +85,26 @@
 									on:mouseenter={() => dispatch('nameHoverStart', murid.nama)}
 									on:mouseleave={() => dispatch('nameHoverEnd')}
 								>
+									<div>
+										<button
+											type="button"
+											class="text-left font-medium transition-colors hover:text-primary"
+											on:click={() => selectName(murid.nama)}
+										>
+											{murid.nama}
+										</button>
+										{#if murid.alamatLengkap}
+											<p class="mt-0.5 text-xs text-base-content/70">
+												📍 {murid.alamatLengkap}
+											</p>
+										{/if}
+									</div>
 									<button
 										type="button"
-										class="font-medium text-left hover:text-primary transition-colors"
-										on:click={() => selectName(murid.nama)}
-									>
-										{murid.nama}
-									</button>
-									<button
-										type="button"
-										class="btn btn-xs btn-outline btn-primary"
+										class="btn btn-outline btn-primary btn-xs ml-2 self-start"
 										on:click={() => handleEditMurid(murid.id)}
 									>
-										Lihat & Edit
+										Edit
 									</button>
 								</li>
 							{/each}
