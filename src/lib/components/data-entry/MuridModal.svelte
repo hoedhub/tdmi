@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
+	import { createEventDispatcher, tick } from 'svelte';
 	import { SuperTable } from '$lib/components/SuperTable';
 	import type { ColumnDef, SortConfig, FilterState } from '$lib/components/SuperTable';
-	import { tick } from 'svelte';
+	import { muridModalStore } from '$lib/stores/muridModalStore';
 
 	// --- Type Definitions ---
 	interface Murid {
@@ -22,15 +22,10 @@
 	export let editedMuridId: number | undefined = undefined;
 
 	// --- State ---
-	let muridData: Murid[] = [];
-	let totalItems = 0;
-	let loading = false;
 	let pageSize = 5;
 	let currentPage = 1;
 	let currentSort: SortConfig[] | undefined = undefined;
-	let currentFilters: Record<string, any> = {};
-	let hasDbError = false;
-	let dataLoaded = false;
+	let currentFilters: FilterState = { columns: {} };
 
 	const dispatch = createEventDispatcher<{
 		select: Murid;
@@ -51,38 +46,10 @@
 		{ key: 'kecamatanName', label: 'Kecamatan', sortable: true, filterable: 'text' }
 	];
 
-	async function fetchTableData(
-		sort?: SortConfig[] | null,
-		filters?: Record<string, any>,
-		page: number = 1
-	) {
-		loading = true;
-		hasDbError = false;
-		try {
-			const response = await fetch('/member/pendataan/table', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ sort, filters, page, pageSize, excludeId: editedMuridId })
-			});
-
-			if (!response.ok) throw new Error('Failed to fetch murid data');
-
-			const result = await response.json();
-			muridData = result.murid;
-			totalItems = result.totalItems;
-			currentPage = result.currentPage;
-		} catch (error) {
-			console.error('Error fetching table data:', error);
-			hasDbError = true;
-		} finally {
-			loading = false;
-		}
-	}
-
 	function handleSelect(event: CustomEvent<number[]>) {
 		const selectedId = event.detail[0];
 		if (selectedId) {
-			const selected = muridData.find((m) => m.id === selectedId);
+			const selected = $muridModalStore.muridData.find((m) => m.id === selectedId);
 			if (selected) {
 				dispatch('select', selected);
 				closeModal();
@@ -96,33 +63,38 @@
 
 	async function handleSort(event: CustomEvent<SortConfig[] | null>) {
 		currentSort = event.detail ?? undefined;
-		await fetchTableData(currentSort, currentFilters, currentPage);
+		await muridModalStore.updateData(currentSort, currentFilters, currentPage, pageSize, editedMuridId);
 	}
 
 	async function handleFilter(event: CustomEvent<FilterState>) {
-		currentFilters = event.detail;
-		await fetchTableData(currentSort, currentFilters, 1);
+		currentFilters = event.detail; // Store the entire filter state
+		currentPage = 1; // Reset page on filter change
+		await muridModalStore.updateData(currentSort, currentFilters, currentPage, pageSize, editedMuridId);
 	}
 
 	async function handlePageChange(event: CustomEvent<number>) {
 		currentPage = event.detail;
-		await fetchTableData(currentSort, currentFilters, currentPage);
+		await muridModalStore.updateData(currentSort, currentFilters, currentPage, pageSize, editedMuridId);
 	}
 
 	async function handleItemsPerPageChange(event: CustomEvent<number>) {
 		pageSize = event.detail;
-		await fetchTableData(currentSort, currentFilters, 1);
+		currentPage = 1; // Reset page on items per page change
+		await muridModalStore.updateData(currentSort, currentFilters, currentPage, pageSize, editedMuridId);
 	}
 
 	let superTableComponent: SuperTable<Murid>;
 	let prevShowModal = showModal;
 	$: {
 		if (showModal && !prevShowModal) {
-			// Fetch data only on the first time the modal is opened
-			if (!dataLoaded) {
-				fetchTableData();
-				dataLoaded = true;
-			}
+			// Load data if it's not already loaded
+			muridModalStore.loadDataIfNeeded(
+				currentSort,
+				currentFilters,
+				currentPage,
+				pageSize,
+				editedMuridId
+			);
 
 			// Always clear selection when modal opens
 			tick().then(() => {
@@ -143,11 +115,11 @@
 				<SuperTable
 					bind:this={superTableComponent}
 					{columns}
-					data={muridData}
+					data={$muridModalStore.muridData}
 					rowKey="id"
 					itemsPerPageProp={pageSize}
-					totalItemsProp={totalItems}
-					isLoadingProp={loading}
+					totalItemsProp={$muridModalStore.totalItems}
+					isLoadingProp={$muridModalStore.loading}
 					sort={currentSort}
 					serverSide={true}
 					selectionMode="single"
@@ -156,7 +128,7 @@
 					on:pageChange={handlePageChange}
 					on:itemsPerPageChange={handleItemsPerPageChange}
 					on:selectionChange={handleSelect}
-					dbError={hasDbError}
+					dbError={$muridModalStore.hasDbError}
 					disabledRowKeys={editedMuridId ? [editedMuridId] : []}
 				>
 					<svelte:fragment slot="error-state">
@@ -164,7 +136,14 @@
 							<p>Tidak dapat memuat data.</p>
 							<button
 								class="btn btn-outline btn-sm mt-4"
-								on:click={() => fetchTableData(currentSort, currentFilters, currentPage)}
+								on:click={() =>
+									muridModalStore.updateData(
+										currentSort,
+										currentFilters,
+										currentPage,
+										pageSize,
+										editedMuridId
+									)}
 							>
 								Coba Lagi
 							</button>
