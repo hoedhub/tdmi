@@ -6,7 +6,8 @@ import {
 	deskelTable,
 	kecamatanTable,
 	kokabTable,
-	propTable
+	propTable,
+	piketScheduleTable
 } from '$lib/drizzle/schema';
 import { eq, sql } from 'drizzle-orm';
 
@@ -65,36 +66,51 @@ async function isWithinTerritoryScope(userId: string, resourceDeskelId: number):
 
 /**
  * Versi FINAL: Memeriksa izin pengguna dengan semua logika berbasis database.
+ * Termasuk pengecekan jadwal piket dinamis.
  */
 export async function userHasPermission(
 	userId: string,
 	permissionId: string,
 	resource?: { deskelId?: number | null; targetRoleId?: string }
 ): Promise<boolean> {
-	// 1. Dapatkan semua peran yang dimiliki pengguna dari DB
-	const userAssignedRoles = await getUserRoles(userId);
-	if (userAssignedRoles.length === 0) return false;
+	// 1. Dapatkan peran statis dan peran piket dinamis secara paralel
+	const staticRolesPromise = getUserRoles(userId);
+	const piketRolesPromise = db
+		.select({ roleId: piketScheduleTable.roleId })
+		.from(piketScheduleTable)
+		.where(
+			sql`${piketScheduleTable.userId} = ${userId} AND date('now') BETWEEN date(${piketScheduleTable.startDate}) AND date(${piketScheduleTable.endDate})`
+		);
 
-	// 2. Periksa apakah salah satu peran pengguna memberikan izin dasar
+	const [staticRoles, piketRoles] = await Promise.all([staticRolesPromise, piketRolesPromise]);
+
+	// 2. Gabungkan menjadi peran efektif, hapus duplikat
+	const effectiveRoles = [...new Set([...staticRoles, ...piketRoles.map((r) => r.roleId)])];
+
+	if (effectiveRoles.length === 0) {
+		console.log(`User ${userId} has no effective roles.`);
+		return false;
+	}
+
+	// 3. Periksa apakah salah satu peran efektif memberikan izin dasar
 	let hasBasePermission = false;
-	// Kita bisa optimalkan ini dengan satu query, tapi untuk keterbacaan, kita pisahkan dulu
-	for (const roleId of userAssignedRoles) {
+	// TODO: Optimalkan pencarian izin dengan satu query JOIN jika diperlukan.
+	for (const roleId of effectiveRoles) {
 		const permissions = await getRolePermissions(roleId);
 		if (permissions.includes(permissionId)) {
 			hasBasePermission = true;
 			break;
 		}
 	}
-	// TODO: Optimalkan pencarian izin dengan satu query JOIN jika diperlukan.
 
 	if (!hasBasePermission) {
 		return false;
 	}
 
-	// 3. Terapkan batasan tambahan (Territory & Hierarchy)
+	// 4. Terapkan batasan tambahan (Territory & Hierarchy)
 
 	// Cek Teritori untuk pengguna "Level 3"
-	const isLevel3User = userAssignedRoles.some((roleId) => roleId.endsWith('-propinsi'));
+	const isLevel3User = effectiveRoles.some((roleId) => roleId.endsWith('-propinsi'));
 	const requiresTerritoryCheck = resource?.deskelId != null;
 
 	if (isLevel3User && requiresTerritoryCheck) {
@@ -114,7 +130,7 @@ export async function userHasPermission(
 	if (isWritePermission && hasTargetRole) {
 		let canWriteSubRole = false;
 		// Lakukan pengecekan secara paralel untuk efisiensi
-		const checks = userAssignedRoles.map((userRoleId) =>
+		const checks = effectiveRoles.map((userRoleId) =>
 			isSubRole(userRoleId, resource.targetRoleId!)
 		);
 		const results = await Promise.all(checks);

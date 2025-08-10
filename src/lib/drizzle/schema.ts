@@ -76,7 +76,7 @@ export const muridTable = sqliteTable(
 		updaterId: text('updater_id').notNull(),
 		nama: text('nama').notNull(),
 		namaArab: text('nama_arab'),
-		gender: integer('pria', { mode: 'boolean' }).notNull().default(true),
+		gender: integer('gender', { mode: 'boolean' }).notNull().default(true),
 		deskelId: integer('deskel_id').references(() => deskelTable.id),
 		alamat: text('alamat'),
 		nomorTelepon: text('nomor_telepon'),
@@ -232,10 +232,34 @@ export const nasyathTable = sqliteTable(
 );
 
 // ==================================================================
-// BAGIAN 5: RELATIONS (DEFINISIKAN SEMUA DI AKHIR)
+// BAGIAN 5: TABEL PIKET (JADWAL TUGAS)
+// ==================================================================
+export const piketScheduleTable = sqliteTable(
+	'piket_schedule',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => usersTable.id, { onDelete: 'cascade' }),
+		roleId: text('role_id')
+			.notNull()
+			.references(() => rolesTable.id, { onDelete: 'cascade' }),
+		startDate: text('start_date').notNull(), // Format 'YYYY-MM-DD'
+		endDate: text('end_date').notNull(), // Format 'YYYY-MM-DD'
+		groupId: text('group_id'), // Misal: "Kelompok 1", "Kelompok 2"
+		description: text('description')
+	},
+	(table) => [
+		index('piket_user_idx').on(table.userId),
+		index('piket_date_idx').on(table.startDate, table.endDate)
+	]
+);
+
+// ==================================================================
+// BAGIAN 6: RELATIONS (DEFINISIKAN SEMUA DI AKHIR)
 // ==================================================================
 
-// 5.1 Relasi untuk Tabel PENGHUBUNG (One-to-Many)
+// 6.1 Relasi untuk Tabel PENGHUBUNG (One-to-Many)
 export const userRolesRelations = relations(userRolesTable, ({ one }) => ({
 	user: one(usersTable, { fields: [userRolesTable.userId], references: [usersTable.id] }),
 	role: one(rolesTable, { fields: [userRolesTable.roleId], references: [rolesTable.id] })
@@ -262,10 +286,11 @@ export const roleHierarchyRelations = relations(roleHierarchyTable, ({ one }) =>
 	})
 }));
 
-// 5.2 Relasi untuk Tabel UTAMA (Many-to-Many & Lainnya)
+// 6.2 Relasi untuk Tabel UTAMA (Many-to-Many & Lainnya)
 export const usersRelations = relations(usersTable, ({ many, one }) => ({
 	roles: many(rolesTable),
 	sessions: many(sessionTable),
+	piketSchedules: many(piketScheduleTable), // <-- Relasi baru
 	murid: one(muridTable, {
 		fields: [usersTable.muridId],
 		references: [muridTable.id]
@@ -279,11 +304,12 @@ export const permissionsRelations = relations(permissionsTable, ({ many }) => ({
 export const rolesRelations = relations(rolesTable, ({ many }) => ({
 	users: many(usersTable),
 	permissions: many(permissionsTable),
+	piketSchedules: many(piketScheduleTable), // <-- Relasi baru
 	children: many(roleHierarchyTable, { relationName: 'parentRoles' }),
 	parents: many(roleHierarchyTable, { relationName: 'childRoles' })
 }));
 
-// 5.3 Relasi untuk Tabel Nasyath
+// 6.3 Relasi untuk Tabel Nasyath
 export const nasyathRelations = relations(nasyathTable, ({ one }) => ({
 	murid: one(muridTable, {
 		fields: [nasyathTable.muridId],
@@ -295,7 +321,13 @@ export const nasyathRelations = relations(nasyathTable, ({ one }) => ({
 	})
 }));
 
-// 5.4 Relasi untuk Tabel Murid
+// 6.4 Relasi untuk Tabel Murid
 export const muridRelations = relations(muridTable, ({ many }) => ({
 	nasyath: many(nasyathTable)
+}));
+
+// 6.5 Relasi untuk Tabel Piket
+export const piketScheduleRelations = relations(piketScheduleTable, ({ one }) => ({
+	user: one(usersTable, { fields: [piketScheduleTable.userId], references: [usersTable.id] }),
+	role: one(rolesTable, { fields: [piketScheduleTable.roleId], references: [rolesTable.id] })
 }));
