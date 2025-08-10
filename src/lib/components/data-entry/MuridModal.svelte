@@ -30,6 +30,7 @@
 	let currentSort: SortConfig[] | undefined = undefined;
 	let currentFilters: Record<string, any> = {};
 	let hasDbError = false;
+	let dataLoaded = false;
 
 	const dispatch = createEventDispatcher<{
 		select: Murid;
@@ -117,15 +118,13 @@
 	let prevShowModal = showModal;
 	$: {
 		if (showModal && !prevShowModal) {
-			// Modal was just opened, reset state and fetch data
-			muridData = [];
-			totalItems = 0;
-			currentPage = 1;
-			currentSort = undefined;
-			currentFilters = {};
-			fetchTableData();
+			// Fetch data only on the first time the modal is opened
+			if (!dataLoaded) {
+				fetchTableData();
+				dataLoaded = true;
+			}
 
-			// Use tick to wait for the component to be mounted before clearing selection
+			// Always clear selection when modal opens
 			tick().then(() => {
 				if (superTableComponent) {
 					superTableComponent.clearSelection();
