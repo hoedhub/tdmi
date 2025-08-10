@@ -102,7 +102,14 @@
 			required
 		/>
 		<div class="mt-2">
-			<SimilarMuridsAlert {similarMurids} {onclose} />
+			<SimilarMuridsAlert
+				{similarMurids}
+				{onclose}
+				on:nameSelect={(e) => {
+					formData.nama = e.detail;
+					handleInput();
+				}}
+			/>
 		</div>
 	</div>
 	<div>
