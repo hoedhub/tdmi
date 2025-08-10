@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount, createEventDispatcher } from 'svelte';
+	import { createEventDispatcher } from 'svelte';
 	import MuridModal from './MuridModal.svelte';
 
 	// Types for the data received from the modal
@@ -37,11 +37,7 @@
 		dispatch('clear');
 	}
 
-	onMount(() => {
-		if (initialData) {
-			selectedMurid = initialData;
-		}
-	});
+	$: selectedMurid = initialData || null;
 </script>
 
 <div class="flex items-center gap-2 {className}">

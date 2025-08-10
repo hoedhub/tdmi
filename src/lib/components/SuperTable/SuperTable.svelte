@@ -229,7 +229,7 @@
 		// dispatch('swipe', event.detail);
 	}
 
-	function clearSelection() {
+	export function clearSelection() {
 		$selectedIds = new Set();
 		dispatch('selectionChange', []);
 	}

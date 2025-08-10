@@ -1,7 +1,8 @@
 <script lang="ts">
-	import { createEventDispatcher, onMount } from 'svelte';
+	import { createEventDispatcher } from 'svelte';
 	import { SuperTable } from '$lib/components/SuperTable';
 	import type { ColumnDef, SortConfig, FilterState } from '$lib/components/SuperTable';
+	import { tick } from 'svelte';
 
 	// --- Type Definitions ---
 	interface Murid {
@@ -112,14 +113,26 @@
 		await fetchTableData(currentSort, currentFilters, 1);
 	}
 
-	onMount(() => {
-		if (showModal) {
-			fetchTableData(currentSort, currentFilters, currentPage);
-		}
-	});
+	let superTableComponent: SuperTable<Murid>;
+	let prevShowModal = showModal;
+	$: {
+		if (showModal && !prevShowModal) {
+			// Modal was just opened, reset state and fetch data
+			muridData = [];
+			totalItems = 0;
+			currentPage = 1;
+			currentSort = undefined;
+			currentFilters = {};
+			fetchTableData();
 
-	$: if (showModal) {
-		fetchTableData(currentSort, currentFilters, currentPage);
+			// Use tick to wait for the component to be mounted before clearing selection
+			tick().then(() => {
+				if (superTableComponent) {
+					superTableComponent.clearSelection();
+				}
+			});
+		}
+		prevShowModal = showModal;
 	}
 </script>
 
@@ -129,6 +142,7 @@
 			<h3 class="text-lg font-bold">Pilih Murid</h3>
 			<div class="py-4">
 				<SuperTable
+					bind:this={superTableComponent}
 					{columns}
 					data={muridData}
 					rowKey="id"
