@@ -63,20 +63,21 @@
 						Ada {similarMurids.length} nama yang mirip di database. Mungkin salah satunya adalah
 						orang yang Anda cari?
 					</p>
-					<div class="space-y-2 max-h-40 overflow-y-auto pr-1">
-						{#each similarMurids as murid (murid.id)}
-							<div
-								class="flex items-center justify-between bg-base-100/80 p-2 rounded-lg text-sm"
-							>
-								<span class="font-medium">{murid.nama}</span>
-								<button
-									class="btn btn-xs btn-outline btn-primary"
-									on:click={() => handleEditMurid(murid.id)}
-								>
-									Lihat & Edit
-								</button>
-							</div>
-						{/each}
+					<div class="max-h-40 overflow-y-auto rounded-lg bg-base-100/60 border border-base-300/50">
+						<ul class="divide-y divide-base-300/50">
+							{#each similarMurids as murid (murid.id)}
+								<li class="flex items-center justify-between px-2 py-1.5 text-sm">
+									<span class="font-medium">{murid.nama}</span>
+									<button
+										type="button"
+										class="btn btn-xs btn-outline btn-primary"
+										on:click={() => handleEditMurid(murid.id)}
+									>
+										Lihat & Edit
+									</button>
+								</li>
+							{/each}
+						</ul>
 					</div>
 				</div>
 			{/if}
