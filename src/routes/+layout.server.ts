@@ -10,7 +10,8 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
 	const returnData: {
 		user: typeof locals.user;
 		canAccessAdmin?: boolean;
-		canAccessPendataan?: boolean; // Add canAccessPendataan
+		canAccessPendataan?: boolean;
+		canManagePiket?: boolean; // <-- Tambahkan flag baru
 	} = {
 		user: locals.user
 	};
@@ -23,13 +24,15 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
 			throw redirect(302, '/login');
 		}
 	} else {
-		const [canAccessAdmin, canAccessPendataan] = await Promise.all([
+		const [canAccessAdmin, canAccessPendataan, canManagePiket] = await Promise.all([
 			userHasPermission(locals.user.id, 'perm-admin-access'),
-			userHasPermission(locals.user.id, 'perm-pendataan-access') // Check for pendataan access
+			userHasPermission(locals.user.id, 'perm-pendataan-access'), // Check for pendataan access
+			userHasPermission(locals.user.id, 'perm-piket-read') // <-- Tambahkan pengecekan izin piket
 		]);
 
 		returnData.canAccessAdmin = canAccessAdmin;
 		returnData.canAccessPendataan = canAccessPendataan; // Assign pendataan access
+		returnData.canManagePiket = canManagePiket; // <-- Kirim flag ke UI
 
 		if (unauthenticatedRoutes.includes(url.pathname) || url.pathname === '/') {
 			throw redirect(303, '/member'); // Or your main authenticated route
