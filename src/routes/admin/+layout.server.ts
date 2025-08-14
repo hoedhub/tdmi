@@ -29,8 +29,16 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
 		throw error(403, 'Akses Ditolak. Anda tidak memiliki izin untuk mengakses halaman ini.');
 	}
 
-	// 3. Jika semua pengecekan berhasil, lanjutkan dan berikan data pengguna.
+	// 3. Periksa izin spesifik untuk fitur di dalam admin
+	const [canManagePiket, canCreateBackup] = await Promise.all([
+		userHasPermission(locals.user.id, 'perm-piket-read'),
+		userHasPermission(locals.user.id, 'perm-backup-create')
+	]);
+
+	// 4. Jika semua pengecekan berhasil, lanjutkan dan berikan data.
 	return {
-		user: locals.user
+		user: locals.user,
+		canManagePiket,
+		canCreateBackup
 	};
 };

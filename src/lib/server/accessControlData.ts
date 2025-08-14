@@ -7,104 +7,148 @@ import {
 	rolePermissionsTable,
 	roleHierarchyTable
 } from '$lib/drizzle/schema';
-import { eq } from 'drizzle-orm';
 
 // =================================================================
-// DATA MASTER RBAC
-// Inisialisasi data peran, izin, dan hierarki langsung di sini.
+// DATA MASTER RBAC - DISINKRONKAN DENGAN DATABASE AKTUAL
 // =================================================================
 
 const rolesData = [
+	{ id: 'role-admin', name: 'Admin', description: 'First level user: Admin' },
+	{ id: 'role-naib', name: 'Naib', description: 'First level user: Naib' },
+	{ id: 'role-wakil-naib', name: 'Wakil Naib', description: 'First level user: Wakil Naib' },
+	{ id: 'role-legalitas', name: 'Legalitas', description: 'Second level user: Legalitas' },
+	{ id: 'role-maaliyah', name: 'Maaliyah', description: 'Second level user: Maaliyah' },
+	{ id: 'role-nasyath', name: 'Nasyath', description: 'Second level user: Nasyath' },
+	{ id: 'role-pendataan', name: 'Pendataan', description: 'Second level user: Pendataan' },
 	{
-		id: 'SUPERADMIN',
-		name: 'Super Administrator',
-		description: 'Full access to all system features.'
+		id: 'role-legalitas-propinsi',
+		name: 'Legalitas Propinsi',
+		description: 'Third level user: Legalitas scoped to Propinsi'
 	},
-	{ id: 'ADMIN', name: 'Administrator', description: 'Manages users and system settings.' },
-	{ id: 'PENDATAAN', name: 'Petugas Pendataan', description: 'Manages member data.' },
-	{ id: 'NASYATH', name: 'Petugas Nasyath', description: 'Manages activity data.' },
-	{ id: 'MEMBER', name: 'Member', description: 'Standard user access.' }
+	{
+		id: 'role-maaliyah-propinsi',
+		name: 'Maaliyah Propinsi',
+		description: 'Third level user: Maaliyah scoped to Propinsi'
+	},
+	{
+		id: 'role-nasyath-propinsi',
+		name: 'Nasyath Propinsi',
+		description: 'Third level user: Nasyath scoped to Propinsi'
+	},
+	{
+		id: 'role-pendataan-propinsi',
+		name: 'Pendataan Propinsi',
+		description: 'Third level user: Pendataan scoped to Propinsi'
+	},
+	{ id: 'role-manager', name: 'Manager', description: 'General Manager' },
+	{ id: 'role-editor', name: 'Editor', description: 'General Editor' },
+	{ id: 'role-viewer', name: 'Viewer', description: 'General Viewer' },
+	{
+		id: 'role-territory-manager',
+		name: 'Territory Manager',
+		description: 'Territory Manager'
+	},
+	{ id: 'role-territory-editor', name: 'Territory Editor', description: 'Territory Editor' },
+	{
+		id: 'role-piket-admin',
+		name: 'Piket Admin',
+		description: 'Peran untuk mengelola jadwal dan administrasi piket'
+	},
+	{
+		id: 'role-piket-manager',
+		name: "Manajer Ruasa'",
+		description: "Peran untuk mengelola jadwal ruasa'"
+	}
 ];
 
 const permissionsData = [
-	// Admin Permissions
-	{
-		id: 'perm-admin-access',
-		name: 'Akses Panel Admin',
-		description: 'Bisa mengakses halaman /admin'
-	},
-	{ id: 'perm-user-read', name: 'Lihat Pengguna', description: 'Bisa melihat daftar pengguna' },
+	{ id: 'perm-user-read', name: 'Read Users', description: 'Allows reading user data' },
 	{
 		id: 'perm-user-write',
-		name: 'Kelola Pengguna',
-		description: 'Bisa membuat, mengedit, dan menghapus pengguna'
+		name: 'Write Users',
+		description: 'Allows creating/updating/deleting user data'
 	},
-	{
-		id: 'perm-role-read',
-		name: 'Lihat Peran',
-		description: 'Bisa melihat daftar peran dan izinnya'
-	},
+	{ id: 'perm-role-read', name: 'Read Roles', description: 'Allows reading role data' },
 	{
 		id: 'perm-role-write',
-		name: 'Kelola Peran',
-		description: 'Bisa membuat, mengedit, dan menghapus peran'
+		name: 'Write Roles',
+		description: 'Allows creating/updating/deleting role data'
 	},
-
-	// Pendataan Permissions
+	{
+		id: 'perm-territory-read',
+		name: 'Read Territories',
+		description: 'Allows reading territory data'
+	},
+	{
+		id: 'perm-data-read-all',
+		name: 'Read All Data',
+		description: 'Allows reading all application data'
+	},
+	{
+		id: 'perm-data-write-scoped',
+		name: 'Write Scoped Data',
+		description: 'Allows writing data within assigned scope/territory'
+	},
 	{
 		id: 'perm-pendataan-access',
-		name: 'Akses Pendataan',
-		description: 'Bisa mengakses halaman /member/pendataan'
+		name: 'Access Pendataan',
+		description: 'Allows access to Pendataan section'
 	},
-	{ id: 'perm-murid-read', name: 'Lihat Data Murid', description: 'Bisa melihat data semua murid' },
-	{
-		id: 'perm-murid-write',
-		name: 'Kelola Data Murid',
-		description: 'Bisa membuat, mengedit, dan menghapus data murid'
-	},
-	{
-		id: 'perm-murid-export',
-		name: 'Ekspor Data Murid',
-		description: 'Bisa mengekspor data murid ke file'
-	},
-
-	// Nasyath Permissions
 	{
 		id: 'perm-nasyath-access',
-		name: 'Akses Nasyath',
-		description: 'Bisa mengakses halaman /member/nasyath'
-	},
-	{ id: 'perm-nasyath-read', name: 'Lihat Data Nasyath', description: 'Bisa melihat data nasyath' },
-	{
-		id: 'perm-nasyath-write',
-		name: 'Kelola Data Nasyath',
-		description: 'Bisa membuat, mengedit, dan menghapus data nasyath'
+		name: 'Access Nasyath',
+		description: 'Allows access to Nasyath section'
 	},
 	{
-		id: 'perm-nasyath-export',
-		name: 'Ekspor Data Nasyath',
-		description: 'Bisa mengekspor data nasyath'
-	},
-
-	// General Member Permissions
-	{
-		id: 'perm-profile-read',
-		name: 'Lihat Profil Sendiri',
-		description: 'Bisa melihat halaman profil sendiri'
+		id: 'perm-admin-access',
+		name: 'Access Admin Area',
+		description: 'Allows access to the admin dashboard and menus'
 	},
 	{
-		id: 'perm-profile-write',
-		name: 'Edit Profil Sendiri',
-		description: 'Bisa mengedit profil sendiri'
+		id: 'perm-pendataan-write',
+		name: 'Write Pendataan',
+		description: 'Allows creating/updating/deleting pendataan/muriddata'
+	},
+	{
+		id: 'perm-pendataan-read',
+		name: 'Read Pendataan',
+		description: 'Allows reading pendataan/murid data'
+	},
+	{ id: 'perm-nasyath-read', name: 'Write Nasyath', description: 'Allows writing data to Nasyath' },
+	{
+		id: 'perm-piket-read',
+		name: "Lihat Jadwal Ruasa'",
+		description: "Bisa melihat halaman manajemen jadwal ruasa'"
+	},
+	{
+		id: 'perm-piket-write',
+		name: "Kelola Jadwal Ruasa'",
+		description: "Bisa membuat, mengedit, dan menghapus jadwal ruasa'"
+	},
+	// --- IZIN BARU UNTUK BACKUP ---
+	{
+		id: 'perm-backup-create',
+		name: 'Buat Backup',
+		description: 'Bisa membuat dan mengunduh backup database'
 	}
 ];
 
 const roleHierarchyData = [
-	{ parent: 'SUPERADMIN', child: 'ADMIN' },
-	{ parent: 'ADMIN', child: 'PENDATAAN' },
-	{ parent: 'ADMIN', child: 'NASYATH' },
-	{ parent: 'PENDATAAN', child: 'MEMBER' },
-	{ parent: 'NASYATH', child: 'MEMBER' }
+	{ parent: 'role-admin', child: 'role-naib' },
+	{ parent: 'role-admin', child: 'role-wakil-naib' },
+	{ parent: 'role-naib', child: 'role-legalitas' },
+	{ parent: 'role-naib', child: 'role-maaliyah' },
+	{ parent: 'role-naib', child: 'role-nasyath' },
+	{ parent: 'role-naib', child: 'role-pendataan' },
+	{ parent: 'role-wakil-naib', child: 'role-legalitas' },
+	{ parent: 'role-wakil-naib', child: 'role-maaliyah' },
+	{ parent: 'role-wakil-naib', child: 'role-nasyath' },
+	{ parent: 'role-wakil-naib', child: 'role-pendataan' },
+	{ parent: 'role-legalitas', child: 'role-legalitas-propinsi' },
+	{ parent: 'role-maaliyah', child: 'role-maaliyah-propinsi' },
+	{ parent: 'role-nasyath', child: 'role-nasyath-propinsi' },
+	{ parent: 'role-pendataan', child: 'role-pendataan-propinsi' },
+	{ parent: 'role-admin', child: 'role-piket-admin' }
 ];
 
 // =================================================================
@@ -115,57 +159,77 @@ export async function seedRbacData() {
 	try {
 		console.log('Starting RBAC data seeding...');
 
-		// 1. Hapus data lama untuk memastikan kebersihan (opsional, tergantung kebutuhan)
+		// Hapus data lama untuk memastikan kebersihan
 		await db.delete(roleHierarchyTable);
 		await db.delete(rolePermissionsTable);
-		await db.delete(userRolesTable);
+		// await db.delete(userRolesTable); // DIHAPUS - Ini adalah data penting yang tidak boleh di-reset.
 		await db.delete(permissionsTable);
 		await db.delete(rolesTable);
 		console.log('Old RBAC data cleared.');
 
-		// 2. Masukkan Peran (Roles)
+		// Masukkan Peran (Roles)
 		await db.insert(rolesTable).values(rolesData).onConflictDoNothing();
 		console.log('Roles seeded.');
 
-		// 3. Masukkan Izin (Permissions)
+		// Masukkan Izin (Permissions)
 		await db.insert(permissionsTable).values(permissionsData).onConflictDoNothing();
 		console.log('Permissions seeded.');
 
-		// 4. Tetapkan semua izin ke SUPERADMIN
-		const allPermissionIds = permissionsData.map((p) => p.id);
-		const superAdminPermissions = allPermissionIds.map((permId) => ({
-			roleId: 'SUPERADMIN',
-			permissionId: permId
-		}));
-		await db.insert(rolePermissionsTable).values(superAdminPermissions).onConflictDoNothing();
-		console.log('SUPERADMIN permissions seeded.');
-
-		// 5. Tetapkan izin spesifik untuk peran lain
-		const otherRolePermissions = [
-			// ADMIN
-			{ roleId: 'ADMIN', permissionId: 'perm-admin-access' },
-			{ roleId: 'ADMIN', permissionId: 'perm-user-read' },
-			{ roleId: 'ADMIN', permissionId: 'perm-user-write' },
-			{ roleId: 'ADMIN', permissionId: 'perm-role-read' },
-			{ roleId: 'ADMIN', permissionId: 'perm-role-write' },
-			// PENDATAAN
-			{ roleId: 'PENDATAAN', permissionId: 'perm-pendataan-access' },
-			{ roleId: 'PENDATAAN', permissionId: 'perm-murid-read' },
-			{ roleId: 'PENDATAAN', permissionId: 'perm-murid-write' },
-			{ roleId: 'PENDATAAN', permissionId: 'perm-murid-export' },
-			// NASYATH
-			{ roleId: 'NASYATH', permissionId: 'perm-nasyath-access' },
-			{ roleId: 'NASYATH', permissionId: 'perm-nasyath-read' },
-			{ roleId: 'NASYATH', permissionId: 'perm-nasyath-write' },
-			{ roleId: 'NASYATH', permissionId: 'perm-nasyath-export' },
-			// MEMBER
-			{ roleId: 'MEMBER', permissionId: 'perm-profile-read' },
-			{ roleId: 'MEMBER', permissionId: 'perm-profile-write' }
+		// Tetapkan izin spesifik untuk peran
+		const rolePermissions = [
+			{ roleId: 'role-manager', permissionId: 'perm-user-read' },
+			{ roleId: 'role-manager', permissionId: 'perm-role-read' },
+			{ roleId: 'role-manager', permissionId: 'perm-data-write-scoped' },
+			{ roleId: 'role-editor', permissionId: 'perm-user-read' },
+			{ roleId: 'role-editor', permissionId: 'perm-data-write-scoped' },
+			{ roleId: 'role-territory-manager', permissionId: 'perm-user-read' },
+			{ roleId: 'role-territory-manager', permissionId: 'perm-data-write-scoped' },
+			{ roleId: 'role-territory-editor', permissionId: 'perm-user-read' },
+			{ roleId: 'role-territory-editor', permissionId: 'perm-data-write-scoped' },
+			{ roleId: 'role-viewer', permissionId: 'perm-user-read' },
+			{ roleId: 'role-viewer', permissionId: 'perm-territory-read' },
+			{ roleId: 'role-pendataan', permissionId: 'perm-pendataan-access' },
+			{ roleId: 'role-pendataan-propinsi', permissionId: 'perm-pendataan-access' },
+			{ roleId: 'role-nasyath', permissionId: 'perm-nasyath-access' },
+			{ roleId: 'role-nasyath-propinsi', permissionId: 'perm-nasyath-access' },
+			{ roleId: 'role-pendataan', permissionId: 'perm-pendataan-write' },
+			{ roleId: 'role-pendataan', permissionId: 'perm-pendataan-read' },
+			{ roleId: 'role-wakil-naib', permissionId: 'perm-admin-access' },
+			{ roleId: 'role-wakil-naib', permissionId: 'perm-nasyath-access' },
+			{ roleId: 'role-wakil-naib', permissionId: 'perm-pendataan-access' },
+			{ roleId: 'role-wakil-naib', permissionId: 'perm-data-read-all' },
+			{ roleId: 'role-wakil-naib', permissionId: 'perm-pendataan-read' },
+			{ roleId: 'role-wakil-naib', permissionId: 'perm-role-read' },
+			{ roleId: 'role-wakil-naib', permissionId: 'perm-territory-read' },
+			{ roleId: 'role-wakil-naib', permissionId: 'perm-user-read' },
+			{ roleId: 'role-wakil-naib', permissionId: 'perm-pendataan-write' },
+			{ roleId: 'role-wakil-naib', permissionId: 'perm-role-write' },
+			{ roleId: 'role-wakil-naib', permissionId: 'perm-data-write-scoped' },
+			{ roleId: 'role-wakil-naib', permissionId: 'perm-user-write' },
+			{ roleId: 'role-admin', permissionId: 'perm-admin-access' },
+			{ roleId: 'role-admin', permissionId: 'perm-nasyath-access' },
+			{ roleId: 'role-admin', permissionId: 'perm-pendataan-access' },
+			{ roleId: 'role-admin', permissionId: 'perm-data-read-all' },
+			{ roleId: 'role-admin', permissionId: 'perm-pendataan-read' },
+			{ roleId: 'role-admin', permissionId: 'perm-role-read' },
+			{ roleId: 'role-admin', permissionId: 'perm-territory-read' },
+			{ roleId: 'role-admin', permissionId: 'perm-user-read' },
+			{ roleId: 'role-admin', permissionId: 'perm-pendataan-write' },
+			{ roleId: 'role-admin', permissionId: 'perm-role-write' },
+			{ roleId: 'role-admin', permissionId: 'perm-data-write-scoped' },
+			{ roleId: 'role-admin', permissionId: 'perm-user-write' },
+			{ roleId: 'role-admin', permissionId: 'perm-nasyath-read' },
+			{ roleId: 'role-piket-manager', permissionId: 'perm-piket-read' },
+			{ roleId: 'role-piket-manager', permissionId: 'perm-piket-write' },
+			{ roleId: 'role-admin', permissionId: 'perm-piket-read' },
+			{ roleId: 'role-admin', permissionId: 'perm-piket-write' },
+			// --- PENETAPAN IZIN BARU UNTUK BACKUP ---
+			{ roleId: 'role-admin', permissionId: 'perm-backup-create' }
 		];
-		await db.insert(rolePermissionsTable).values(otherRolePermissions).onConflictDoNothing();
-		console.log('Other role permissions seeded.');
+		await db.insert(rolePermissionsTable).values(rolePermissions).onConflictDoNothing();
+		console.log('Role permissions seeded.');
 
-		// 6. Bangun Hierarki Peran
+		// Bangun Hierarki Peran
 		const hierarchyToInsert = roleHierarchyData.map((h) => ({
 			parentRoleId: h.parent,
 			childRoleId: h.child
@@ -181,11 +245,7 @@ export async function seedRbacData() {
 	}
 }
 
-// =================================================================
-// FUNGSI UTILITAS (jika diperlukan)
-// Contoh: Fungsi untuk menetapkan peran ke pengguna
-// =================================================================
-
+// ... (Fungsi utilitas seperti assignRoleToUser tetap sama)
 export async function assignRoleToUser(userId: string, roleId: string) {
 	try {
 		await db.insert(userRolesTable).values({ userId, roleId }).onConflictDoNothing();

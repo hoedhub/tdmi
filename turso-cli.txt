@@ -1,0 +1,2 @@
+turso db shell tdmi .dump > backp202508132327.sql
+turso db shell tdmi .schema > schema202508132327.sql

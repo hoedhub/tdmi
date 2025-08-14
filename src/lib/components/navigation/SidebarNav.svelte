@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import { createEventDispatcher } from 'svelte';
-	import { BadgeCheck, ShieldAlert, UsersRound } from 'lucide-svelte'; // <-- Import ikon
+	import { BadgeCheck, ShieldAlert, UsersRound, DatabaseBackup } from 'lucide-svelte'; // <-- Import ikon
 
 	const dispatch = createEventDispatcher();
 
@@ -49,6 +49,19 @@
 			>
 				<BadgeCheck class="h-5 w-5" />
 				Manajemen Ruasa'
+			</a>
+		</li>
+	{/if}
+	<!-- Link baru untuk Backup -->
+	{#if $page.data.canCreateBackup}
+		<li>
+			<a
+				href="/admin/backup"
+				class={$page.url.pathname.startsWith('/admin/backup') ? 'active' : ''}
+				on:click={handleNavigation}
+			>
+				<DatabaseBackup class="h-5 w-5" />
+				Backup
 			</a>
 		</li>
 	{/if}

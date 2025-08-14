@@ -17,7 +17,7 @@ const fetchWithRetry = _fetch(global.fetch as any, {
 	retryOn: [500, 503, 504] // Retry on server errors and timeouts
 }) as (url: RequestInfo, init?: RequestInit) => Promise<Response>;
 
-const client = createClient({
+export const client = createClient({
 	url: process.env.TURSO_CONNECTION_URL!,
 	authToken: process.env.TURSO_AUTH_TOKEN,
 	fetch: fetchWithRetry
