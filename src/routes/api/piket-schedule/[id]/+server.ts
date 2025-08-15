@@ -15,17 +15,18 @@ export const PUT: RequestHandler = async ({ request, locals, params }) => {
 	if (isNaN(id)) throw error(400, 'ID tidak valid');
 
 	const body = await request.json();
+	const RUASA_ROLE_ID = 'role-piket-admin'; // <-- Peran ditetapkan di sini
 
 	// Validasi sederhana
-	if (!body.userId || !body.roleId || !body.startDate || !body.endDate) {
-		throw error(400, 'Field userId, roleId, startDate, dan endDate wajib diisi');
+	if (!body.userId || !body.startDate || !body.endDate) {
+		throw error(400, 'Field userId, startDate, dan endDate wajib diisi');
 	}
 
 	const [updatedSchedule] = await db
 		.update(piketScheduleTable)
 		.set({
 			userId: body.userId,
-			roleId: body.roleId,
+			roleId: RUASA_ROLE_ID, // <-- Menggunakan peran yang sudah ditetapkan
 			startDate: body.startDate,
 			endDate: body.endDate,
 			groupId: body.groupId,

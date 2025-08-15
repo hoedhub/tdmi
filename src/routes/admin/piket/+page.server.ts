@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
 import { userHasPermission } from '$lib/server/accessControl';
-import { getAllUsers, getAllRoles } from '$lib/server/accessControlDB';
+import { getAllUsers } from '$lib/server/accessControlDB';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
@@ -17,14 +17,12 @@ export const load: PageServerLoad = async ({ locals }) => {
 	// 2. Periksa izin untuk melakukan aksi tulis (buat/edit/hapus)
 	const canWrite = await userHasPermission(locals.user.id, 'perm-piket-write');
 
-	// 3. Ambil data yang diperlukan untuk form (users dan roles)
+	// 3. Ambil data yang diperlukan untuk form (hanya users)
 	const users = await getAllUsers();
-	const roles = await getAllRoles();
 
 	// 4. Kirim data dan flag izin ke komponen Svelte
 	return {
 		users,
-		roles,
 		permissions: {
 			canWrite
 		}

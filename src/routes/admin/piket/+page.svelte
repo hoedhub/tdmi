@@ -14,7 +14,7 @@
 	let currentSchedule: {
 		id: number | null;
 		userId: string;
-		roleId: string;
+		// roleId dihapus
 		startDate: string;
 		endDate: string;
 		groupId: string;
@@ -22,7 +22,6 @@
 	} = {
 		id: null,
 		userId: '',
-		roleId: '',
 		startDate: '',
 		endDate: '',
 		groupId: '',
@@ -62,7 +61,6 @@
 		currentSchedule = {
 			id: schedule.id,
 			userId: schedule.userId,
-			roleId: schedule.roleId,
 			startDate: schedule.startDate.split('T')[0], // Format YYYY-MM-DD
 			endDate: schedule.endDate.split('T')[0], // Format YYYY-MM-DD
 			groupId: schedule.groupId || '',
@@ -79,7 +77,6 @@
 		currentSchedule = {
 			id: null,
 			userId: '',
-			roleId: '',
 			startDate: '',
 			endDate: '',
 			groupId: '',
@@ -154,7 +151,6 @@
 			<thead>
 				<tr>
 					<th>Pengguna</th>
-					<th>Peran Ruasa'</th>
 					<th>Grup</th>
 					<th>Mulai</th>
 					<th>Selesai</th>
@@ -167,11 +163,11 @@
 			<tbody>
 				{#if isLoading}
 					<tr>
-						<td colspan={data.permissions.canWrite ? 7 : 6} class="text-center">Memuat data...</td>
+						<td colspan={data.permissions.canWrite ? 6 : 5} class="text-center">Memuat data...</td>
 					</tr>
 				{:else if schedules.length === 0}
 					<tr>
-						<td colspan={data.permissions.canWrite ? 7 : 6} class="text-center"
+						<td colspan={data.permissions.canWrite ? 6 : 5} class="text-center"
 							>Tidak ada jadwal.</td
 						>
 					</tr>
@@ -179,7 +175,6 @@
 				{#each schedules as schedule (schedule.id)}
 					<tr>
 						<td>{schedule.username || 'N/A'}</td>
-						<td>{schedule.roleName || 'N/A'}</td>
 						<td>{schedule.groupId || '-'}</td>
 						<td>{formatDate(schedule.startDate)}</td>
 						<td>{formatDate(schedule.endDate)}</td>
@@ -214,16 +209,6 @@
 						<option disabled value="">Pilih pengguna</option>
 						{#each data.users as user}
 							<option value={user.id}>{user.username}</option>
-						{/each}
-					</select>
-				</div>
-
-				<div class="form-control mt-2">
-					<label for="role" class="label"><span class="label-text">Peran Ruasa'</span></label>
-					<select id="role" class="select select-bordered" bind:value={currentSchedule.roleId} required>
-						<option disabled value="">Pilih peran</option>
-						{#each data.roles as role}
-							<option value={role.id}>{role.name}</option>
 						{/each}
 					</select>
 				</div>
