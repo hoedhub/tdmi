@@ -9,17 +9,17 @@ export const load: PageServerLoad = async ({ locals }) => {
 		throw error(401, 'Tidak terautentikasi');
 	}
 
-	// 2. Periksa izin untuk melakukan aksi tulis (buat/edit/hapus)
+	// 2. Periksa izin untuk membuat jadwal
 	const canWrite = await userHasPermission(locals.user.id, 'perm-piket-write');
+	if (!canWrite) {
+		throw error(403, 'Akses ditolak: Anda tidak memiliki izin untuk menyusun jadwal piket.');
+	}
 
-	// 3. Ambil data yang diperlukan untuk form (hanya users)
+	// 3. Ambil semua data pengguna untuk ditampilkan di form
 	const users = await getAllUsers();
 
-	// 4. Kirim data dan flag izin ke komponen Svelte
+	// 4. Kirim data pengguna ke komponen Svelte
 	return {
-		users,
-		permissions: {
-			canWrite
-		}
+		users
 	};
 };

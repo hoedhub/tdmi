@@ -141,7 +141,10 @@
 	<div class="flex justify-between items-center mb-4">
 		<h1 class="text-2xl font-bold">Manajemen Jadwal Ruasa'</h1>
 		{#if data.permissions.canWrite}
-			<button class="btn btn-primary" on:click={openNewModal}>+ Tambah Jadwal</button>
+			<div class="flex gap-2">
+				<a href="/admin/piket/susun" class="btn btn-secondary">Susun Jadwal Putaran</a>
+				<button class="btn btn-primary" on:click={openNewModal}>+ Tambah Jadwal</button>
+			</div>
 		{/if}
 	</div>
 
