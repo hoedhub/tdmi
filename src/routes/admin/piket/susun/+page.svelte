@@ -320,7 +320,9 @@
 
 	function unassignPeriod(periodIndex: number) {
 		if (generatedSchedules[periodIndex].isLocked) return;
-		if (confirm(`Kosongkan semua petugas dari periode ${generatedSchedules[periodIndex].period}?`)) {
+		if (
+			confirm(`Kosongkan semua petugas dari periode ${generatedSchedules[periodIndex].period}?`)
+		) {
 			generatedSchedules[periodIndex].userIds = [];
 			generatedSchedules = [...generatedSchedules];
 		}
@@ -400,7 +402,7 @@
 										type="checkbox"
 										id="selectAll"
 										on:change={toggleSelectAll}
-										class="checkbox checkbox-primary"
+										class="checkbox-primary checkbox"
 										bind:this={selectAllCheckbox}
 									/>
 									<label for="selectAll" class="ml-3 font-medium">Pilih Semua</label>
@@ -474,11 +476,11 @@
 									<input
 										type="number"
 										id="periodDuration"
-										class="input input-bordered join-item w-1/3"
+										class="input join-item input-bordered w-1/3"
 										bind:value={periodDuration}
 										min="1"
 									/>
-									<select bind:value={periodUnit} class="select select-bordered join-item flex-1">
+									<select bind:value={periodUnit} class="join-item select select-bordered flex-1">
 										<option value="days">Hari</option>
 										<option value="weeks">Minggu</option>
 										<option value="months">Bulan</option>
@@ -498,7 +500,9 @@
 							</div>
 						</div>
 						<div class="card-actions mt-4 justify-end">
-							<button class="btn btn-primary" on:click={generateScheduleSlots}>Lanjut: Susun Jadwal</button>
+							<button class="btn btn-primary" on:click={generateScheduleSlots}
+								>Lanjut: Susun Jadwal</button
+							>
 						</div>
 					</div>
 				{/if}
@@ -514,9 +518,10 @@
 									disabled={allPeriodsLocked}>Acak Ulang</button
 								>
 								<button
-									class="btn btn-warning btn-outline"
+									class="btn btn-outline btn-warning"
 									on:click={unassignAll}
-									disabled={allPeriodsLocked || noAssignmentsInUnlocked}>Kosongkan Semua Petugas</button
+									disabled={allPeriodsLocked || noAssignmentsInUnlocked}
+									>Kosongkan Semua Petugas</button
 								>
 							</div>
 						</div>
@@ -561,7 +566,7 @@
 											</td>
 											<td class="flex items-center gap-1">
 												<button
-													class="btn btn-sm btn-ghost group"
+													class="group btn btn-ghost btn-sm"
 													on:click={() => openUserSelectionModal(i)}
 													disabled={schedule.isLocked}
 													title="Ubah petugas"
@@ -569,14 +574,14 @@
 													<Pencil class="h-5 w-5" />
 												</button>
 												<button
-													class="btn btn-sm btn-ghost group"
+													class="group btn btn-ghost btn-sm"
 													on:click={() => unassignPeriod(i)}
 													disabled={schedule.isLocked || schedule.userIds.length === 0}
 													title="Kosongkan periode"
 												>
 													<Trash2 class="h-5 w-5" />
 												</button>
-												<button class="btn btn-sm btn-ghost group" on:click={() => toggleLock(i)}>
+												<button class="group btn btn-ghost btn-sm" on:click={() => toggleLock(i)}>
 													{#if schedule.isLocked}
 														<!-- Is locked, show Unlock icon -->
 														<Unlock class="h-5 w-5 text-success" />

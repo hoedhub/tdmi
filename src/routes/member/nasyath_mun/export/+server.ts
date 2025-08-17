@@ -104,8 +104,18 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		// --- Dynamic Filename Generation ---
 		let periodString = '';
 		const monthNames = [
-			'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-			'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+			'Januari',
+			'Februari',
+			'Maret',
+			'April',
+			'Mei',
+			'Juni',
+			'Juli',
+			'Agustus',
+			'September',
+			'Oktober',
+			'November',
+			'Desember'
 		];
 
 		if (periodType === 'bulan' && dateInfo) {
@@ -116,7 +126,6 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			periodString = `Export_${new Date().toISOString().split('T')[0]}`;
 		}
 		const fileName = `Nasyath_MUN_${periodString}.xlsx`;
-
 
 		// --- Excel Generation ---
 		const workbook = new ExcelJS.Workbook();

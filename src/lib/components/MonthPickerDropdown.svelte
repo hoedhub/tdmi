@@ -46,8 +46,9 @@
 	<div class="grid grid-cols-3 gap-1">
 		{#each monthNames as month, i}
 			<button
-				class="btn btn-sm btn-ghost"
-				class:btn-active={i === selectedDate.getMonth() && pickerYear === selectedDate.getFullYear()}
+				class="btn btn-ghost btn-sm"
+				class:btn-active={i === selectedDate.getMonth() &&
+					pickerYear === selectedDate.getFullYear()}
 				on:click={() => selectMonth(i)}
 			>
 				{month}

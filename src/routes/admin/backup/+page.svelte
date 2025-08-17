@@ -63,12 +63,11 @@
 	}
 </script>
 
-
-<div class="p-6 space-y-4">
+<div class="space-y-4 p-6">
 	<h1 class="text-2xl font-bold">Manajemen Backup Database</h1>
 	<p class="text-gray-600">
-		Buat dan unduh salinan lengkap dari database aplikasi. File backup akan berformat SQL dan
-		dapat digunakan untuk memulihkan data jika terjadi masalah.
+		Buat dan unduh salinan lengkap dari database aplikasi. File backup akan berformat SQL dan dapat
+		digunakan untuk memulihkan data jika terjadi masalah.
 	</p>
 
 	<div class="pt-4">
@@ -76,13 +75,13 @@
 			type="button"
 			on:click={handleBackup}
 			disabled={!canCreateBackup || isLoading}
-			class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
+			class="inline-flex items-center justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-gray-400"
 		>
 			{#if isLoading}
-				<Loader2 class="w-5 h-5 mr-2 animate-spin" />
+				<Loader2 class="mr-2 h-5 w-5 animate-spin" />
 				<span>Memproses...</span>
 			{:else}
-				<Download class="w-5 h-5 mr-2" />
+				<Download class="mr-2 h-5 w-5" />
 				<span>Buat & Unduh Backup</span>
 			{/if}
 		</button>

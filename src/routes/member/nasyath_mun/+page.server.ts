@@ -80,7 +80,12 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	// If not, show the last 6 months.
 	const chartDateConditions = startDateParam
 		? dateConditions
-		: [gte(nasyathTable.tanggalMulai, new Date(new Date().setMonth(new Date().getMonth() - 6)).toISOString())];
+		: [
+				gte(
+					nasyathTable.tanggalMulai,
+					new Date(new Date().setMonth(new Date().getMonth() - 6)).toISOString()
+				)
+			];
 
 	const activitiesPerMonthResult = await db
 		.select({

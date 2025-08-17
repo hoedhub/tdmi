@@ -63,24 +63,48 @@
 
 	async function handleSort(event: CustomEvent<SortConfig[] | null>) {
 		currentSort = event.detail ?? undefined;
-		await muridModalStore.updateData(currentSort, currentFilters, currentPage, pageSize, editedMuridId);
+		await muridModalStore.updateData(
+			currentSort,
+			currentFilters,
+			currentPage,
+			pageSize,
+			editedMuridId
+		);
 	}
 
 	async function handleFilter(event: CustomEvent<FilterState>) {
 		currentFilters = event.detail; // Store the entire filter state
 		currentPage = 1; // Reset page on filter change
-		await muridModalStore.updateData(currentSort, currentFilters, currentPage, pageSize, editedMuridId);
+		await muridModalStore.updateData(
+			currentSort,
+			currentFilters,
+			currentPage,
+			pageSize,
+			editedMuridId
+		);
 	}
 
 	async function handlePageChange(event: CustomEvent<number>) {
 		currentPage = event.detail;
-		await muridModalStore.updateData(currentSort, currentFilters, currentPage, pageSize, editedMuridId);
+		await muridModalStore.updateData(
+			currentSort,
+			currentFilters,
+			currentPage,
+			pageSize,
+			editedMuridId
+		);
 	}
 
 	async function handleItemsPerPageChange(event: CustomEvent<number>) {
 		pageSize = event.detail;
 		currentPage = 1; // Reset page on items per page change
-		await muridModalStore.updateData(currentSort, currentFilters, currentPage, pageSize, editedMuridId);
+		await muridModalStore.updateData(
+			currentSort,
+			currentFilters,
+			currentPage,
+			pageSize,
+			editedMuridId
+		);
 	}
 
 	let superTableComponent: SuperTable<Murid>;

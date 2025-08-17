@@ -1,6 +1,11 @@
-
 import { db } from '$lib/drizzle';
-import { muridTable, deskelTable, kecamatanTable, kokabTable, propTable } from '$lib/drizzle/schema';
+import {
+	muridTable,
+	deskelTable,
+	kecamatanTable,
+	kokabTable,
+	propTable
+} from '$lib/drizzle/schema';
 import { json } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
 import levenshtein from 'tiny-levenshtein';

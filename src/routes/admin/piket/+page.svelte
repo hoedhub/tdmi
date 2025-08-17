@@ -85,9 +85,7 @@
 	}
 
 	async function handleSubmit() {
-		const url = isEditing
-			? `/api/piket-schedule/${currentSchedule.id}`
-			: '/api/piket-schedule';
+		const url = isEditing ? `/api/piket-schedule/${currentSchedule.id}` : '/api/piket-schedule';
 		const method = isEditing ? 'PUT' : 'POST';
 
 		try {
@@ -138,7 +136,7 @@
 </script>
 
 <div class="container mx-auto p-4">
-	<div class="flex justify-between items-center mb-4">
+	<div class="mb-4 flex items-center justify-between">
 		<h1 class="text-2xl font-bold">Manajemen Jadwal Ruasa'</h1>
 		{#if data.permissions.canWrite}
 			<div class="flex gap-2">
@@ -149,7 +147,7 @@
 	</div>
 
 	<!-- Table -->
-	<div class="overflow-x-auto bg-base-100 rounded-lg shadow">
+	<div class="overflow-x-auto rounded-lg bg-base-100 shadow">
 		<table class="table w-full">
 			<thead>
 				<tr>
@@ -184,10 +182,10 @@
 						<td>{schedule.description || '-'}</td>
 						{#if data.permissions.canWrite}
 							<td class="flex gap-2">
-								<button class="btn btn-sm btn-warning" on:click={() => openEditModal(schedule)}
+								<button class="btn btn-warning btn-sm" on:click={() => openEditModal(schedule)}
 									>Edit</button
 								>
-								<button class="btn btn-sm btn-error" on:click={() => handleDelete(schedule.id)}
+								<button class="btn btn-error btn-sm" on:click={() => handleDelete(schedule.id)}
 									>Hapus</button
 								>
 							</td>
@@ -203,12 +201,17 @@
 {#if showModal}
 	<div class="modal modal-open">
 		<div class="modal-box w-11/12 max-w-2xl">
-			<h3 class="font-bold text-lg">{isEditing ? 'Edit' : 'Tambah'} Jadwal Ruasa'</h3>
+			<h3 class="text-lg font-bold">{isEditing ? 'Edit' : 'Tambah'} Jadwal Ruasa'</h3>
 
 			<form on:submit|preventDefault={handleSubmit}>
 				<div class="form-control mt-4">
 					<label for="user" class="label"><span class="label-text">Pengguna</span></label>
-					<select id="user" class="select select-bordered" bind:value={currentSchedule.userId} required>
+					<select
+						id="user"
+						class="select select-bordered"
+						bind:value={currentSchedule.userId}
+						required
+					>
 						<option disabled value="">Pilih pengguna</option>
 						{#each data.users as user}
 							<option value={user.id}>{user.username}</option>
@@ -216,9 +219,11 @@
 					</select>
 				</div>
 
-				<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+				<div class="mt-2 grid grid-cols-1 gap-4 md:grid-cols-2">
 					<div class="form-control">
-						<label for="startDate" class="label"><span class="label-text">Tanggal Mulai</span></label>
+						<label for="startDate" class="label"
+							><span class="label-text">Tanggal Mulai</span></label
+						>
 						<input
 							type="date"
 							id="startDate"
@@ -228,7 +233,9 @@
 						/>
 					</div>
 					<div class="form-control">
-						<label for="endDate" class="label"><span class="label-text">Tanggal Selesai</span></label>
+						<label for="endDate" class="label"
+							><span class="label-text">Tanggal Selesai</span></label
+						>
 						<input
 							type="date"
 							id="endDate"
@@ -240,7 +247,9 @@
 				</div>
 
 				<div class="form-control mt-2">
-					<label for="groupId" class="label"><span class="label-text">ID Grup (Opsional)</span></label>
+					<label for="groupId" class="label"
+						><span class="label-text">ID Grup (Opsional)</span></label
+					>
 					<input
 						type="text"
 						id="groupId"

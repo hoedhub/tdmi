@@ -307,7 +307,7 @@
 	<!-- Toggle Button (Desktop Only) -->
 	<button
 		on:click={toggleSidebar}
-		class="btn btn-sm btn-circle btn-ghost absolute z-40 hidden transition-all duration-300 md:flex"
+		class="btn btn-circle btn-ghost btn-sm absolute z-40 hidden transition-all duration-300 md:flex"
 		style="top: {isSidebarCollapsed ? '2.25rem' : '3.5rem'}; transform: translateY(-50%);"
 		class:left-14={isSidebarCollapsed}
 		class:left-72={!isSidebarCollapsed}

@@ -1,8 +1,13 @@
-
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { db } from '$lib/drizzle';
-import { muridTable, deskelTable, kecamatanTable, kokabTable, propTable } from '$lib/drizzle/schema';
+import {
+	muridTable,
+	deskelTable,
+	kecamatanTable,
+	kokabTable,
+	propTable
+} from '$lib/drizzle/schema';
 import { like, eq } from 'drizzle-orm';
 import { userHasPermission } from '$lib/server/accessControl';
 

@@ -109,7 +109,9 @@
 			searchTimeout = setTimeout(async () => {
 				console.log(`[Form] Executing search for: "${nama}"`);
 				try {
-					const response = await fetch(`/api/murid/similar?nama=${encodeURIComponent(nama.trim())}`);
+					const response = await fetch(
+						`/api/murid/similar?nama=${encodeURIComponent(nama.trim())}`
+					);
 					if (response.ok) {
 						const data = await response.json();
 						console.log('[Form] Received data from API:', data);

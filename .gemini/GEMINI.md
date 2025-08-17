@@ -5,10 +5,10 @@ _Foundational rules for consistency, stability, and alignment._
 1. **Follow Requirements & Patterns (Prinsip DRY)**
    - **Prinsip Utama**: Selalu prioritaskan penggunaan kembali logika, pola, dan komponen yang sudah ada sebelum membuat yang baru (Don't Repeat Yourself). Replikasi pola/logika yang ada sebelum membuat solusi baru.
    - **Alur Kerja Pengembangan**:
-       1.  **Pahami Kebutuhan**: Analisis permintaan untuk mengidentifikasi fungsionalitas yang dibutuhkan.
-       2.  **Cari Komponen Internal**: Lakukan pencarian di `src/lib/components/` dan `src/lib/utils/` untuk solusi yang ada. Komponen utama meliputi `SuperTable`, `data-entry/*`, `layout/*`, dan `toast`.
-       3.  **Periksa Dependensi**: Lihat `package.json` untuk fungsionalitas yang mungkin sudah disediakan oleh library yang ada (SvelteKit, Drizzle, Lucia-auth, Tailwind CSS).
-       4.  **Buat Baru (Jika Perlu)**: Hanya jika tidak ada solusi, buat komponen baru dengan meniru gaya dan pola kode yang ada.
+     1. **Pahami Kebutuhan**: Analisis permintaan untuk mengidentifikasi fungsionalitas yang dibutuhkan.
+     2. **Cari Komponen Internal**: Lakukan pencarian di `src/lib/components/` dan `src/lib/utils/` untuk solusi yang ada. Komponen utama meliputi `SuperTable`, `data-entry/*`, `layout/*`, dan `toast`.
+     3. **Periksa Dependensi**: Lihat `package.json` untuk fungsionalitas yang mungkin sudah disediakan oleh library yang ada (SvelteKit, Drizzle, Lucia-auth, Tailwind CSS).
+     4. **Buat Baru (Jika Perlu)**: Hanya jika tidak ada solusi, buat komponen baru dengan meniru gaya dan pola kode yang ada.
    - **Sumber Kebenaran**: `README.md` adalah acuan utama. Jika ada konflik, gunakan implementasi terbaru. Perubahan signifikan yang menyimpang dari pola harus dicatat di `/worklogs.md`.
 
 ---

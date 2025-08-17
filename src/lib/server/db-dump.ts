@@ -19,7 +19,7 @@ function escapeSqlValue(val: any): string {
 		return "'" + val.replace(/'/g, "''") + "'";
 	}
 	if (val instanceof Uint8Array) {
-		// Convert blob to hex literal X'...' 
+		// Convert blob to hex literal X'...'
 		return "X'" + Buffer.from(val).toString('hex') + "'";
 	}
 	// Fallback for other types (like boolean, which will be converted to 0 or 1 by SQLite driver)
@@ -44,7 +44,9 @@ export function createDatabaseDump(): ReadableStream<string> {
 						sql: sql<string>`sql`
 					})
 					.from(sql`sqlite_schema`)
-					.where(sql`type = 'table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_litestream_%' AND name NOT LIKE '__drizzle_%'`);
+					.where(
+						sql`type = 'table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_litestream_%' AND name NOT LIKE '__drizzle_%'`
+					);
 
 				for (const table of schemas) {
 					// 2. Enqueue CREATE TABLE statement
@@ -52,7 +54,7 @@ export function createDatabaseDump(): ReadableStream<string> {
 
 					// 3. Get all data from the current table
 					const rows = await client.execute({
-						sql: `SELECT * FROM "${table.name}"`, 
+						sql: `SELECT * FROM "${table.name}"`,
 						args: []
 					});
 
@@ -64,7 +66,7 @@ export function createDatabaseDump(): ReadableStream<string> {
 						}
 					}
 				}
-				
+
 				// 5. Get indexes and other schema elements
 				const otherSchemas = await db
 					.select({

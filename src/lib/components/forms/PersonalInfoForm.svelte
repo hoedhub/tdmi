@@ -1,4 +1,3 @@
-
 <script lang="ts">
 	import { onDestroy } from 'svelte';
 	import { scale } from 'svelte/transition';
@@ -106,7 +105,7 @@
 			/>
 			{#if hoveredName}
 				<div
-					class="input input-bordered pointer-events-none absolute top-0 left-0 flex w-full items-center bg-base-200/50"
+					class="input input-bordered pointer-events-none absolute left-0 top-0 flex w-full items-center bg-base-200/50"
 				>
 					{hoveredName}
 				</div>
