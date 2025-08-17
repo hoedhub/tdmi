@@ -3,6 +3,7 @@
 	import { error as toastError, success as toastSuccess } from '$lib/components/toast';
 	import { slide } from 'svelte/transition';
 	import { flip } from 'svelte/animate';
+	import { Lock, Unlock } from 'lucide-svelte';
 
 	export let data;
 
@@ -19,6 +20,7 @@
 		startDate: Date;
 		endDate: Date;
 		userIds: string[];
+		isLocked: boolean; // Properti baru untuk fitur kunci
 	}> = [];
 
 	// State UI
@@ -51,6 +53,8 @@
 	// --- LOGIKA UMPAN BALIK LANGKAH 2 ---
 	let assignmentCounts: Record<string, number> = {};
 	let unassignedUsers: { id: string; username: string }[] = [];
+	let multiTurnUsers: [string, number][] = [];
+	$: allPeriodsLocked = generatedSchedules.every((s) => s.isLocked);
 
 	$: {
 		if (currentStep === 2) {
@@ -65,9 +69,16 @@
 			}
 			assignmentCounts = counts;
 
+			multiTurnUsers = Object.entries(assignmentCounts).filter(([, count]) => count > 1);
+
 			unassignedUsers = data.users.filter(
 				(u) => selectedUserIds.has(u.id) && !assignedIds.has(u.id)
 			);
+		} else {
+			// Reset state saat tidak di langkah 2
+			assignmentCounts = {};
+			unassignedUsers = [];
+			multiTurnUsers = [];
 		}
 	}
 
@@ -119,7 +130,8 @@
 				period: i,
 				startDate: new Date(currentStartDate),
 				endDate: new Date(endDate),
-				userIds: []
+				userIds: [],
+				isLocked: false // Default tidak terkunci
 			});
 
 			if (periodUnit === 'days') {
@@ -134,34 +146,60 @@
 		currentStep = 2;
 	}
 
-	// Fungsi untuk mengacak jadwal
+	// Fungsi untuk mengacak jadwal (logika baru dengan sistem kunci)
 	function randomizeSchedules(isInitialGeneration = false) {
 		if (!isInitialGeneration && generatedSchedules.length === 0) {
 			toastError('Silakan buat kerangka jadwal terlebih dahulu.');
 			return;
 		}
 
-		let availableUsers = [...data.users.filter((u) => selectedUserIds.has(u.id))];
+		const unlockedSchedules = generatedSchedules.filter((s) => !s.isLocked);
+		if (unlockedSchedules.length === 0) {
+			toastError('Semua periode sudah dikunci. Tidak ada yang bisa diacak.');
+			return;
+		}
+
+		// 1. Identifikasi pengguna yang sudah ditugaskan di periode terkunci
+		const lockedUserIds = new Set<string>();
+		generatedSchedules.forEach((s) => {
+			if (s.isLocked) {
+				s.userIds.forEach((id) => lockedUserIds.add(id));
+			}
+		});
+
+		// 2. Siapkan "kolam" pengguna yang benar-benar tersedia untuk diacak
+		let availableUsers = data.users.filter(
+			(u) => selectedUserIds.has(u.id) && !lockedUserIds.has(u.id)
+		);
+
+		// Acak "kolam" pengguna yang tersedia
 		for (let i = availableUsers.length - 1; i > 0; i--) {
 			const j = Math.floor(Math.random() * (i + 1));
 			[availableUsers[i], availableUsers[j]] = [availableUsers[j], availableUsers[i]];
 		}
 
-		const numUsers = availableUsers.length;
-		const numPeriods = generatedSchedules.length;
+		const numAvailableUsers = availableUsers.length;
+		const numUnlockedPeriods = unlockedSchedules.length;
 
-		generatedSchedules.forEach((s) => (s.userIds = []));
+		// Reset hanya periode yang tidak terkunci
+		unlockedSchedules.forEach((s) => (s.userIds = []));
 
-		if (numUsers >= numPeriods) {
-			for (let i = 0; i < numUsers; i++) {
-				generatedSchedules[i % numPeriods].userIds.push(availableUsers[i].id);
+		if (numAvailableUsers === 0 && numUnlockedPeriods > 0) {
+			toastError('Tidak ada pengguna tersedia untuk diacak ke periode yang tidak terkunci.');
+			return;
+		}
+
+		// Distribusikan pengguna yang tersedia ke periode yang tidak terkunci
+		if (numAvailableUsers >= numUnlockedPeriods) {
+			for (let i = 0; i < numAvailableUsers; i++) {
+				unlockedSchedules[i % numUnlockedPeriods].userIds.push(availableUsers[i].id);
 			}
 		} else {
-			for (let i = 0; i < numPeriods; i++) {
-				generatedSchedules[i].userIds.push(availableUsers[i % numUsers].id);
+			for (let i = 0; i < numUnlockedPeriods; i++) {
+				unlockedSchedules[i].userIds.push(availableUsers[i % numAvailableUsers].id);
 			}
 		}
-		generatedSchedules = [...generatedSchedules];
+		generatedSchedules = [...generatedSchedules]; // Trigger reactivity
 	}
 
 	// Fungsi untuk mereset semua state
@@ -209,8 +247,9 @@
 		}
 	}
 
-	// --- Logika Modal ---
+	// --- Logika Modal & Kunci ---
 	function openUserSelectionModal(index: number) {
+		if (generatedSchedules[index].isLocked) return;
 		editingPeriodIndex = index;
 		modalSelectedUserIds = new Set(generatedSchedules[index].userIds);
 		showUserSelectionModal = true;
@@ -219,7 +258,7 @@
 	function saveModalSelection() {
 		if (editingPeriodIndex !== null) {
 			generatedSchedules[editingPeriodIndex].userIds = Array.from(modalSelectedUserIds);
-			generatedSchedules = [...generatedSchedules]; // Trigger reactivity
+			generatedSchedules = [...generatedSchedules];
 		}
 		closeModal();
 	}
@@ -228,6 +267,11 @@
 		showUserSelectionModal = false;
 		editingPeriodIndex = null;
 		modalSelectedUserIds.clear();
+	}
+
+	function toggleLock(index: number) {
+		generatedSchedules[index].isLocked = !generatedSchedules[index].isLocked;
+		generatedSchedules = [...generatedSchedules];
 	}
 
 	// Helper
@@ -396,8 +440,10 @@
 					<div>
 						<div class="mb-4 flex flex-wrap items-center justify-between gap-2">
 							<p>Sesuaikan petugas untuk setiap periode di bawah ini.</p>
-							<button class="btn btn-secondary" on:click={() => randomizeSchedules(false)}
-								>Acak Ulang</button
+							<button
+								class="btn btn-secondary"
+								on:click={() => randomizeSchedules(false)}
+								disabled={allPeriodsLocked}>Acak Ulang</button
 							>
 						</div>
 
@@ -409,12 +455,12 @@
 										<th>Tanggal Mulai</th>
 										<th>Tanggal Selesai</th>
 										<th>Petugas</th>
-										<th class="w-1">Aksi</th>
+										<th class="w-1 text-center">Aksi</th>
 									</tr>
 								</thead>
 								<tbody
 									>{#each generatedSchedules as schedule, i (schedule.period)}
-										<tr animate:flip={{ duration: 300 }}>
+										<tr class:bg-base-200={schedule.isLocked} animate:flip={{ duration: 300 }}>
 											<td>{schedule.period}</td>
 											<td>{formatDate(schedule.startDate)}</td>
 											<td>{formatDate(schedule.endDate)}</td>
@@ -429,10 +475,23 @@
 													<span class="text-error">Belum ditugaskan</span>
 												{/if}
 											</td>
-											<td>
-												<button class="btn btn-sm btn-ghost" on:click={() => openUserSelectionModal(i)}
-													>Ubah</button
+											<td class="flex items-center gap-1">
+												<button
+													class="btn btn-sm btn-ghost"
+													on:click={() => openUserSelectionModal(i)}
+													disabled={schedule.isLocked}>Ubah</button
 												>
+												<button class="btn btn-sm btn-ghost group" on:click={() => toggleLock(i)}>
+													{#if schedule.isLocked}
+														<!-- Is locked, show Unlock icon -->
+														<Unlock class="h-5 w-5 text-success" />
+													{:else}
+														<!-- Is unlocked, show Lock icon -->
+														<Lock
+															class="h-5 w-5 text-base-content/50 transition-colors group-hover:text-warning"
+														/>
+													{/if}
+												</button>
 											</td>
 										</tr>
 									{/each}</tbody
@@ -441,10 +500,7 @@
 						</div>
 
 						<!-- Panel Status Penugasan -->
-						{#if unassignedUsers.length > 0 || Object.values(assignmentCounts).some((count) => count > 1)}
-							{@const multiTurnUsers = Object.entries(assignmentCounts).filter(
-								([, count]) => count > 1
-							)}
+						{#if unassignedUsers.length > 0 || multiTurnUsers.length > 0}
 							<div class="mt-6 space-y-4 rounded-lg bg-base-200/60 p-4">
 								<h4 class="font-semibold">Status Penugasan</h4>
 								{#if multiTurnUsers.length > 0}
