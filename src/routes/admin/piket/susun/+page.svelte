@@ -3,7 +3,7 @@
 	import { error as toastError, success as toastSuccess } from '$lib/components/toast';
 	import { slide } from 'svelte/transition';
 	import { flip } from 'svelte/animate';
-	import { Lock, Unlock } from 'lucide-svelte';
+	import { Lock, Unlock, Trash2, X, Pencil } from 'lucide-svelte';
 
 	export let data;
 
@@ -27,11 +27,25 @@
 	let currentStep = 1;
 	let selectAllCheckbox: HTMLInputElement;
 	let feedbackMessage = '';
+	let isPristine = true;
 
 	// --- State Modal ---
 	let showUserSelectionModal = false;
 	let editingPeriodIndex: number | null = null;
 	let modalSelectedUserIds = new Set<string>();
+	let usersAssignedElsewhere = new Set<string>();
+
+	// Cek kondisi awal (pristine) untuk menonaktifkan tombol reset
+	$: {
+		const isStateDefault =
+			selectedUserIds.size === 0 &&
+			periodCount === 12 &&
+			periodDuration === 1 &&
+			periodUnit === 'months' &&
+			startDate === new Date().toISOString().split('T')[0] &&
+			currentStep === 1;
+		isPristine = isStateDefault;
+	}
 
 	// --- LOGIKA UMPAN BALIK REAL-TIME ---
 	$: {
@@ -55,6 +69,9 @@
 	let unassignedUsers: { id: string; username: string }[] = [];
 	let multiTurnUsers: [string, number][] = [];
 	$: allPeriodsLocked = generatedSchedules.every((s) => s.isLocked);
+	$: noAssignmentsInUnlocked = generatedSchedules
+		.filter((s) => !s.isLocked)
+		.every((s) => s.userIds.length === 0);
 
 	$: {
 		if (currentStep === 2) {
@@ -213,6 +230,13 @@
 		currentStep = 1;
 	}
 
+	// Fungsi untuk menampilkan konfirmasi sebelum mereset
+	function confirmAndReset() {
+		if (confirm('Apakah Anda yakin ingin memulai ulang? Semua pengaturan akan dihapus.')) {
+			resetAll();
+		}
+	}
+
 	// Fungsi untuk menyimpan jadwal ke server
 	async function saveRotationSchedule() {
 		const schedulesToSave = generatedSchedules.flatMap((schedule) =>
@@ -250,6 +274,16 @@
 	// --- Logika Modal & Kunci ---
 	function openUserSelectionModal(index: number) {
 		if (generatedSchedules[index].isLocked) return;
+
+		// Identifikasi user yang sudah ditugaskan di periode lain
+		const assignedElsewhere = new Set<string>();
+		generatedSchedules.forEach((schedule, i) => {
+			if (i !== index) {
+				schedule.userIds.forEach((id) => assignedElsewhere.add(id));
+			}
+		});
+		usersAssignedElsewhere = assignedElsewhere;
+
 		editingPeriodIndex = index;
 		modalSelectedUserIds = new Set(generatedSchedules[index].userIds);
 		showUserSelectionModal = true;
@@ -267,11 +301,44 @@
 		showUserSelectionModal = false;
 		editingPeriodIndex = null;
 		modalSelectedUserIds.clear();
+		usersAssignedElsewhere.clear();
 	}
 
 	function toggleLock(index: number) {
 		generatedSchedules[index].isLocked = !generatedSchedules[index].isLocked;
 		generatedSchedules = [...generatedSchedules];
+	}
+
+	// --- Logika Unassign ---
+	function unassignUser(periodIndex: number, userIdToRemove: string) {
+		if (generatedSchedules[periodIndex].isLocked) return;
+		generatedSchedules[periodIndex].userIds = generatedSchedules[periodIndex].userIds.filter(
+			(id) => id !== userIdToRemove
+		);
+		generatedSchedules = [...generatedSchedules];
+	}
+
+	function unassignPeriod(periodIndex: number) {
+		if (generatedSchedules[periodIndex].isLocked) return;
+		if (confirm(`Kosongkan semua petugas dari periode ${generatedSchedules[periodIndex].period}?`)) {
+			generatedSchedules[periodIndex].userIds = [];
+			generatedSchedules = [...generatedSchedules];
+		}
+	}
+
+	function unassignAll() {
+		if (
+			confirm(
+				'Apakah Anda yakin ingin mengosongkan semua petugas dari semua periode yang tidak terkunci?'
+			)
+		) {
+			generatedSchedules = generatedSchedules.map((schedule) => {
+				if (!schedule.isLocked) {
+					return { ...schedule, userIds: [] };
+				}
+				return schedule;
+			});
+		}
 	}
 
 	// Helper
@@ -291,7 +358,7 @@
 	<div class="container mx-auto">
 		<div class="mb-6 flex flex-wrap items-center justify-between gap-4">
 			<h1 class="text-3xl font-bold text-base-content">Susun Jadwal Piket Satu Putaran</h1>
-			<button class="btn btn-outline gap-2" on:click={resetAll}>
+			<button class="btn btn-outline gap-2" on:click={confirmAndReset} disabled={isPristine}>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
 					fill="none"
@@ -440,11 +507,18 @@
 					<div>
 						<div class="mb-4 flex flex-wrap items-center justify-between gap-2">
 							<p>Sesuaikan petugas untuk setiap periode di bawah ini.</p>
-							<button
-								class="btn btn-secondary"
-								on:click={() => randomizeSchedules(false)}
-								disabled={allPeriodsLocked}>Acak Ulang</button
-							>
+							<div class="flex gap-2">
+								<button
+									class="btn btn-secondary"
+									on:click={() => randomizeSchedules(false)}
+									disabled={allPeriodsLocked}>Acak Ulang</button
+								>
+								<button
+									class="btn btn-warning btn-outline"
+									on:click={unassignAll}
+									disabled={allPeriodsLocked || noAssignmentsInUnlocked}>Kosongkan Semua Petugas</button
+								>
+							</div>
 						</div>
 
 						<div class="overflow-x-auto">
@@ -466,21 +540,42 @@
 											<td>{formatDate(schedule.endDate)}</td>
 											<td>
 												{#if schedule.userIds.length > 0}
-													<div class="flex flex-wrap gap-1">
+													<div class="flex flex-wrap items-center gap-1">
 														{#each schedule.userIds as userId}
-															<span class="badge badge-ghost">{getUsername(userId)}</span>
+															<div class="badge badge-ghost flex items-center gap-1.5 pr-1">
+																<span>{getUsername(userId)}</span>
+																<button
+																	class="h-4 w-4 rounded-full bg-base-content/20 text-base-100 transition-colors hover:bg-error"
+																	on:click={() => unassignUser(i, userId)}
+																	disabled={schedule.isLocked}
+																	title="Hapus petugas"
+																>
+																	<X class="h-3 w-3" />
+																</button>
+															</div>
 														{/each}
 													</div>
 												{:else}
-													<span class="text-error">Belum ditugaskan</span>
+													<span class="text-base-content/60">Belum ditugaskan</span>
 												{/if}
 											</td>
 											<td class="flex items-center gap-1">
 												<button
-													class="btn btn-sm btn-ghost"
+													class="btn btn-sm btn-ghost group"
 													on:click={() => openUserSelectionModal(i)}
-													disabled={schedule.isLocked}>Ubah</button
+													disabled={schedule.isLocked}
+													title="Ubah petugas"
 												>
+													<Pencil class="h-5 w-5" />
+												</button>
+												<button
+													class="btn btn-sm btn-ghost group"
+													on:click={() => unassignPeriod(i)}
+													disabled={schedule.isLocked || schedule.userIds.length === 0}
+													title="Kosongkan periode"
+												>
+													<Trash2 class="h-5 w-5" />
+												</button>
 												<button class="btn btn-sm btn-ghost group" on:click={() => toggleLock(i)}>
 													{#if schedule.isLocked}
 														<!-- Is locked, show Unlock icon -->
@@ -563,7 +658,16 @@
 									modalSelectedUserIds = modalSelectedUserIds;
 								}}
 							/>
-							<span class="label-text">{user.username}</span>
+							<span
+								class="label-text"
+								class:opacity-60={usersAssignedElsewhere.has(user.id)}
+								class:italic={usersAssignedElsewhere.has(user.id)}
+								title={usersAssignedElsewhere.has(user.id)
+									? 'Sudah ditugaskan di periode lain'
+									: ''}
+							>
+								{user.username}
+							</span>
 						</label>
 					{/each}
 				</div>

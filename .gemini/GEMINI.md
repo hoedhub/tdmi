@@ -2,12 +2,14 @@
 
 _Foundational rules for consistency, stability, and alignment._
 
-1. **Follow Requirements & Patterns**
-   - Start with PRD/README. Replicate existing patterns/logic before creating new solutions.
-   - For conflicting patterns, use README guidance or the most recently modified implementation.
-   - If for some reasons you must make changes that don't align with the README/PRD, update the README/PRD to reflect the changes.
-     -Record changes, at least the key changes in a worklog file `/worklogs.md` for "what" and "why" with timestamp.
-   - Always review `/worklogs.md` (create it if not exists) before planning changes to keep yourself in context.
+1. **Follow Requirements & Patterns (Prinsip DRY)**
+   - **Prinsip Utama**: Selalu prioritaskan penggunaan kembali logika, pola, dan komponen yang sudah ada sebelum membuat yang baru (Don't Repeat Yourself). Replikasi pola/logika yang ada sebelum membuat solusi baru.
+   - **Alur Kerja Pengembangan**:
+       1.  **Pahami Kebutuhan**: Analisis permintaan untuk mengidentifikasi fungsionalitas yang dibutuhkan.
+       2.  **Cari Komponen Internal**: Lakukan pencarian di `src/lib/components/` dan `src/lib/utils/` untuk solusi yang ada. Komponen utama meliputi `SuperTable`, `data-entry/*`, `layout/*`, dan `toast`.
+       3.  **Periksa Dependensi**: Lihat `package.json` untuk fungsionalitas yang mungkin sudah disediakan oleh library yang ada (SvelteKit, Drizzle, Lucia-auth, Tailwind CSS).
+       4.  **Buat Baru (Jika Perlu)**: Hanya jika tidak ada solusi, buat komponen baru dengan meniru gaya dan pola kode yang ada.
+   - **Sumber Kebenaran**: `README.md` adalah acuan utama. Jika ada konflik, gunakan implementasi terbaru. Perubahan signifikan yang menyimpang dari pola harus dicatat di `/worklogs.md`.
 
 ---
 
@@ -32,6 +34,11 @@ _Foundational rules for consistency, stability, and alignment._
 9. **Proactive & Efficient Memory Management**
    - Actively identify important information (behavioral rules or project facts).
    - Propose saving this information to the appropriate location (`GEMINI.md` for rules, Serena memory for facts) to ensure memory is relevant and not bloated.
+10. **Evaluasi Kritis & Solusi Alternatif**
+    - Jangan secara otomatis menyetujui atau melaksanakan setiap permintaan.
+    - Lakukan evaluasi kritis terhadap potensi dampak negatifnya (misalnya, terhadap performa, keterbacaan kode, UI/UX, keamanan, atau utang teknis).
+    - Jika sebuah permintaan dinilai kurang ideal, sampaikan alasannya dengan jelas dan logis.
+    - Selalu usulkan solusi alternatif yang lebih baik, lebih aman, atau lebih selaras dengan tujuan jangka panjang proyek.
 
 ---
 
@@ -62,7 +69,6 @@ _Code quality, testing, and environments._
 **Code Quality**
 
 - ✅ **Linting/Formatting**: Strict adherence to project standards.
-- ✅ **DRY (Don’t Repeat Yourself)**: Eliminate duplication; reuse existing logic.
 - ✅ **Comments**: Explain _why_ (complex logic/business rules), not _what_.
 - 📏 **File Size Limits**:
   - Components/utilities: `≤ 300 lines`
