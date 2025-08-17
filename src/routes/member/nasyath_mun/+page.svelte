@@ -406,7 +406,7 @@
 
 		// Only navigate if params have changed to avoid unnecessary reloads
 		if (params.toString() !== $page.url.searchParams.toString()) {
-			await goto(`?${params.toString()}`, { keepFocus: true, noscroll: true });
+			await goto(`?${params.toString()}`, { keepFocus: true, noScroll: true });
 		}
 
 		// Always refetch table data with the correct filters
@@ -495,7 +495,10 @@
 					sort: currentSort,
 					periodType: periodType,
 					// Kirim tanggal yang relevan untuk pembuatan nama file di server
-					dateInfo: periodType === 'bulan' ? { month: selectedDate.getMonth(), year: selectedDate.getFullYear() } : finalDateFilter
+					dateInfo:
+						periodType === 'bulan'
+							? { month: selectedDate.getMonth(), year: selectedDate.getFullYear() }
+							: finalDateFilter
 				})
 			});
 
@@ -541,8 +544,6 @@
 			isExporting = false;
 		}
 	}
-
-	
 
 	import { absoluteDropdownStore } from '$lib/stores/absoluteDropdown';
 
@@ -741,8 +742,14 @@
 					><div class="flex flex-col flex-wrap items-start gap-4 pt-2 md:flex-row md:items-end">
 						<!-- Period Selector -->
 						<div class="form-control">
-							<label class="label pb-1"><span class="label-text">تحديد الفترة</span></label>
-							<select class="select select-sm select-bordered" bind:value={periodType}>
+							<label class="label pb-1" for="period-type-select"
+								><span class="label-text">تحديد الفترة</span></label
+							>
+							<select
+								id="period-type-select"
+								class="select select-bordered select-sm"
+								bind:value={periodType}
+							>
 								<option value="bulan">شهري</option>
 								<option value="rentang">نطاق تاريخ</option>
 							</select>
@@ -751,15 +758,17 @@
 						{#if periodType === 'bulan'}
 							<!-- Month Selector Dropdown -->
 							<div class="form-control">
-								<label class="label pb-1"><span class="label-text">تحديد الشهر</span></label>
+								<label class="label pb-1" for="month-select"
+									><span class="label-text">تحديد الشهر</span></label
+								>
 								<div class="join">
-									<button class="btn btn-sm join-item" on:click={previousMonth}>
+									<button class="btn join-item btn-sm" on:click={previousMonth}>
 										<ChevronRight class="h-4 w-4" />
 									</button>
-									<button class="btn btn-sm join-item w-36 font-normal" on:click={showMonthPicker}>
+									<button class="btn join-item btn-sm w-36 font-normal" on:click={showMonthPicker}>
 										{monthYearDisplay}
 									</button>
-									<button class="btn btn-sm join-item" on:click={nextMonth}>
+									<button class="btn join-item btn-sm" on:click={nextMonth}>
 										<ChevronLeft class="h-4 w-4" />
 									</button>
 								</div>
@@ -791,8 +800,10 @@
 						{/if}
 
 						<div class="flex items-center gap-1">
-							<button class="btn btn-primary btn-sm" on:click={applyFilters}>تصفية</button
-							><button class="btn btn-ghost btn-sm" on:click={resetFilters}>إعادة تعيين</button>
+							<button class="btn btn-primary btn-sm" on:click={applyFilters}>تصفية</button><button
+								class="btn btn-ghost btn-sm"
+								on:click={resetFilters}>إعادة تعيين</button
+							>
 						</div>
 					</div></svelte:fragment
 				>
