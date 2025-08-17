@@ -24,6 +24,14 @@ _Foundational rules for consistency, stability, and alignment._
    - Use `async/await`; never block the main thread.
 6. **Never Make Assumption**
    - If you don't understand or not sure of what the user means, ask for clarification.
+7. **Holistic UI/UX Context**
+   - When providing solutions, always consider good UI/UX in the context of the entire related page and, if necessary, the entire application.
+8. **UI/UX Animation & Feedback Preferences**
+   - **Transitions**: Prefer `slide` transitions. Ensure surrounding elements are affected by the transition and move smoothly with it.
+   - **Feedback**: Informational/warning feedback (non-errors) should be noticeable but less dramatic than error messages.
+9. **Proactive & Efficient Memory Management**
+   - Actively identify important information (behavioral rules or project facts).
+   - Propose saving this information to the appropriate location (`GEMINI.md` for rules, Serena memory for facts) to ensure memory is relevant and not bloated.
 
 ---
 
