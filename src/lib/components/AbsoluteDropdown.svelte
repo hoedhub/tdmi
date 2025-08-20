@@ -107,7 +107,7 @@
 		aria-hidden="true"
 		on:click|self={absoluteDropdownStore.close}
 	></div>
-	<div
+	<ul
 		bind:this={menuElement}
 		style={menuStyle}
 		class="menu fixed z-50 rounded-box bg-base-300 p-2 shadow-lg"
@@ -143,10 +143,12 @@
 				</li>
 			{/each}
 		{:else if $absoluteDropdownStore.content === 'monthPicker'}
-			<MonthPickerDropdown
-				initialDate={$absoluteDropdownStore.data.initialDate}
-				onChange={$absoluteDropdownStore.data.onChange}
-			/>
+			<li>
+				<MonthPickerDropdown
+					initialDate={$absoluteDropdownStore.data.initialDate}
+					onChange={$absoluteDropdownStore.data.onChange}
+				/>
+			</li>
 		{/if}
-	</div>
+	</ul>
 {/if}
