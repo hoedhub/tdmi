@@ -35,6 +35,7 @@
 	import { enhance } from '$app/forms';
 	import { loading as showLoadingToast, update, success, error } from '$lib/components/toast';
 	import type { ActionResult } from '@sveltejs/kit';
+	import { api } from '$lib/utils/api';
 
 	// 2. PROPS
 	interface ChartData {
@@ -59,6 +60,8 @@
 			tempat: string | null;
 			muridNama: string | null;
 		}[];
+		dbError?: boolean;
+		message?: string;
 	};
 
 	export let data: PageDataExtended;
@@ -74,6 +77,11 @@
 	}
 
 	onMount(() => {
+		if (data.dbError) {
+			error(data.message || 'Gagal memuat data dashboard.');
+			// Still allow view switching, but table will show error.
+		}
+
 		// Initialize view from localStorage
 		if (typeof window !== 'undefined') {
 			const savedView = localStorage.getItem(`${$page.data.user?.id || 'default'}-nasyathView`);
@@ -330,29 +338,20 @@
 		loading = true;
 		dbError = false;
 
-		// Determine the date range for the query
 		let finalDateFilter = {};
 		if (periodType === 'bulan') {
 			const year = selectedDate.getFullYear();
 			const month = selectedDate.getMonth();
 			const startDate = new Date(year, month, 1);
 			const endDate = new Date(year, month + 1, 0);
-
-			// Timezone-safe formatting
-			const formatDate = (d: Date) => {
-				const y = d.getFullYear();
-				const m = (d.getMonth() + 1).toString().padStart(2, '0');
-				const day = d.getDate().toString().padStart(2, '0');
-				return `${y}-${m}-${day}`;
-			};
-
+			const formatDate = (d: Date) => d.toISOString().split('T')[0];
 			finalDateFilter = { start: formatDate(startDate), end: formatDate(endDate) };
 		} else {
 			finalDateFilter = { ...dateFilter };
 		}
 
 		try {
-			const response = await fetch('/member/nasyath_mun/table', {
+			const response = await api('/member/nasyath_mun/table', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
@@ -362,15 +361,16 @@
 					pageSize
 				})
 			});
-			if (!response.ok) throw new Error('Gagal memuat data nasyath');
+			if (!response.ok) throw new Error('Gagal memuat data nasyath dari server');
 			const result = await response.json();
 			nasyathData = result.data;
 			totalItems = result.totalItems;
 			currentPage = result.currentPage;
 		} catch (err) {
-			console.error('Error fetching nasyath data:', err);
+			const e = err as Error;
+			console.error('Error fetching nasyath data:', e);
 			dbError = true;
-			error('Gagal memuat data dari server.');
+			error(e.message || 'Gagal memuat data dari server.');
 		} finally {
 			loading = false;
 		}
@@ -467,7 +467,6 @@
 		isExporting = true;
 
 		try {
-			// Give a moment for the toast to appear
 			await new Promise((resolve) => setTimeout(resolve, 100));
 
 			let finalDateFilter = {};
@@ -476,25 +475,19 @@
 				const month = selectedDate.getMonth();
 				const startDate = new Date(year, month, 1);
 				const endDate = new Date(year, month + 1, 0);
-				const formatDate = (d: Date) => {
-					const y = d.getFullYear();
-					const m = (d.getMonth() + 1).toString().padStart(2, '0');
-					const day = d.getDate().toString().padStart(2, '0');
-					return `${y}-${m}-${day}`;
-				};
+				const formatDate = (d: Date) => d.toISOString().split('T')[0];
 				finalDateFilter = { start: formatDate(startDate), end: formatDate(endDate) };
 			} else {
 				finalDateFilter = { ...dateFilter };
 			}
 
-			const response = await fetch('/member/nasyath_mun/export', {
+			const response = await api('/member/nasyath_mun/export', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					filters: { ...currentFilters, dateRange: finalDateFilter },
 					sort: currentSort,
 					periodType: periodType,
-					// Kirim tanggal yang relevan untuk pembuatan nama file di server
 					dateInfo:
 						periodType === 'bulan'
 							? { month: selectedDate.getMonth(), year: selectedDate.getFullYear() }
@@ -527,19 +520,16 @@
 				});
 			} else {
 				const errorText = await response.text();
-				update(toastId, {
-					type: 'error',
-					message: `Gagal mengekspor: ${errorText}`,
-					duration: 8000
-				});
+				throw new Error(errorText);
 			}
-		} catch (err: any) {
+		} catch (err) {
+			const e = err as Error;
 			update(toastId, {
 				type: 'error',
-				message: `Terjadi kesalahan: ${err.message}`,
+				message: `Gagal mengekspor: ${e.message}`,
 				duration: 8000
 			});
-			console.error('Export error:', err);
+			console.error('Export error:', e);
 		} finally {
 			isExporting = false;
 		}
@@ -729,7 +719,6 @@
 				serverSide={true}
 				isSelectable={true}
 				isLoadingProp={loading}
-				{dbError}
 				itemsPerPageProp={pageSize}
 				totalItemsProp={totalItems}
 				sort={currentSort}
