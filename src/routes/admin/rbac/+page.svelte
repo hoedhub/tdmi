@@ -83,7 +83,11 @@
 
 	// --- Lifecycle ---
 	onMount(() => {
-		if (!selectedRoleId && data.roles.length > 0) {
+		if (data.dbError) {
+			error(data.message || 'Gagal memuat data. Silakan coba muat ulang halaman.');
+			return;
+		}
+		if (!selectedRoleId && data.roles && data.roles.length > 0) {
 			selectedRoleId = data.roles[0].id;
 		}
 	});

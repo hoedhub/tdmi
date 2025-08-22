@@ -16,34 +16,53 @@ import {
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
-	if (!locals.user) {
-		throw error(401, 'Unauthorized');
+	try {
+		if (!locals.user) {
+			throw error(401, 'Unauthorized');
+		}
+
+		const canAccess = await userHasPermission(locals.user.id, 'perm-admin-access');
+		if (!canAccess) {
+			throw error(403, 'Akses Ditolak. Anda tidak memiliki izin untuk mengelola RBAC.');
+		}
+
+		// Ambil semua data RBAC secara paralel
+		const [users, roles, permissions, userRoleMap, rolePermissionMap, roleHierarchy] =
+			await Promise.all([
+				getAllUsers(),
+				getAllRoles(),
+				getAllPermissions(),
+				getUserRoleMap(),
+				getRolePermissionMap(),
+				getRoleHierarchy()
+			]);
+
+		return {
+			dbError: false,
+			users,
+			roles,
+			permissions,
+			userRoleMap,
+			rolePermissionMap,
+			roleHierarchy
+		};
+	} catch (e) {
+		if (e && typeof e === 'object' && 'status' in e && typeof e.status === 'number' && e.status >= 400 && e.status < 500) {
+			throw e;
+		}
+		console.error('Database error in /admin/rbac load:', e);
+		return {
+			dbError: true,
+			message: 'Gagal memuat data RBAC: Tidak dapat terhubung ke server.',
+			// Return empty arrays for data to prevent runtime errors on the client
+			users: [],
+			roles: [],
+			permissions: [],
+			userRoleMap: [],
+			rolePermissionMap: [],
+			roleHierarchy: []
+		};
 	}
-
-	const canAccess = await userHasPermission(locals.user.id, 'perm-admin-access');
-	if (!canAccess) {
-		throw error(403, 'Akses Ditolak. Anda tidak memiliki izin untuk mengelola RBAC.');
-	}
-
-	// Ambil semua data RBAC secara paralel
-	const [users, roles, permissions, userRoleMap, rolePermissionMap, roleHierarchy] =
-		await Promise.all([
-			getAllUsers(),
-			getAllRoles(),
-			getAllPermissions(),
-			getUserRoleMap(),
-			getRolePermissionMap(),
-			getRoleHierarchy()
-		]);
-
-	return {
-		users,
-		roles,
-		permissions,
-		userRoleMap, // Kirim peta langsung ke klien
-		rolePermissionMap,
-		roleHierarchy
-	};
 };
 
 export const actions: Actions = {
