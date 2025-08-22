@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
 	import type { PageData } from './$types';
+	import { api } from '$lib/utils/api';
+	import { error as toastError, success as toastSuccess } from '$lib/components/toast';
 
 	export let data: PageData;
 
@@ -30,6 +32,11 @@
 
 	// Lifecycle
 	onMount(async () => {
+		if (data.dbError) {
+			toastError(data.message || 'Gagal memuat halaman. Coba muat ulang.');
+			isLoading = false;
+			return;
+		}
 		await fetchSchedules();
 	});
 
@@ -37,14 +44,15 @@
 	async function fetchSchedules() {
 		isLoading = true;
 		try {
-			const res = await fetch('/api/piket-schedule');
+			const res = await api('/api/piket-schedule', {});
 			if (res.ok) {
 				schedules = await res.json();
 			} else {
-				console.error('Gagal memuat jadwal:', await res.text());
+				throw new Error(await res.text());
 			}
-		} catch (e) {
-			console.error('Error:', e);
+		} catch (err) {
+			const error = err as Error;
+			toastError(`Gagal memuat jadwal: ${error.message}`);
 		} finally {
 			isLoading = false;
 		}
@@ -89,20 +97,22 @@
 		const method = isEditing ? 'PUT' : 'POST';
 
 		try {
-			const res = await fetch(url, {
+			const res = await api(url, {
 				method,
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(currentSchedule)
 			});
 
 			if (res.ok) {
+				toastSuccess(`Jadwal berhasil ${isEditing ? 'diperbarui' : 'ditambahkan'}.`);
 				closeModal();
 				await fetchSchedules();
 			} else {
-				alert(`Gagal menyimpan: ${await res.text()}`);
+				throw new Error(await res.text());
 			}
-		} catch (e) {
-			alert(`Error: ${e}`);
+		} catch (err) {
+			const error = err as Error;
+			toastError(`Gagal menyimpan: ${error.message}`);
 		}
 	}
 
@@ -110,17 +120,19 @@
 		if (!confirm('Apakah Anda yakin ingin menghapus jadwal ini?')) return;
 
 		try {
-			const res = await fetch(`/api/piket-schedule/${id}`, {
+			const res = await api(`/api/piket-schedule/${id}`, {
 				method: 'DELETE'
 			});
 
 			if (res.ok) {
+				toastSuccess('Jadwal berhasil dihapus.');
 				await fetchSchedules();
 			} else {
-				alert(`Gagal menghapus: ${await res.text()}`);
+				throw new Error(await res.text());
 			}
-		} catch (e) {
-			alert(`Error: ${e}`);
+		} catch (err) {
+			const error = err as Error;
+			toastError(`Gagal menghapus: ${error.message}`);
 		}
 	}
 
