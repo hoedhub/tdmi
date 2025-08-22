@@ -1,47 +1,45 @@
 // +layout.server.ts
-import { redirect } from '@sveltejs/kit';
-import type { LayoutServerLoad } from './$types'; // Import the type
+import { redirect, error } from '@sveltejs/kit';
+import type { LayoutServerLoad } from './$types';
 import { userHasPermission } from '$lib/server/accessControl';
 
 export const load: LayoutServerLoad = async ({ locals, url }) => {
-	// Add 'url'
-	// console.log(`[Layout Load] Running for user: ${locals.user?.username} (ID: ${locals.user?.id})`);
-
 	const returnData: {
 		user: typeof locals.user;
 		canAccessAdmin?: boolean;
 		canAccessPendataan?: boolean;
-		canManagePiket?: boolean; // <-- Tambahkan flag baru
+		canManagePiket?: boolean;
 	} = {
 		user: locals.user
 	};
-	// Pages that don't require authentication
-	const unauthenticatedRoutes = ['/login', '/signup']; // Add any other public routes
+
+	const unauthenticatedRoutes = ['/login', '/signup'];
 
 	if (!locals.user) {
-		// If the user is not logged in AND they are trying to access a protected page
 		if (!unauthenticatedRoutes.includes(url.pathname)) {
 			throw redirect(302, '/login');
 		}
 	} else {
-		const [canAccessAdmin, canAccessPendataan, canManagePiket] = await Promise.all([
-			userHasPermission(locals.user.id, 'perm-admin-access'),
-			userHasPermission(locals.user.id, 'perm-pendataan-access'), // Check for pendataan access
-			userHasPermission(locals.user.id, 'perm-piket-read') // <-- Tambahkan pengecekan izin piket
-		]);
-
-		returnData.canAccessAdmin = canAccessAdmin;
-		returnData.canAccessPendataan = canAccessPendataan; // Assign pendataan access
-		returnData.canManagePiket = canManagePiket; // <-- Kirim flag ke UI
-
+		// This redirect logic must be outside the try...catch block.
 		if (unauthenticatedRoutes.includes(url.pathname) || url.pathname === '/') {
-			throw redirect(303, '/member'); // Or your main authenticated route
+			throw redirect(303, '/member');
+		}
+
+		try {
+			const [canAccessAdmin, canAccessPendataan, canManagePiket] = await Promise.all([
+				userHasPermission(locals.user.id, 'perm-admin-access'),
+				userHasPermission(locals.user.id, 'perm-pendataan-access'),
+				userHasPermission(locals.user.id, 'perm-piket-read')
+			]);
+
+			returnData.canAccessAdmin = canAccessAdmin;
+			returnData.canAccessPendataan = canAccessPendataan;
+			returnData.canManagePiket = canManagePiket;
+		} catch (e) {
+			console.error(`Database error in root layout load for user ${locals.user.id}:`, e);
+			throw error(503, 'Gagal memuat data pengguna: Server tidak dapat dihubungi.');
 		}
 	}
-
-	// return {
-	//     user: locals.user
-	// };
 
 	return returnData;
 };

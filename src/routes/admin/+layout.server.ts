@@ -15,30 +15,34 @@ afterNavigate(({ from, to }) => {
 });
 
 export const load: LayoutServerLoad = async ({ locals, url }) => {
-	// 1. Pengecekan pertama: Apakah pengguna sudah login?
-	// Logika ini tetap sama dan sudah benar.
 	if (!locals.user) {
 		throw redirect(302, `/login?redirectTo=${url.pathname}`);
 	}
 
-	// 2. Pengecekan kedua: Apakah pengguna yang login punya IZIN untuk mengakses area admin?
-	const canAccess = await userHasPermission(locals.user.id, 'perm-admin-access');
+	try {
+		const canAccess = await userHasPermission(locals.user.id, 'perm-admin-access');
 
-	if (!canAccess) {
-		// Jika tidak punya izin, hentikan dan tampilkan halaman error.
-		throw error(403, 'Akses Ditolak. Anda tidak memiliki izin untuk mengakses halaman ini.');
+		if (!canAccess) {
+			throw error(403, 'Akses Ditolak. Anda tidak memiliki izin untuk mengakses halaman ini.');
+		}
+
+		const [canManagePiket, canCreateBackup] = await Promise.all([
+			userHasPermission(locals.user.id, 'perm-piket-read'),
+			userHasPermission(locals.user.id, 'perm-backup-create')
+		]);
+
+		return {
+			user: locals.user,
+			canManagePiket,
+			canCreateBackup
+		};
+	} catch (e) {
+		// Check if it's a controlled error from our logic (like 403)
+		if (e && typeof e === 'object' && 'status' in e && e.status === 403) {
+			throw e; // Re-throw the specific 403 error
+		}
+		// Handle unexpected/database errors
+		console.error(`Database error in admin layout load for user ${locals.user.id}:`, e);
+		throw error(503, 'Gagal memuat data admin: Server tidak dapat dihubungi.');
 	}
-
-	// 3. Periksa izin spesifik untuk fitur di dalam admin
-	const [canManagePiket, canCreateBackup] = await Promise.all([
-		userHasPermission(locals.user.id, 'perm-piket-read'),
-		userHasPermission(locals.user.id, 'perm-backup-create')
-	]);
-
-	// 4. Jika semua pengecekan berhasil, lanjutkan dan berikan data.
-	return {
-		user: locals.user,
-		canManagePiket,
-		canCreateBackup
-	};
 };

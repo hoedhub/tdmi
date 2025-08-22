@@ -1,6 +1,6 @@
 // src/hooks.server.ts
 import { lucia } from '$lib/server/auth';
-import type { Handle } from '@sveltejs/kit';
+import { error, type Handle } from '@sveltejs/kit';
 
 export const handle: Handle = async ({ event, resolve }) => {
 	const sessionId = event.cookies.get(lucia.sessionCookieName);
@@ -10,23 +10,29 @@ export const handle: Handle = async ({ event, resolve }) => {
 		return resolve(event);
 	}
 
-	const { session, user } = await lucia.validateSession(sessionId);
-	if (session && session.fresh) {
-		const sessionCookie = lucia.createSessionCookie(session.id);
-		event.cookies.set(sessionCookie.name, sessionCookie.value, {
-			path: '.',
-			...sessionCookie.attributes
-		});
+	try {
+		const { session, user } = await lucia.validateSession(sessionId);
+		if (session && session.fresh) {
+			const sessionCookie = lucia.createSessionCookie(session.id);
+			event.cookies.set(sessionCookie.name, sessionCookie.value, {
+				path: '.',
+				...sessionCookie.attributes
+			});
+		}
+		if (!session) {
+			const sessionCookie = lucia.createBlankSessionCookie();
+			event.cookies.set(sessionCookie.name, sessionCookie.value, {
+				path: '.',
+				...sessionCookie.attributes
+			});
+		}
+		event.locals.user = user;
+		event.locals.session = session;
+	} catch (e) {
+		// If database connection fails, throw a controlled error
+		console.error('Database connection failed during session validation:', e);
+		throw error(503, 'Gagal memvalidasi sesi: Tidak dapat terhubung ke server.');
 	}
-	if (!session) {
-		const sessionCookie = lucia.createBlankSessionCookie();
-		event.cookies.set(sessionCookie.name, sessionCookie.value, {
-			path: '.',
-			...sessionCookie.attributes
-		});
-	}
-	event.locals.user = user;
-	event.locals.session = session;
 
 	return resolve(event, {
 		transformPageChunk: ({ html, done }) => {
