@@ -30,28 +30,35 @@ export const load: PageServerLoad = async ({ locals }) => {
 export const actions: Actions = {
 	updateUserRoles: async ({ request, locals }) => {
 		if (!locals.user) throw error(401, 'Unauthorized');
-		// Periksa apakah pengguna memiliki izin untuk mengubah data pengguna.
-		const canWriteUsers = await userHasPermission(locals.user.id, 'perm-user-write');
-		if (!canWriteUsers) {
-			return fail(403, {
-				message: 'Akses Ditolak. Anda tidak memiliki izin untuk mengubah peran pengguna.'
-			});
-		}
-
-		const data = await request.formData();
-		const userId = data.get('userId')?.toString();
-		const selectedRoles = data.getAll('roles').map(String);
-
-		if (!userId) {
-			return fail(400, { message: 'User ID dibutuhkan.' });
-		}
 
 		try {
+			const canWriteUsers = await userHasPermission(locals.user.id, 'perm-user-write');
+			if (!canWriteUsers) {
+				return fail(403, {
+					message: 'Akses Ditolak. Anda tidak memiliki izin untuk mengubah peran pengguna.'
+				});
+			}
+
+			const data = await request.formData();
+			const userId = data.get('userId')?.toString();
+			const selectedRoles = data.getAll('roles').map(String);
+
+			if (!userId) {
+				return fail(400, { message: 'User ID dibutuhkan.' });
+			}
+
 			await updateUserRoles(userId, selectedRoles);
 			return { success: true, message: `Peran untuk pengguna ${userId} berhasil diperbarui.` };
-		} catch (e) {
-			console.error(`Error updating roles for user ${userId}:`, e);
-			return fail(500, { message: `Gagal memperbarui peran untuk pengguna ${userId}.` });
+		} catch (e: any) {
+			console.error(`Error in updateUserRoles action for user ${locals.user.id}:`, e);
+			// Check if it's a controlled fail() from our logic
+			if (e && typeof e === 'object' && 'status' in e) {
+				return fail(e.status as number, e.body || { message: 'Terjadi kesalahan yang tidak diketahui.' });
+			}
+			// Assume database/network error
+			return fail(503, {
+				message: `Gagal memperbarui peran: Server tidak dapat dihubungi. Silakan coba lagi.`
+			});
 		}
 	}
 };

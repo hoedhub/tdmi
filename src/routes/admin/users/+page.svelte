@@ -5,6 +5,8 @@
 	import { goto } from '$app/navigation';
 	import { Pen, Trash } from 'lucide-svelte';
 	import { onMount } from 'svelte';
+	import { api } from '$lib/utils/api'; // <-- Use centralized API helper
+	import { success as toastSuccess, error as toastError, warning as toastWarning } from '$lib/components/toast'; // <-- Use centralized toast
 
 	// --- Type Definitions ---
 	interface Role {
@@ -38,14 +40,11 @@
 	let users = data.users;
 	let allRoles = data.allRoles;
 	let totalItems = data.totalItems;
-	let loading = true; // Start with loading true
-	let hasDbError = false;
+	let loading = true;
 	let pageSize = 10;
 	let currentPage = 1;
 	let currentSort: SortConfig[] | undefined = undefined;
 	let currentFilters: Record<string, any> = {};
-	let retryAttempt = 0;
-	const maxRetries = 5;
 
 	let columns: ColumnDef[] = [];
 	$: if (allRoles.length > 0) {
@@ -87,51 +86,34 @@
 		];
 	}
 
-	// --- Functions ---
-	async function fetchWithRetry(url: string, options: RequestInit, attempt = 1): Promise<Response> {
-		retryAttempt = attempt;
-		try {
-			const response = await fetch(url, options);
-			if (response.status >= 500 && attempt < maxRetries) {
-				throw new Error(`Server error: ${response.status}`); // Trigger retry
-			}
-			return response;
-		} catch (error) {
-			if (attempt < maxRetries) {
-				await new Promise((resolve) => setTimeout(resolve, Math.pow(2, attempt) * 1000));
-				return fetchWithRetry(url, options, attempt + 1);
-			} else {
-				throw error; // Final attempt failed
-			}
-		}
-	}
-
 	async function fetchTableData(
 		sort?: SortConfig[] | null,
 		filters?: Record<string, any>,
 		page: number = 1
 	) {
-		hasDbError = false;
 		loading = true;
 		try {
-			const response = await fetchWithRetry('/admin/users/table', {
+			const response = await api('/admin/users/table', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ sort, filters, page, pageSize })
 			});
 
-			if (!response.ok) throw new Error('Failed to fetch users');
+			if (!response.ok) {
+				// The api helper already retried, so this is likely a persistent error.
+				throw new Error(`Server responded with ${response.status}`);
+			}
 
 			const result = await response.json();
 
 			users = result.users;
 			totalItems = result.totalItems;
-			allRoles = result.allRoles; // Also update roles from server
+			allRoles = result.allRoles;
 			currentPage = result.currentPage;
-			retryAttempt = 0; // Reset on success
-		} catch (error) {
+		} catch (err) {
+			const error = err as Error;
 			console.error('Error fetching table data:', error);
-			hasDbError = true;
+			toastError('Gagal memuat data pengguna. Silakan coba muat ulang halaman.');
 		} finally {
 			loading = false;
 		}
@@ -163,21 +145,27 @@
 
 	async function handleDeleteUser(userId: string, username: string) {
 		if (userId === data.user?.id) {
-			alert('You cannot delete your own account.');
+			toastWarning('Anda tidak dapat menghapus akun Anda sendiri.');
 			return;
 		}
 		if (
 			confirm(`Are you sure you want to delete user "${username}"? This action cannot be undone.`)
 		) {
-			const response = await fetch(`/admin/users/${userId}/delete`, {
-				method: 'POST'
-			});
-			if (response.ok) {
-				alert('User deleted successfully.');
-				invalidateAll();
-			} else {
-				const result = await response.json().catch(() => ({ message: response.statusText }));
-				alert(`Failed to delete user: ${result.message}`);
+			try {
+				const response = await api(`/admin/users/${userId}/delete`, {
+					method: 'POST'
+				});
+
+				if (response.ok) {
+					toastSuccess(`Pengguna "${username}" berhasil dihapus.`);
+					invalidateAll(); // Reload data
+				} else {
+					const result = await response.json().catch(() => ({ message: response.statusText }));
+					throw new Error(result.message);
+				}
+			} catch (err) {
+				const error = err as Error;
+				toastError(`Gagal menghapus pengguna: ${error.message}`);
 			}
 		}
 	}
@@ -205,7 +193,6 @@
 		isLoadingProp={loading}
 		sort={currentSort}
 		serverSide={true}
-		dbError={hasDbError}
 		on:sort={handleSort}
 		on:filter={handleFilter}
 		on:pageChange={handlePageChange}
@@ -216,24 +203,7 @@
 			<div class="p-8 text-center">
 				<span class="loading loading-spinner mb-4"></span>
 				<p class="text-lg font-semibold">Memuat data...</p>
-				{#if retryAttempt > 1}
-					<p class="text-sm text-warning">
-						Koneksi bermasalah. Mencoba lagi... (Percobaan {retryAttempt} dari {maxRetries})
-					</p>
-				{:else}
-					<p class="text-sm text-base-content/70">Harap tunggu sebentar.</p>
-				{/if}
-			</div>
-		</svelte:fragment>
-		<svelte:fragment slot="error-state">
-			<div class="p-8 text-center text-error">
-				<p>Tidak dapat terhubung ke database.</p>
-				<button
-					class="btn btn-outline btn-sm mt-4"
-					on:click={() => fetchTableData(currentSort, currentFilters, currentPage)}
-				>
-					Coba Lagi
-				</button>
+				<p class="text-sm text-base-content/70">Harap tunggu sebentar.</p>
 			</div>
 		</svelte:fragment>
 		<svelte:fragment slot="row-actions" let:row>
