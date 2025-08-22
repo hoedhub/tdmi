@@ -4,33 +4,40 @@ import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	if (!locals.user) {
-		throw redirect(302, '/login'); // Redirect to login if not authenticated
+		throw redirect(302, '/login');
 	}
 
-	// Check permissions for the 'pendataan' page
-	const [canAccessPendataan, canReadMurid, canWriteMurid] = await Promise.all([
-		userHasPermission(locals.user.id, 'perm-pendataan-access'),
-		userHasPermission(locals.user.id, 'perm-pendataan-read'),
-		userHasPermission(locals.user.id, 'perm-pendataan-write')
-	]);
+	try {
+		const [canAccessPendataan, canReadMurid, canWriteMurid] = await Promise.all([
+			userHasPermission(locals.user.id, 'perm-pendataan-access'),
+			userHasPermission(locals.user.id, 'perm-pendataan-read'),
+			userHasPermission(locals.user.id, 'perm-pendataan-write')
+		]);
 
-	if (!canAccessPendataan) {
-		throw error(403, 'Akses Ditolak. Anda tidak memiliki izin untuk mengakses halaman Pendataan.');
+		if (!canAccessPendataan) {
+			throw error(403, 'Akses Ditolak. Anda tidak memiliki izin untuk mengakses halaman Pendataan.');
+		}
+
+		if (!canReadMurid) {
+			throw error(403, 'Akses Ditolak. Anda tidak memiliki izin untuk melihat data murid.');
+		}
+
+		return {
+			user: locals.user,
+			canReadMurid,
+			canWriteMurid,
+			totalItems: 0,
+			dbError: false
+		};
+	} catch (e) {
+		if (e && typeof e === 'object' && 'status' in e && typeof e.status === 'number' && e.status >= 400 && e.status < 500) {
+			throw e;
+		}
+		console.error('Database error in /member/pendataan load:', e);
+		return {
+			user: locals.user, // Still return user data if available
+			dbError: true,
+			message: 'Gagal memuat data halaman: Tidak dapat terhubung ke server.'
+		};
 	}
-
-	if (!canReadMurid) {
-		// If they can access the page but not read data, still deny access to prevent empty page
-		throw error(403, 'Akses Ditolak. Anda tidak memiliki izin untuk melihat data murid.');
-	}
-
-	// Data fetching is now handled on the client-side.
-	// This function now only handles access control and passes permissions.
-	return {
-		user: locals.user,
-		canReadMurid,
-		canWriteMurid,
-		// totalItems is no longer fetched here to prevent timeout
-		totalItems: 0, // Start with 0, client will fetch the real count
-		dbError: false // Initial state, client will handle DB errors
-	};
 };

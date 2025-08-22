@@ -7,8 +7,16 @@
 	import { Pen, Trash, PlusCircle } from 'lucide-svelte';
 	import { onMount } from 'svelte';
 	import type { DatabaseUserAttributes } from '$lib/server/auth';
+	import { api } from '$lib/utils/api';
+	import { error as toastError, success as toastSuccess } from '$lib/components/toast';
 
 	// --- Type Definitions ---
+	// Use a type intersection (&) to extend PageData, which is the correct approach.
+	type ExtendedPageData = PageData & {
+		dbError: boolean;
+		message?: string;
+	};
+
 	interface Murid {
 		id: number;
 		updatedAt: string;
@@ -37,17 +45,8 @@
 		propinsiName: string | null;
 	}
 
-	interface ExtendedPageData extends PageData {
-		user: DatabaseUserAttributes;
-		canReadMurid: true; // Corrected type: if page loads, this must be true
-		canWriteMurid: boolean;
-		totalItems: number;
-	}
-
 	export let data: ExtendedPageData;
 	export let form: { success?: boolean; message?: string } | null;
-
-	let hasDbError = data.dbError;
 
 	let muridData: Murid[] = [];
 	let totalItems = data.totalItems;
@@ -149,53 +148,31 @@
 		}
 	];
 
-	let retryAttempt = 0;
-	let maxRetries = 5;
-
 	// --- Functions ---
-	async function fetchWithRetry(url: string, options: RequestInit, attempt = 1): Promise<Response> {
-		retryAttempt = attempt;
-		try {
-			const response = await fetch(url, options);
-			if (response.status >= 500 && attempt < maxRetries) {
-				throw new Error(`Server error: ${response.status}`); // Trigger retry
-			}
-			return response;
-		} catch (error) {
-			if (attempt < maxRetries) {
-				await new Promise((resolve) => setTimeout(resolve, Math.pow(2, attempt) * 1000));
-				return fetchWithRetry(url, options, attempt + 1);
-			} else {
-				throw error; // Final attempt failed
-			}
-		}
-	}
-
 	async function fetchTableData(
 		sort?: SortConfig[] | null,
 		filters?: Record<string, any>,
 		page: number = 1
 	) {
-		hasDbError = false; // Reset error state on new attempt
 		loading = true;
 		try {
-			const response = await fetchWithRetry('/member/pendataan/table', {
+			const response = await api('/member/pendataan/table', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ sort, filters, page, pageSize })
 			});
 
-			if (!response.ok) throw new Error('Failed to fetch murid data');
+			if (!response.ok) {
+				throw new Error('Gagal mengambil data murid');
+			}
 
 			const result = await response.json();
-
 			muridData = result.murid;
 			totalItems = result.totalItems;
 			currentPage = result.currentPage;
-			retryAttempt = 0; // Reset on success
-		} catch (error) {
-			console.error('Error fetching table data:', error);
-			hasDbError = true; // Set error state if fetch fails
+		} catch (err) {
+			const error = err as Error;
+			toastError(error.message || 'Tidak dapat terhubung ke server.');
 		} finally {
 			loading = false;
 		}
@@ -229,15 +206,20 @@
 				`Are you sure you want to delete murid "${nama}" (ID: ${muridId})? This action cannot be undone.`
 			)
 		) {
-			const response = await fetch(`/member/pendataan/${muridId}/delete`, {
-				method: 'POST' // Using POST for delete action as per SvelteKit convention for form actions
-			});
-			if (response.ok) {
-				alert('Murid deleted successfully.');
-				invalidateAll(); // Invalidate all data to refetch the table
-			} else {
-				const result = await response.json().catch(() => ({ message: response.statusText }));
-				alert(`Failed to delete murid: ${result.message}`);
+			try {
+				const response = await api(`/member/pendataan/${muridId}/delete`, {
+					method: 'POST'
+				});
+				if (response.ok) {
+					toastSuccess('Murid berhasil dihapus.');
+					invalidateAll();
+				} else {
+					const result = await response.json().catch(() => ({ message: response.statusText }));
+					throw new Error(result.message);
+				}
+			} catch (err) {
+				const error = err as Error;
+				toastError(`Gagal menghapus murid: ${error.message}`);
 			}
 		}
 	}
@@ -262,6 +244,10 @@
 
 	// Initial data fetch on component mount
 	onMount(async () => {
+		if (data.dbError) {
+			toastError(data.message || 'Gagal memuat halaman. Coba muat ulang.');
+			return;
+		}
 		if (canReadMurid) {
 			await fetchTableData(currentSort, currentFilters, currentPage);
 		}
@@ -279,7 +265,6 @@
 
 {#key muridData}
 	<SuperTable
-		dbError={hasDbError}
 		data={muridData}
 		{columns}
 		rowKey="id"
@@ -307,24 +292,7 @@
 			<div class="p-8 text-center">
 				<span class="loading loading-spinner mb-4"></span>
 				<p class="text-lg font-semibold">Memuat data...</p>
-				{#if retryAttempt > 1}
-					<p class="text-sm text-warning">
-						Koneksi bermasalah. Mencoba lagi... (Percobaan {retryAttempt} dari {maxRetries})
-					</p>
-				{:else}
-					<p class="text-sm text-base-content/70">Harap tunggu sebentar.</p>
-				{/if}
-			</div>
-		</svelte:fragment>
-		<svelte:fragment slot="error-state">
-			<div class="p-8 text-center text-error">
-				<p>Tidak dapat terhubung ke database.</p>
-				<button
-					class="btn btn-outline btn-sm mt-4"
-					on:click={() => fetchTableData(currentSort, currentFilters, currentPage)}
-				>
-					Coba Lagi
-				</button>
+				<p class="text-sm text-base-content/70">Harap tunggu sebentar.</p>
 			</div>
 		</svelte:fragment>
 		<svelte:fragment slot="row-actions" let:row>
