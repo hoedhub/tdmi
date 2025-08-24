@@ -1,7 +1,5 @@
 <script lang="ts">
 	// This component is now fully theme-agnostic and uses standard DaisyUI classes.
-	// It uses semantic DaisyUI classes like `bg-neutral`.
-	// The active theme is responsible for defining the color of `neutral`.
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
@@ -10,6 +8,11 @@
 	import { absoluteDropdownStore } from '$lib/stores/absoluteDropdown';
 	import { tooltipStore } from '$lib/stores/tooltipStore';
 	import { themeStore } from '$lib/stores/themeStore';
+	import { setPreference } from '$lib/stores/preferenceService';
+
+	// Import content components for the dropdown
+	import ThemePicker from './ThemePicker.svelte';
+	import UserMenu from './UserMenu.svelte';
 
 	import {
 		Home,
@@ -21,26 +24,12 @@
 		CalendarRange
 	} from 'lucide-svelte';
 
-	let isSidebarOpen = false;
-	let isSidebarCollapsed = false;
+	// Initialize state from the class set by the inline script to prevent flash
+	let isSidebarCollapsed =
+		typeof document !== 'undefined' && document.documentElement.classList.contains('sidebar-collapsed');
+	let isSidebarOpen = false; // For mobile drawer state
 	let userButtonEl: HTMLButtonElement;
 	let themeButtonEl: HTMLButtonElement;
-
-	$: if (typeof window !== 'undefined' && $page.data.user) {
-		const userId = $page.data.user.id;
-		const savedSidebarState = localStorage.getItem(`${userId}-sidebar-collapsed`);
-		isSidebarCollapsed = savedSidebarState ? JSON.parse(savedSidebarState) : false;
-	}
-
-	async function logout() {
-		if (!confirm("You're about to logout... Are you sure?")) return;
-		const response = await fetch('/api/logout', { method: 'POST' });
-		if (response.ok) {
-			goto('/login');
-		} else {
-			console.error('Logout failed');
-		}
-	}
 
 	const menuItems = [
 		{ href: '/', label: 'Dashboard', icon: Home },
@@ -51,20 +40,19 @@
 
 	function handleUserMenuClick() {
 		const rect = userButtonEl.getBoundingClientRect();
-		absoluteDropdownStore.toggle(rect, 'user', 'up');
+		absoluteDropdownStore.toggle(rect, UserMenu, 'up');
 	}
 
 	function handleThemeMenuClick() {
 		const rect = themeButtonEl.getBoundingClientRect();
-		absoluteDropdownStore.toggle(rect, 'theme', 'up');
+		absoluteDropdownStore.toggle(rect, ThemePicker, 'up');
 	}
 
 	function toggleSidebar() {
 		isSidebarCollapsed = !isSidebarCollapsed;
-		if (typeof window !== 'undefined') {
-			const userId = $page.data.user?.id || 'default';
-			localStorage.setItem(`${userId}-sidebar-collapsed`, JSON.stringify(isSidebarCollapsed));
-		}
+		// Update the global class and use the centralized service to save the preference
+		document.documentElement.classList.toggle('sidebar-collapsed', isSidebarCollapsed);
+		setPreference($page.data.user, 'sidebar-collapsed', isSidebarCollapsed);
 	}
 
 	function showTooltip(event: MouseEvent, content: string) {
@@ -79,21 +67,12 @@
 	}
 
 	onMount(() => {
-		if (typeof window !== 'undefined') {
-			const userId = $page.data.user?.id || 'default';
-			const savedTheme = localStorage.getItem(`${userId}-theme`);
-			if (savedTheme) {
-				themeStore.set(savedTheme);
-			}
-			document.documentElement.setAttribute('data-theme', $themeStore);
-
-			const savedSidebarState = localStorage.getItem(`${userId}-sidebar-collapsed`);
-			if (savedSidebarState) {
-				isSidebarCollapsed = JSON.parse(savedSidebarState);
-			}
-		}
+		// Ensure the component's reactive state is correct on mount, reading from the DOM
+		// which was set by the early script.
+		isSidebarCollapsed = document.documentElement.classList.contains('sidebar-collapsed');
 	});
 
+	// When the store changes, update the data-theme attribute
 	$: if (typeof document !== 'undefined') {
 		document.documentElement.setAttribute('data-theme', $themeStore);
 	}
@@ -139,7 +118,10 @@
 	</div>
 
 	<!-- Sidebar -->
-	<aside class="drawer-side z-30 transition-all duration-300" class:collapsed={isSidebarCollapsed}>
+	<aside
+		class="drawer-side z-30 transition-all duration-300 shadow-sidebar"
+		class:collapsed={isSidebarCollapsed}
+	>
 		<label for="sidebar-drawer-toggle" aria-label="close sidebar" class="drawer-overlay"></label>
 
 		<!-- Responsive Sidebar Structure -->
@@ -186,7 +168,6 @@
 								on:click={() => (isSidebarOpen = false)}
 								on:mouseenter={(e) => showTooltip(e, item.label)}
 								on:mouseleave={hideTooltip}
-								title={item.label}
 							>
 								<svelte:component this={item.icon} size={20} class="opacity-75" />
 								<span class:md:hidden={isSidebarCollapsed}>{item.label}</span>
@@ -206,7 +187,6 @@
 								on:click={() => (isSidebarOpen = false)}
 								on:mouseenter={(e) => showTooltip(e, 'Admin')}
 								on:mouseleave={hideTooltip}
-								title="Admin"
 							>
 								<ChartNoAxesGantt size={20} class="opacity-75" />
 								<span class:md:hidden={isSidebarCollapsed}>{'Admin'}</span>

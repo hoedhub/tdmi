@@ -1,9 +1,45 @@
 <!doctype html>
-<html lang="en" data-theme="slack-pro-light">
+<html lang="en">
 	<head>
 		<meta charset="utf-8" />
 		<link rel="icon" href="%sveltekit.assets%/favicon.jpg" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<script>
+			// This script runs before the body is rendered to prevent visual flashes.
+			(function () {
+				try {
+					const defaultTheme = 'slack-pro-light';
+					let theme = defaultTheme;
+					let isCollapsed = false;
+
+					// Get the last active user ID to find their preferences
+					const lastActiveUser = localStorage.getItem('lastActiveUser');
+
+					if (lastActiveUser) {
+						// --- THEME LOGIC ---
+						const savedTheme = localStorage.getItem(`${lastActiveUser}-theme`);
+						if (savedTheme) {
+							// The value is stored as a JSON string (e.g., "cupcake"), so parse it.
+							theme = JSON.parse(savedTheme);
+						}
+
+						// --- SIDEBAR LOGIC ---
+						const savedSidebarState = localStorage.getItem(`${lastActiveUser}-sidebar-collapsed`);
+						if (savedSidebarState) {
+							isCollapsed = JSON.parse(savedSidebarState);
+						}
+					}
+
+					// Apply the determined settings
+					document.documentElement.setAttribute('data-theme', theme);
+					if (isCollapsed) {
+						document.documentElement.classList.add('sidebar-collapsed');
+					}
+				} catch (e) {
+					// Ignore errors in case localStorage is disabled or data is corrupt.
+				}
+			})();
+		</script>
 		%sveltekit.head%
 	</head>
 

@@ -4,7 +4,11 @@ export default {
 	content: ['./src/**/*.{html,js,svelte,ts}'],
 
 	theme: {
-		extend: {}
+		extend: {
+			boxShadow: {
+				sidebar: '0 15px 25px -5px rgb(0 0 0 / 0.2), 0 8px 10px -6px rgb(0 0 0 / 0.15)'
+			}
+		}
 	},
 
 	plugins: [require('@tailwindcss/typography'), require('daisyui')],

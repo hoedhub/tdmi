@@ -1,77 +1,48 @@
+import type { ComponentType } from 'svelte';
 import { writable } from 'svelte/store';
+import { browser } from '$app/environment';
 
-interface DropdownState {
+interface AbsoluteDropdownStore {
 	isOpen: boolean;
-	position: { top: number; left: number; right: number; bottom: number };
-	content: 'user' | 'theme' | 'monthPicker' | null;
+	position: DOMRect | null; // Can be null on the server
 	direction: 'up' | 'down';
-	data?: any;
+	component: ComponentType | null;
+	data: any;
 }
 
-function createDropdownStore() {
-	const { subscribe, set, update } = writable<DropdownState>({
+function createAbsoluteDropdownStore() {
+	const { subscribe, set, update } = writable<AbsoluteDropdownStore>({
 		isOpen: false,
-		position: { top: 0, left: 0, right: 0, bottom: 0 },
-		content: null,
+		position: null, // Initialize with null
 		direction: 'down',
+		component: null,
 		data: null
 	});
 
 	return {
 		subscribe,
-		open: (
-			position: DOMRect,
-			content: 'user' | 'theme' | 'monthPicker',
-			direction: 'up' | 'down' = 'down',
-			data?: any
-		) => {
-			set({
-				isOpen: true,
-				position: {
-					top: position.top,
-					left: position.left,
-					right: position.right,
-					bottom: position.bottom
-				},
-				content,
-				direction,
-				data
-			});
-		},
-		close: () => {
-			set({
-				isOpen: false,
-				position: { top: 0, left: 0, right: 0, bottom: 0 },
-				content: null,
-				direction: 'down',
-				data: null
-			});
-		},
 		toggle: (
 			position: DOMRect,
-			content: 'user' | 'theme' | 'monthPicker',
+			component: ComponentType,
 			direction: 'up' | 'down' = 'down',
-			data?: any
+			data: any = null
 		) => {
 			update((state) => {
-				if (state.isOpen && state.content === content) {
+				if (state.isOpen && state.component === component) {
 					return { ...state, isOpen: false };
 				}
-				return {
-					isOpen: true,
-					position: {
-						top: position.top,
-						left: position.left,
-						right: position.right,
-						bottom: position.bottom
-					},
-					content,
-					direction,
-					data
-				};
+				return { isOpen: true, position, component, direction, data };
 			});
-		}
+		},
+		close: () =>
+			set({
+				isOpen: false,
+				position: null,
+				component: null,
+				direction: 'down',
+				data: null
+			})
 	};
 }
 
-export const absoluteDropdownStore = createDropdownStore();
+export const absoluteDropdownStore = createAbsoluteDropdownStore();
