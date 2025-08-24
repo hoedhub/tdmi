@@ -1,10 +1,18 @@
 import type { Config } from 'tailwindcss';
+import defaultTheme from 'tailwindcss/defaultTheme';
 
 export default {
 	content: ['./src/**/*.{html,js,svelte,ts}'],
 
 	theme: {
 		extend: {
+			fontFamily: {
+				// THE DEFINITIVE FIX:
+				// 1. Start with our desired Latin font ('Inter').
+				// 2. Immediately provide our custom Arabic font ('Noto Naskh Arabic').
+				// 3. Then, spread the rest of the default system fonts as the final fallback.
+				sans: ['Inter', 'Noto Naskh Arabic', ...defaultTheme.fontFamily.sans]
+			},
 			boxShadow: {
 				sidebar: '0 15px 25px -5px rgb(0 0 0 / 0.2), 0 8px 10px -6px rgb(0 0 0 / 0.15)'
 			}
@@ -52,13 +60,9 @@ export default {
 					primary: '#611f69',
 					secondary: '#4A154B',
 					accent: '#2EB67D',
-					
-					// THE KEY CHANGE: Redefine neutral colors for this theme
-					neutral: '#4A154B', // Slack Aubergine for the sidebar
-					'neutral-content': '#FFFFFF', // White text on the purple sidebar
-					
-					'base-100': '#FFFFFF', // White main content area
-					
+					neutral: '#4A154B',
+					'neutral-content': '#FFFFFF',
+					'base-100': '#FFFFFF',
 					info: '#36C5F0',
 					success: '#2EB67D',
 					warning: '#ECB22E',
@@ -72,13 +76,9 @@ export default {
 					primary: '#8E458E',
 					secondary: '#36C5F0',
 					accent: '#2EB67D',
-
-					// THE KEY CHANGE: Redefine neutral colors for this theme
-					neutral: '#19171D', // Dark purple/black for sidebar
-					'neutral-content': '#D1D2D3', // Light gray text
-					
-					'base-100': '#1A1D21', // Dark main content area
-
+					neutral: '#19171D',
+					'neutral-content': '#D1D2D3',
+					'base-100': '#1A1D21',
 					info: '#36C5F0',
 					success: '#2EB67D',
 					warning: '#ECB22E',

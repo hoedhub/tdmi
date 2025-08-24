@@ -1,3 +1,18 @@
+/* Impor Font dari Google Fonts (harus paling atas) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+
+/* Impor Tailwind */
 @import 'tailwindcss/base';
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
+
+/* Tambahkan gaya kustom ke layer 'base' Tailwind */
+@layer base {
+	@font-face {
+		font-family: 'Noto Naskh Arabic';
+		font-style: normal;
+		font-weight: 400 700; /* Rentang untuk variable font */
+		font-display: swap;
+		src: url(/fonts/NotoNaskhArabic-VariableFont_wght.ttf) format('truetype');
+	}
+}
