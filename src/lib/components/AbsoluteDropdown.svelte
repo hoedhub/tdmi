@@ -5,11 +5,14 @@
 	import { goto } from '$app/navigation';
 	import { UserPen, LogOut } from 'lucide-svelte';
 	import MonthPickerDropdown from './MonthPickerDropdown.svelte';
+	import { themeStore } from '$lib/stores/themeStore';
 
 	let menuElement: HTMLUListElement;
 	let menuStyle = '';
 
 	const themes = [
+		'slack-pro-light',
+		'slack-pro-dark',
 		'light',
 		'dark',
 		'cupcake',
@@ -43,12 +46,11 @@
 		'nord',
 		'sunset'
 	];
-	let currentTheme = 'cupcake'; // Default theme
 
 	function toggleTheme(theme: string) {
-		if (currentTheme === theme) return;
+		if ($themeStore === theme) return;
 		document.documentElement.setAttribute('data-theme', theme);
-		currentTheme = theme;
+		themeStore.set(theme); // Update the store
 		localStorage.setItem(`${$page.data.user?.id || 'default'}-theme`, theme);
 		absoluteDropdownStore.close();
 	}
@@ -95,7 +97,7 @@
 		if (typeof window !== 'undefined') {
 			const savedTheme = localStorage.getItem(`${$page.data.user?.id || 'default'}-theme`);
 			if (savedTheme) {
-				currentTheme = savedTheme;
+				themeStore.set(savedTheme); // Initialize store on mount
 			}
 		}
 	});
@@ -131,12 +133,12 @@
 			{#each themes as theme}
 				<li>
 					<button
-						class:active={currentTheme === theme}
+						class:active={$themeStore === theme}
 						on:click|preventDefault={() => toggleTheme(theme)}
 						on:mouseover|preventDefault={() => previewTheme(theme)}
 						on:focus|preventDefault={() => previewTheme(theme)}
-						on:mouseleave|preventDefault={() => previewTheme(currentTheme)}
-						on:blur|preventDefault={() => previewTheme(currentTheme)}
+						on:mouseleave|preventDefault={() => previewTheme($themeStore)}
+						on:blur|preventDefault={() => previewTheme($themeStore)}
 					>
 						{theme}
 					</button>

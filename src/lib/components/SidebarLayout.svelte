@@ -1,52 +1,43 @@
 <script lang="ts">
+	// This component is now fully theme-agnostic and uses standard DaisyUI classes.
+	// It uses semantic DaisyUI classes like `bg-neutral`.
+	// The active theme is responsible for defining the color of `neutral`.
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
-	import { ChartNoAxesGantt, User, ChevronsLeft } from 'lucide-svelte'; // Import User icon
-	import logo from '$lib/assets/TDMI-Logo-0002.jpg'; // Import your logo if needed
+	import { ChartNoAxesGantt, User, ChevronsLeft } from 'lucide-svelte';
+	import logo from '$lib/assets/TDMI-Logo-0002.jpg';
 	import { absoluteDropdownStore } from '$lib/stores/absoluteDropdown';
 	import { tooltipStore } from '$lib/stores/tooltipStore';
+	import { themeStore } from '$lib/stores/themeStore';
 
-	// Import Lucide icons
 	import {
 		Home,
 		Settings,
-		UserPen,
 		Users,
 		Menu as MenuIcon,
-		LogOut,
 		UserCircle,
 		Palette,
 		CalendarRange
 	} from 'lucide-svelte';
-	// For SvelteKit, you might use: import { page } from '$app/stores';
 
-	let isSidebarOpen = false; // For mobile drawer state
-	let isSidebarCollapsed = false; // For desktop collapsed state
-	let currentPath = '';
-	let isDarkMode = false; // Simple state for theme toggle example
+	let isSidebarOpen = false;
+	let isSidebarCollapsed = false;
 	let userButtonEl: HTMLButtonElement;
 	let themeButtonEl: HTMLButtonElement;
 
-	// Reload state when user changes
 	$: if (typeof window !== 'undefined' && $page.data.user) {
 		const userId = $page.data.user.id;
 		const savedSidebarState = localStorage.getItem(`${userId}-sidebar-collapsed`);
-		if (savedSidebarState) {
-			isSidebarCollapsed = JSON.parse(savedSidebarState);
-		} else {
-			isSidebarCollapsed = false;
-		}
+		isSidebarCollapsed = savedSidebarState ? JSON.parse(savedSidebarState) : false;
 	}
 
 	async function logout() {
 		if (!confirm("You're about to logout... Are you sure?")) return;
 		const response = await fetch('/api/logout', { method: 'POST' });
 		if (response.ok) {
-			// Redirect or update UI as needed
-			goto('/login'); // or wherever you want to redirect after logout
+			goto('/login');
 		} else {
-			// Handle error
 			console.error('Logout failed');
 		}
 	}
@@ -55,45 +46,8 @@
 		{ href: '/', label: 'Dashboard', icon: Home },
 		{ href: '/member/pendataan', label: 'Pendataan', icon: Users },
 		{ href: '/member/nasyath_mun', label: 'Nasyath MUN', icon: CalendarRange },
-		// { href: '/member/profile', label: 'Edit Profile', icon: UserPen },
 		{ href: '/settings', label: 'Settings', icon: Settings }
 	];
-
-	const themes = [
-		'light',
-		'dark',
-		'cupcake',
-		'bumblebee',
-		'emerald',
-		'corporate',
-		'synthwave',
-		'retro',
-		'cyberpunk',
-		'valentine',
-		'halloween',
-		'garden',
-		'forest',
-		'aqua',
-		'lofi',
-		'pastel',
-		'fantasy',
-		'wireframe',
-		'black',
-		'luxury',
-		'dracula',
-		'cmyk',
-		'autumn',
-		'business',
-		'acid',
-		'lemonade',
-		'night',
-		'coffee',
-		'winter',
-		'dim',
-		'nord',
-		'sunset'
-	];
-	let currentTheme = 'cupcake'; // Default theme
 
 	function handleUserMenuClick() {
 		const rect = userButtonEl.getBoundingClientRect();
@@ -128,10 +82,10 @@
 		if (typeof window !== 'undefined') {
 			const userId = $page.data.user?.id || 'default';
 			const savedTheme = localStorage.getItem(`${userId}-theme`);
-			if (savedTheme && currentTheme !== savedTheme) {
-				currentTheme = savedTheme;
-				document.documentElement.setAttribute('data-theme', savedTheme);
+			if (savedTheme) {
+				themeStore.set(savedTheme);
 			}
+			document.documentElement.setAttribute('data-theme', $themeStore);
 
 			const savedSidebarState = localStorage.getItem(`${userId}-sidebar-collapsed`);
 			if (savedSidebarState) {
@@ -139,6 +93,10 @@
 			}
 		}
 	});
+
+	$: if (typeof document !== 'undefined') {
+		document.documentElement.setAttribute('data-theme', $themeStore);
+	}
 </script>
 
 <div class="drawer relative md:drawer-open">
@@ -186,7 +144,7 @@
 
 		<!-- Responsive Sidebar Structure -->
 		<div
-			class="h-full w-64 bg-base-200 text-base-content transition-all duration-300"
+			class="h-full w-64 bg-neutral text-neutral-content transition-all duration-300"
 			class:md:w-14={isSidebarCollapsed}
 			class:md:w-72={!isSidebarCollapsed}
 		>
@@ -276,7 +234,7 @@
 						on:mouseleave={hideTooltip}
 					>
 						<Palette size={24} />
-						<span class:md:hidden={isSidebarCollapsed} class="truncate">Theme: {currentTheme}</span>
+						<span class:md:hidden={isSidebarCollapsed} class="truncate">Theme: {$themeStore}</span>
 					</button>
 
 					<!-- User Profile Dropdown -->
@@ -333,12 +291,9 @@
 			padding: 0;
 			align-items: center;
 		}
-
 		:global(.drawer-side.collapsed .menu) {
 			padding-inline: 0.5rem; /* 8px */
 		}
-
-		/* Hide text span inside links when collapsed */
 		:global(.drawer-side.collapsed .menu li a span) {
 			display: none;
 		}
