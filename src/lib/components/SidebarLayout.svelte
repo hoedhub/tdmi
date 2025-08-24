@@ -245,8 +245,9 @@
 	<!-- Toggle Button (Desktop Only) -->
 	<button
 		on:click={toggleSidebar}
-		class="btn btn-circle btn-ghost btn-sm absolute z-40 hidden transition-all duration-300 md:flex"
-		style="top: {isSidebarCollapsed ? '2.25rem' : '3.5rem'}; transform: translateY(-50%);"
+		class="btn btn-circle btn-ghost btn-sm absolute z-40 hidden -translate-y-1/2 transition-all duration-300 md:flex"
+		class:top-9={!isSidebarCollapsed}
+		class:top-[2.25rem]={isSidebarCollapsed}
 		class:left-14={isSidebarCollapsed}
 		class:left-72={!isSidebarCollapsed}
 		aria-label="Toggle sidebar"

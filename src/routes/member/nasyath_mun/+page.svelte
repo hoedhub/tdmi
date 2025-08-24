@@ -36,6 +36,7 @@
 	import { loading as showLoadingToast, update, success, error } from '$lib/components/toast';
 	import type { ActionResult } from '@sveltejs/kit';
 	import { api } from '$lib/utils/api';
+	import MonthPickerDropdown from '$lib/components/MonthPickerDropdown.svelte';
 
 	// 2. PROPS
 	interface ChartData {
@@ -567,7 +568,7 @@
 	function showMonthPicker(event: MouseEvent) {
 		const btn = event.currentTarget as HTMLElement;
 		const rect = btn.getBoundingClientRect();
-		absoluteDropdownStore.toggle(rect, 'monthPicker', 'down', {
+		absoluteDropdownStore.toggle(rect, MonthPickerDropdown, 'down', {
 			initialDate: selectedDate,
 			onChange: handleMonthChange
 		});

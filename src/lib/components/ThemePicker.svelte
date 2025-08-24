@@ -4,8 +4,6 @@
 	import { absoluteDropdownStore } from '$lib/stores/absoluteDropdown';
 	import { setPreference } from '$lib/stores/preferenceService';
 
-	export let data: any; // Accept the data prop
-
 	const themes = [
 		'slack-pro-light',
 		'slack-pro-dark',

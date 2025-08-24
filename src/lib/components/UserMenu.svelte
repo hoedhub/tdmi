@@ -4,8 +4,6 @@
 	import { UserPen, LogOut } from 'lucide-svelte';
 	import { absoluteDropdownStore } from '$lib/stores/absoluteDropdown';
 
-	export let data: any; // Accept the data prop to conform to the dropdown's interface
-
 	async function logout() {
 		if (!confirm("You're about to logout... Are you sure?")) return;
 		const response = await fetch('/api/logout', { method: 'POST' });

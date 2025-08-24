@@ -1,5 +1,5 @@
 import { browser } from '$app/environment';
-import type { App } from '$lib/types'; // Assuming you might have a type for User
+import type { User } from 'lucia';
 
 // This service centralizes all user preference interactions with localStorage.
 
@@ -9,7 +9,7 @@ import type { App } from '$lib/types'; // Assuming you might have a type for Use
  * @param key The name of the preference (e.g., 'theme', 'sidebar-collapsed').
  * @param value The value to store.
  */
-export function setPreference(user: App.User | null | undefined, key: string, value: any) {
+export function setPreference(user: User | null | undefined, key: string, value: any) {
 	if (!browser || !user) return;
 
 	try {

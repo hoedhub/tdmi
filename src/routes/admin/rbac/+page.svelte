@@ -185,7 +185,7 @@
 </script>
 
 <div class="h-full p-4 md:p-6">
-	<div class="flex flex-col gap-6 md:flex-row md:gap-8" style="height: calc(100vh - 8rem);">
+	<div class="flex flex-col gap-6 md:flex-row md:gap-8 h-[calc(100vh-8rem)]">
 		<!-- Panel Kiri (Desktop-only): Daftar Peran -->
 		<aside class="card hidden w-full flex-col bg-base-200 shadow-lg md:flex md:w-1/3 lg:w-1/4">
 			<div class="border-b border-base-300 p-4">
