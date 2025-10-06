@@ -49,6 +49,7 @@
 		"@libsql/client": "^0.15.8",
 		"@lucia-auth/adapter-drizzle": "^1.1.0",
 		"@types/lodash.debounce": "^4.0.9",
+		"@vercel/speed-insights": "^1.2.0",
 		"chart.js": "^4.5.0",
 		"cloudinary": "^2.7.0",
 		"compressorjs": "^1.2.1",

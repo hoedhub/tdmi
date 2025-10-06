@@ -34,6 +34,6 @@
 		style={menuStyle}
 		class="fixed z-50 rounded-box bg-base-300 shadow-lg"
 	>
-		<svelte:component this={$absoluteDropdownStore.component} data={$absoluteDropdownStore.data} />
+		<svelte:component this={$absoluteDropdownStore.component} {...$absoluteDropdownStore.data} />
 	</div>
 {/if}

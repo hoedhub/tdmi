@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { absoluteDropdownStore } from '$lib/stores/absoluteDropdown';
 
-	export let initialDate: Date;
-	export let onChange: (date: Date) => void;
+	export let initialDate: Date = new Date();
+	export let onChange: (date: Date) => void = () => {};
 
 	let selectedDate = initialDate;
 	let pickerYear = selectedDate.getFullYear();
