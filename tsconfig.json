@@ -16,9 +16,7 @@
 		"useDefineForClassFields": true,
 		"module": "ESNext",
 		"isolatedModules": true,
-		"preserveValueImports": false,
-		"importsNotUsedAsValues": "remove",
-		"verbatimModuleSyntax": true,
+		"allowArbitraryExtensions": true,
 		"baseUrl": ".",
 		"paths": {
 			"$lib": ["src/lib"],
