@@ -14,36 +14,47 @@
 	const dispatch = createEventDispatcher();
 
 	// --- PROPS ---
-	export let selectedPropinsi: Propinsi | null = null;
-	export let selectedKokab: Kokab | null = null;
-	export let selectedKecamatan: Kecamatan | null = null;
-	export let deskelId: number | undefined = undefined;
-	export let alamat: string = '';
 
 	// --- INTERNAL STATE ---
-	export let propinsiList: Propinsi[] = [];
-	let kokabList: Kokab[] = [];
-	let kecamatanList: Kecamatan[] = [];
-	let deskelList: Deskel[] = [];
+	interface Props {
+		selectedPropinsi?: Propinsi | null;
+		selectedKokab?: Kokab | null;
+		selectedKecamatan?: Kecamatan | null;
+		deskelId?: number | undefined;
+		alamat?: string;
+		propinsiList?: Propinsi[];
+	}
+
+	let {
+		selectedPropinsi = $bindable(null),
+		selectedKokab = $bindable(null),
+		selectedKecamatan = $bindable(null),
+		deskelId = $bindable(undefined),
+		alamat = $bindable(''),
+		propinsiList = $bindable([])
+	}: Props = $props();
+	let kokabList: Kokab[] = $state([]);
+	let kecamatanList: Kecamatan[] = $state([]);
+	let deskelList: Deskel[] = $state([]);
 
 	// Loading indicators for user feedback
-	let loadingPropinsi = false;
-	let loadingKokab = false;
-	let loadingKecamatan = false;
-	let loadingDeskel = false;
-	let initialLoading = false; // For the initial load in edit mode
+	let loadingPropinsi = $state(false);
+	let loadingKokab = $state(false);
+	let loadingKecamatan = $state(false);
+	let loadingDeskel = $state(false);
+	let initialLoading = $state(false); // For the initial load in edit mode
 
 	// Error state variables
-	let propinsiError = false;
-	let kokabError = false;
-	let kecamatanError = false;
-	let deskelError = false;
+	let propinsiError = $state(false);
+	let kokabError = $state(false);
+	let kecamatanError = $state(false);
+	let deskelError = $state(false);
 
 	// Search state for each dropdown
-	let propinsiSearchTerm = '';
-	let kokabSearchTerm = '';
-	let kecamatanSearchTerm = '';
-	let deskelSearchTerm = '';
+	let propinsiSearchTerm = $state('');
+	let kokabSearchTerm = $state('');
+	let kecamatanSearchTerm = $state('');
+	let deskelSearchTerm = $state('');
 
 	// --- DATA FETCHING & LOGIC ---
 
@@ -254,25 +265,25 @@
 	}
 
 	// --- REACTIVE STATEMENTS FOR FILTERING ---
-	$: filteredPropinsiList = propinsiSearchTerm
+	let filteredPropinsiList = $derived(propinsiSearchTerm
 		? propinsiList.filter((p) =>
 				p.propinsi.toLowerCase().includes(propinsiSearchTerm.toLowerCase())
 			)
-		: propinsiList;
+		: propinsiList);
 
-	$: filteredKokabList = kokabSearchTerm
+	let filteredKokabList = $derived(kokabSearchTerm
 		? kokabList.filter((k) => k.kokab.toLowerCase().includes(kokabSearchTerm.toLowerCase()))
-		: kokabList;
+		: kokabList);
 
-	$: filteredKecamatanList = kecamatanSearchTerm
+	let filteredKecamatanList = $derived(kecamatanSearchTerm
 		? kecamatanList.filter((k) =>
 				k.kecamatan.toLowerCase().includes(kecamatanSearchTerm.toLowerCase())
 			)
-		: kecamatanList;
+		: kecamatanList);
 
-	$: filteredDeskelList = deskelSearchTerm
+	let filteredDeskelList = $derived(deskelSearchTerm
 		? deskelList.filter((d) => d.deskel.toLowerCase().includes(deskelSearchTerm.toLowerCase()))
-		: deskelList;
+		: deskelList);
 </script>
 
 <div class="space-y-4">
@@ -288,7 +299,7 @@
 					: ''}"
 			>
 				{#if initialLoading || loadingPropinsi}
-					<span class="loading loading-spinner loading-xs" />
+					<span class="loading loading-spinner loading-xs"></span>
 					<span class="ml-2">Memuat...</span>
 				{:else}
 					{selectedPropinsi?.propinsi || 'Pilih propinsi...'}
@@ -311,14 +322,14 @@
 					{:else if propinsiError}
 						<li class="menu-title text-error">Gagal memuat data.</li>
 						<li>
-							<button type="button" on:click={loadPropinsi}>Coba Lagi</button>
+							<button type="button" onclick={loadPropinsi}>Coba Lagi</button>
 						</li>
 					{:else if filteredPropinsiList.length === 0}
 						<li class="menu-title">Tidak ditemukan.</li>
 					{/if}
 					{#each filteredPropinsiList as propinsi (propinsi.id)}
 						<li>
-							<button type="button" on:click={() => handlePropinsiSelect(propinsi)}>
+							<button type="button" onclick={() => handlePropinsiSelect(propinsi)}>
 								{propinsi.propinsi}
 								<svg
 									class:text-transparent={selectedPropinsi?.id !== propinsi.id}
@@ -354,7 +365,7 @@
 					: ''}"
 			>
 				{#if loadingKokab}
-					<span class="loading loading-spinner loading-xs" />
+					<span class="loading loading-spinner loading-xs"></span>
 				{:else}
 					{selectedKokab?.kokab || 'Pilih kota/kabupaten...'}
 				{/if}
@@ -376,7 +387,7 @@
 					{:else if kokabError}
 						<li class="menu-title text-error">Gagal memuat data.</li>
 						<li>
-							<button type="button" on:click={loadKokab}>Coba Lagi</button>
+							<button type="button" onclick={loadKokab}>Coba Lagi</button>
 						</li>
 					{:else if !selectedPropinsi}
 						<li class="menu-title">Pilih propinsi dahulu.</li>
@@ -385,7 +396,7 @@
 					{/if}
 					{#each filteredKokabList as kokab (kokab.id)}
 						<li>
-							<button type="button" on:click={() => handleKokabSelect(kokab)}>
+							<button type="button" onclick={() => handleKokabSelect(kokab)}>
 								{kokab.kokab}
 								<svg
 									class:text-transparent={selectedKokab?.id !== kokab.id}
@@ -421,7 +432,7 @@
 					: ''}"
 			>
 				{#if loadingKecamatan}
-					<span class="loading loading-spinner loading-xs" />
+					<span class="loading loading-spinner loading-xs"></span>
 				{:else}
 					{selectedKecamatan?.kecamatan || 'Pilih kecamatan...'}
 				{/if}
@@ -443,7 +454,7 @@
 					{:else if kecamatanError}
 						<li class="menu-title text-error">Gagal memuat data.</li>
 						<li>
-							<button type="button" on:click={loadKecamatan}>Coba Lagi</button>
+							<button type="button" onclick={loadKecamatan}>Coba Lagi</button>
 						</li>
 					{:else if !selectedKokab}
 						<li class="menu-title">Pilih kota/kabupaten dahulu.</li>
@@ -452,7 +463,7 @@
 					{/if}
 					{#each filteredKecamatanList as kecamatan (kecamatan.id)}
 						<li>
-							<button type="button" on:click={() => handleKecamatanSelect(kecamatan)}>
+							<button type="button" onclick={() => handleKecamatanSelect(kecamatan)}>
 								{kecamatan.kecamatan}
 								<svg
 									class:text-transparent={selectedKecamatan?.id !== kecamatan.id}
@@ -488,7 +499,7 @@
 					: ''}"
 			>
 				{#if loadingDeskel}
-					<span class="loading loading-spinner loading-xs" />
+					<span class="loading loading-spinner loading-xs"></span>
 				{:else}
 					{deskelList.find((d) => d.id === deskelId)?.deskel || 'Pilih desa/kelurahan...'}
 				{/if}
@@ -510,7 +521,7 @@
 					{:else if deskelError}
 						<li class="menu-title text-error">Gagal memuat data.</li>
 						<li>
-							<button type="button" on:click={loadDeskel}>Coba Lagi</button>
+							<button type="button" onclick={loadDeskel}>Coba Lagi</button>
 						</li>
 					{:else if !selectedKecamatan}
 						<li class="menu-title">Pilih kecamatan dahulu.</li>
@@ -519,7 +530,7 @@
 					{/if}
 					{#each filteredDeskelList as deskel (deskel.id)}
 						<li>
-							<button type="button" on:click={() => handleDeskelSelect(deskel)}>
+							<button type="button" onclick={() => handleDeskelSelect(deskel)}>
 								{deskel.deskel}
 								<svg
 									class:text-transparent={deskelId !== deskel.id}
@@ -548,10 +559,10 @@
 		<textarea
 			id="alamat"
 			bind:value={alamat}
-			on:input={handleAlamatChange}
+			oninput={handleAlamatChange}
 			class="textarea textarea-bordered w-full"
 			placeholder="Dusun, nama jalan, RT/RW, dll."
 			rows="2"
-		/>
+		></textarea>
 	</div>
 </div>

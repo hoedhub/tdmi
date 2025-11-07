@@ -2,7 +2,7 @@
 	// 1. IMPORTS
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
-	import { Bar, Pie } from 'svelte-chartjs';
+	// import { Bar, Pie } from 'svelte-chartjs';
 	import {
 		Chart as ChartJS,
 		Title,
@@ -13,7 +13,6 @@
 		LinearScale,
 		ArcElement
 	} from 'chart.js';
-	import PieChart from '$lib/components/PieChart.svelte';
 	import {
 		Calendar,
 		TrendingUp,
@@ -65,10 +64,9 @@
 		message?: string;
 	};
 
-	export let data: PageDataExtended;
 
 	// 3. STATE MANAGEMENT FOR VIEW TOGGLE
-	let currentView: 'dashboard' | 'table' = 'table'; // Default view
+	let currentView: 'dashboard' | 'table' = $state('table'); // Default view
 
 	function setView(view: 'dashboard' | 'table') {
 		currentView = view;
@@ -139,46 +137,7 @@
 		activityCount: number;
 	}
 
-	$: activitiesPerMonth = {
-		labels: data.charts.activitiesPerMonth.map((item: { month: string; count: number }) => {
-			const [year, month] = item.month.split('-');
-			return new Date(Number(year), Number(month) - 1).toLocaleString('default', {
-				month: 'short',
-				year: '2-digit'
-			});
-		}),
-		datasets: [
-			{
-				label: 'Jumlah Kegiatan',
-				data: data.charts.activitiesPerMonth.map((item) => item.count),
-				backgroundColor: 'rgba(54, 162, 235, 0.6)',
-				borderColor: 'rgba(54, 162, 235, 1)',
-				borderWidth: 1
-			}
-		]
-	};
 
-	$: mostActiveMembers = {
-		labels: data.charts.mostActiveMembers.map(
-			(item: MemberActivity) => item.murid?.nama || 'بدون اسم'
-		),
-		datasets: [
-			{
-				data: data.charts.mostActiveMembers.map((item: MemberActivity) => item.activityCount),
-				backgroundColor: [
-					'#FF6384',
-					'#36A2EB',
-					'#FFCE56',
-					'#4BC0C0',
-					'#9966FF',
-					'#FF9F40',
-					'#C7C7C7'
-				],
-				borderColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#C7C7C7'],
-				borderWidth: 1
-			}
-		]
-	};
 
 	const pieChartOptions = {
 		responsive: true,
@@ -276,60 +235,20 @@
 		murid?: { nama: string | null };
 	}
 
-	let nasyathData: NasyathRow[] = [];
-	let totalItems = 0;
-	let loading = true;
+	let nasyathData: NasyathRow[] = $state([]);
+	let totalItems = $state(0);
+	let loading = $state(true);
 	let dbError = false;
-	let pageSize = 10;
+	let pageSize = $state(10);
 	let currentPage = 1;
-	let currentSort: SortConfig[] | undefined = [
+	let currentSort: SortConfig[] | undefined = $state([
 		{ key: 'murid.nama', direction: 'asc' },
 		{ key: 'tanggalMulai', direction: 'asc' }
-	];
+	]);
 	let currentFilters: FilterState = { global: '', columns: {} };
-	let dateFilter: { start: string; end: string } = { start: '', end: '' };
-	let isExporting = false;
+	let dateFilter: { start: string; end: string } = $state({ start: '', end: '' });
+	let isExporting = $state(false);
 
-	$: columns = (() => {
-		const baseColumns: ColumnDef[] = [
-			{ key: 'kegiatan', label: 'النشاط', sortable: true, filterable: 'text' },
-			{
-				key: 'tanggalMulai',
-				label: 'تاريخ البدء',
-				sortable: true,
-				formatter: (value: any) =>
-					value ? toHindi(new Date(value).toLocaleDateString('ar-EG-u-nu-arab')) : '-'
-			},
-			{
-				key: 'tanggalSelesai',
-				label: 'تاريخ الانتهاء',
-				sortable: true,
-				formatter: (value: any) =>
-					value ? toHindi(new Date(value).toLocaleDateString('ar-EG-u-nu-arab')) : '-'
-			},
-			{
-				key: 'durasi',
-				label: 'المدة',
-				sortable: true,
-				filterable: 'text',
-				formatter: (value: any) => toHindi(value)
-			},
-			{ key: 'tempat', label: 'المكان', sortable: true, filterable: 'text' }
-		];
-		if (data && data.canReadAll) {
-			return [
-				{
-					key: 'murid.nama',
-					label: 'الاسم',
-					sortable: true,
-					filterable: 'text',
-					formatter: (value: any, row: NasyathRow) => row.murid?.nama || 'N/A'
-				} as ColumnDef<NasyathRow>,
-				...baseColumns
-			];
-		}
-		return baseColumns;
-	})();
 
 	async function fetchNasyathData(
 		sort?: SortConfig[] | null,
@@ -537,9 +456,14 @@
 	}
 
 	import { absoluteDropdownStore } from '$lib/stores/absoluteDropdown';
+	interface Props {
+		data: PageDataExtended;
+	}
+
+	let { data }: Props = $props();
 
 	// --- MONTH PICKER LOGIC ---
-	let selectedDate = new Date();
+	let selectedDate = $state(new Date());
 	const monthNames = [
 		'يناير',
 		'فبراير',
@@ -554,12 +478,9 @@
 		'نوفمبر',
 		'ديسمبر'
 	];
-	$: monthYearDisplay = `${monthNames[selectedDate.getMonth()]} ${toHindi(
-		selectedDate.getFullYear()
-	)}`;
 
 	// Period Selector
-	let periodType: 'bulan' | 'rentang' = 'bulan';
+	let periodType: 'bulan' | 'rentang' = $state('bulan');
 
 	function handleMonthChange(newDate: Date) {
 		selectedDate = newDate;
@@ -581,6 +502,88 @@
 	function nextMonth() {
 		selectedDate = new Date(selectedDate.setMonth(selectedDate.getMonth() + 1));
 	}
+	let activitiesPerMonth = $derived({
+		labels: data.charts.activitiesPerMonth.map((item: { month: string; count: number }) => {
+			const [year, month] = item.month.split('-');
+			return new Date(Number(year), Number(month) - 1).toLocaleString('default', {
+				month: 'short',
+				year: '2-digit'
+			});
+		}),
+		datasets: [
+			{
+				label: 'Jumlah Kegiatan',
+				data: data.charts.activitiesPerMonth.map((item) => item.count),
+				backgroundColor: 'rgba(54, 162, 235, 0.6)',
+				borderColor: 'rgba(54, 162, 235, 1)',
+				borderWidth: 1
+			}
+		]
+	});
+	let mostActiveMembers = $derived({
+		labels: data.charts.mostActiveMembers.map(
+			(item: MemberActivity) => item.murid?.nama || 'بدون اسم'
+		),
+		datasets: [
+			{
+				data: data.charts.mostActiveMembers.map((item: MemberActivity) => item.activityCount),
+				backgroundColor: [
+					'#FF6384',
+					'#36A2EB',
+					'#FFCE56',
+					'#4BC0C0',
+					'#9966FF',
+					'#FF9F40',
+					'#C7C7C7'
+				],
+				borderColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#C7C7C7'],
+				borderWidth: 1
+			}
+		]
+	});
+	let columns = $derived((() => {
+		const baseColumns: ColumnDef[] = [
+			{ key: 'kegiatan', label: 'النشاط', sortable: true, filterable: 'text' },
+			{
+				key: 'tanggalMulai',
+				label: 'تاريخ البدء',
+				sortable: true,
+				formatter: (value: any) =>
+					value ? toHindi(new Date(value).toLocaleDateString('ar-EG-u-nu-arab')) : '-'
+			},
+			{
+				key: 'tanggalSelesai',
+				label: 'تاريخ الانتهاء',
+				sortable: true,
+				formatter: (value: any) =>
+					value ? toHindi(new Date(value).toLocaleDateString('ar-EG-u-nu-arab')) : '-'
+			},
+			{
+				key: 'durasi',
+				label: 'المدة',
+				sortable: true,
+				filterable: 'text',
+				formatter: (value: any) => toHindi(value)
+			},
+			{ key: 'tempat', label: 'المكان', sortable: true, filterable: 'text' }
+		];
+		if (data && data.canReadAll) {
+			return [
+				{
+					key: 'murid.nama',
+					label: 'الاسم',
+					sortable: true,
+					filterable: 'text',
+					formatter: (value: any, row: NasyathRow) => row.murid?.nama || 'N/A'
+				} as ColumnDef<NasyathRow>,
+				...baseColumns
+			];
+		}
+		return baseColumns;
+	})());
+	let monthYearDisplay = $derived(`${monthNames[selectedDate.getMonth()]} ${toHindi(
+		selectedDate.getFullYear()
+	)}`);
 </script>
 
 <div class="container mx-auto p-4" dir="rtl">
@@ -593,14 +596,14 @@
 			<button
 				class="btn btn-sm"
 				class:btn-active={currentView === 'dashboard'}
-				on:click={() => setView('dashboard')}
+				onclick={() => setView('dashboard')}
 			>
 				<LayoutDashboard class="h-4 w-4" /> Dashboard
 			</button>
 			<button
 				class="btn btn-sm"
 				class:btn-active={currentView === 'table'}
-				on:click={() => setView('table')}
+				onclick={() => setView('table')}
 			>
 				<Table class="h-4 w-4" /> Tabel
 			</button>
@@ -635,7 +638,7 @@
 					<div class="card-body">
 						<h2 class="card-title mb-4">النشاط الشهري (آخر 6 أشهر)</h2>
 						<div class="h-80">
-							<Bar data={activitiesPerMonth} options={barChartOptions} />
+							<!-- <Bar data={activitiesPerMonth} options={barChartOptions} /> -->
 						</div>
 					</div>
 				</div>
@@ -645,7 +648,7 @@
 						<div class="flex h-[400px] items-center justify-center">
 							<div class="h-full w-full overflow-hidden">
 								<div class="h-[320px]">
-									<Pie data={mostActiveMembers} options={pieChartOptions} />
+									<!-- <Pie data={mostActiveMembers} options={pieChartOptions} /> -->
 								</div>
 								<div class="legend-container h-[80px] overflow-y-auto px-4">
 									<!-- Legend akan muncul di sini -->
@@ -702,7 +705,7 @@
 			<div class="flex items-center justify-end gap-2">
 				<button
 					class="btn btn-secondary btn-sm"
-					on:click={handleExport}
+					onclick={handleExport}
 					disabled={isExporting || nasyathData.length === 0 || loading}
 					title={nasyathData.length === 0 ? 'Tidak ada data untuk diekspor' : 'Ekspor data'}
 				>
@@ -728,7 +731,7 @@
 				on:pageChange={handlePageChange}
 				on:itemsPerPageChange={handleItemsPerPageChange}
 			>
-				<svelte:fragment slot="custom-filters"
+				<svelte:fragment slot="customFilters"
 					><div class="flex flex-col flex-wrap items-start gap-4 pt-2 md:flex-row md:items-end">
 						<!-- Period Selector -->
 						<div class="form-control">
@@ -752,13 +755,13 @@
 									><span class="label-text">تحديد الشهر</span></label
 								>
 								<div class="join">
-									<button class="btn join-item btn-sm" on:click={previousMonth}>
+									<button class="btn join-item btn-sm" onclick={previousMonth}>
 										<ChevronRight class="h-4 w-4" />
 									</button>
-									<button class="btn join-item btn-sm w-36 font-normal" on:click={showMonthPicker}>
+									<button class="btn join-item btn-sm w-36 font-normal" onclick={showMonthPicker}>
 										{monthYearDisplay}
 									</button>
-									<button class="btn join-item btn-sm" on:click={nextMonth}>
+									<button class="btn join-item btn-sm" onclick={nextMonth}>
 										<ChevronLeft class="h-4 w-4" />
 									</button>
 								</div>
@@ -790,24 +793,24 @@
 						{/if}
 
 						<div class="flex items-center gap-1">
-							<button class="btn btn-primary btn-sm" on:click={applyFilters}>تصفية</button><button
+							<button class="btn btn-primary btn-sm" onclick={applyFilters}>تصفية</button><button
 								class="btn btn-ghost btn-sm"
-								on:click={resetFilters}>إعادة تعيين</button
+								onclick={resetFilters}>إعادة تعيين</button
 							>
 						</div>
 					</div></svelte:fragment
 				>
-				<div slot="row-actions" let:row class="flex items-center gap-1">
+				<div slot="rowActions" let:row class="flex items-center gap-1">
 					<button
 						class="btn btn-ghost btn-xs"
 						aria-label="Edit item"
-						on:click={() => handleEdit(row.id)}><Edit class="h-4 w-4" /></button
+						onclick={() => handleEdit(row.id)}><Edit class="h-4 w-4" /></button
 					>
 					<form
 						method="POST"
 						action={`/member/nasyath_mun/${row.id}/delete`}
 						use:enhance={handleDeleteSubmit}
-						on:submit|preventDefault={handleSubmit}
+						onsubmit={handleSubmit}
 					>
 						<button type="submit" class="btn btn-ghost btn-xs text-error" aria-label="Delete item"
 							><Trash2 class="h-4 w-4" /></button

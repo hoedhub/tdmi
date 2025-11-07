@@ -1,8 +1,7 @@
-import { SvelteComponent } from 'svelte';
 import type { SortConfig, ColumnDef, FormatterFunction } from '../types';
 
 function isFormatterFunction<T>(formatter: unknown): formatter is FormatterFunction<T> {
-	return typeof formatter === 'function' && !(formatter.prototype instanceof SvelteComponent);
+	return typeof formatter === 'function';
 }
 
 function getValue(obj: any, key: string): any {

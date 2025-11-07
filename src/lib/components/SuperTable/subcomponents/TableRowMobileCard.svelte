@@ -1,6 +1,7 @@
+<!-- @migration-task Error while migrating Svelte code: This migration would change the name of a slot making the component unusable -->
+<!-- @migration-task Error while migrating Svelte code: This migration would change the name of a slot making the component unusable -->
 <!-- TableRowMobileCard.svelte -->
 <script lang="ts" generics="T extends Record<string, any>">
-	import { SvelteComponent } from 'svelte';
 	import type {
 		ColumnDef,
 		SwipeEvent,
@@ -81,7 +82,7 @@
 	}
 
 	function isSvelteComponent<T>(formatter: Formatter<T>): formatter is FormatterComponent {
-		return typeof formatter !== 'function' || formatter.prototype instanceof SvelteComponent;
+		return typeof formatter !== 'function';
 	}
 </script>
 
@@ -169,13 +170,4 @@
 	</div>
 </div>
 
-<style lang="postcss">
-	.card {
-		@apply bg-base-100 shadow-lg;
-		transition: transform 0.2s ease-out;
-	}
-
-	.divider {
-		@apply h-px bg-base-300;
-	}
-</style>
+<style lang="postcss">/*$$__STYLE_CONTENT__$$*/</style>

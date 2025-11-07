@@ -1,16 +1,22 @@
 <script lang="ts">
+	import { preventDefault } from 'svelte/legacy';
+
 	import { onMount, tick } from 'svelte';
 	import type { PageData } from './$types';
 	import { api } from '$lib/utils/api';
 	import { error as toastError, success as toastSuccess } from '$lib/components/toast';
 
-	export let data: PageData;
+	interface Props {
+		data: PageData;
+	}
+
+	let { data }: Props = $props();
 
 	// Reactive state
-	let schedules: any[] = [];
-	let isLoading = true;
-	let showModal = false;
-	let isEditing = false;
+	let schedules: any[] = $state([]);
+	let isLoading = $state(true);
+	let showModal = $state(false);
+	let isEditing = $state(false);
 
 	// Form data
 	let currentSchedule: {
@@ -21,14 +27,14 @@
 		endDate: string;
 		groupId: string;
 		description: string;
-	} = {
+	} = $state({
 		id: null,
 		userId: '',
 		startDate: '',
 		endDate: '',
 		groupId: '',
 		description: ''
-	};
+	});
 
 	// Lifecycle
 	onMount(async () => {
@@ -153,7 +159,7 @@
 		{#if data.permissions.canWrite}
 			<div class="flex gap-2">
 				<a href="/admin/piket/susun" class="btn btn-secondary">Susun Jadwal Putaran</a>
-				<button class="btn btn-primary" on:click={openNewModal}>+ Tambah Jadwal</button>
+				<button class="btn btn-primary" onclick={openNewModal}>+ Tambah Jadwal</button>
 			</div>
 		{/if}
 	</div>
@@ -194,10 +200,10 @@
 						<td>{schedule.description || '-'}</td>
 						{#if data.permissions.canWrite}
 							<td class="flex gap-2">
-								<button class="btn btn-warning btn-sm" on:click={() => openEditModal(schedule)}
+								<button class="btn btn-warning btn-sm" onclick={() => openEditModal(schedule)}
 									>Edit</button
 								>
-								<button class="btn btn-error btn-sm" on:click={() => handleDelete(schedule.id)}
+								<button class="btn btn-error btn-sm" onclick={() => handleDelete(schedule.id)}
 									>Hapus</button
 								>
 							</td>
@@ -215,7 +221,7 @@
 		<div class="modal-box w-11/12 max-w-2xl">
 			<h3 class="text-lg font-bold">{isEditing ? 'Edit' : 'Tambah'} Jadwal Ruasa'</h3>
 
-			<form on:submit|preventDefault={handleSubmit}>
+			<form onsubmit={preventDefault(handleSubmit)}>
 				<div class="form-control mt-4">
 					<label for="user" class="label"><span class="label-text">Pengguna</span></label>
 					<select
@@ -282,7 +288,7 @@
 				</div>
 
 				<div class="modal-action mt-6">
-					<button type="button" class="btn" on:click={closeModal}>Batal</button>
+					<button type="button" class="btn" onclick={closeModal}>Batal</button>
 					<button type="submit" class="btn btn-primary">{isEditing ? 'Simpan' : 'Tambah'}</button>
 				</div>
 			</form>

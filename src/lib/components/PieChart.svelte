@@ -2,8 +2,12 @@
 	import { Pie, getElementAtEvent } from 'svelte-chartjs';
 	import { Chart as ChartJS, Title, Tooltip, Legend, ArcElement, CategoryScale } from 'chart.js';
 
-	export let data: any;
-	export let options: any;
+	interface Props {
+		data: any;
+		options: any;
+	}
+
+	let { data, options }: Props = $props();
 
 	ChartJS.register(Title, Tooltip, Legend, ArcElement, CategoryScale);
 </script>

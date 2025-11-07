@@ -1,4 +1,4 @@
-import type { ComponentType } from 'svelte';
+import type { SvelteComponent } from 'svelte';
 import { writable } from 'svelte/store';
 import { browser } from '$app/environment';
 
@@ -6,7 +6,7 @@ interface AbsoluteDropdownStore {
 	isOpen: boolean;
 	position: DOMRect | null; // Can be null on the server
 	direction: 'up' | 'down';
-	component: ComponentType | null;
+	component: any | null;
 	data: any;
 }
 
@@ -23,7 +23,7 @@ function createAbsoluteDropdownStore() {
 		subscribe,
 		toggle: (
 			position: DOMRect,
-			component: ComponentType,
+			component: any,
 			direction: 'up' | 'down' = 'down',
 			data: any = null
 		) => {

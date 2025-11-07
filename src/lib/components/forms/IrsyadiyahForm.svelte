@@ -2,9 +2,13 @@
 	import RelatedMurid from '../data-entry/RelatedMurid.svelte';
 	import type { MuridFormData } from '$lib/stores/muridForm';
 
-	export let formData: MuridFormData['formData'];
-	export let handleInput: () => void;
-	export let editedMuridId: number | undefined = undefined;
+	interface Props {
+		formData: MuridFormData['formData'];
+		handleInput: () => void;
+		editedMuridId?: number | undefined;
+	}
+
+	let { formData = $bindable(), handleInput, editedMuridId = undefined }: Props = $props();
 </script>
 
 <fieldset class="space-y-4 rounded-lg border border-base-300 p-4">

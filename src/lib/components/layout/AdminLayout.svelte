@@ -1,8 +1,13 @@
 <script lang="ts">
 	import AdminHeader from '$lib/components/layout/AdminHeader.svelte';
 	import SidebarNav from '$lib/components/navigation/SidebarNav.svelte';
+	interface Props {
+		children?: import('svelte').Snippet;
+	}
 
-	let drawerToggle: HTMLInputElement;
+	let { children }: Props = $props();
+
+	let drawerToggle: HTMLInputElement | undefined = $state();
 
 	function closeDrawer() {
 		if (drawerToggle) {
@@ -17,7 +22,7 @@
 		<!-- Page content here -->
 		<AdminHeader />
 		<main class="flex-grow p-4">
-			<slot />
+			{@render children?.()}
 		</main>
 	</div>
 	<div class="drawer-side">

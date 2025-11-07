@@ -4,12 +4,23 @@
 	import { createEventDispatcher } from 'svelte';
 	import { ChevronsUpDown, ChevronUp, ChevronDown } from 'lucide-svelte';
 
-	export let columns: ColumnDef[];
-	export let currentSort: SortConfig[] | null;
-	export let isSelectable: boolean = false;
-	export let allSelected: boolean = false;
-	export let someSelected: boolean = false;
-	export let filterValues: Record<string, any> = {};
+	interface Props {
+		columns: ColumnDef[];
+		currentSort: SortConfig[] | null;
+		isSelectable?: boolean;
+		allSelected?: boolean;
+		someSelected?: boolean;
+		filterValues?: Record<string, any>;
+	}
+
+	let {
+		columns,
+		currentSort,
+		isSelectable = false,
+		allSelected = false,
+		someSelected = false,
+		filterValues = {}
+	}: Props = $props();
 
 	const dispatch = createEventDispatcher();
 
@@ -42,7 +53,7 @@
 					class="checkbox checkbox-xs"
 					checked={allSelected}
 					indeterminate={someSelected && !allSelected}
-					on:change={(e) => dispatch('selectAll', { selected: e.currentTarget.checked })}
+					onchange={(e) => dispatch('selectAll', { selected: e.currentTarget.checked })}
 					aria-label="Select all rows"
 				/>
 			</th>
@@ -55,7 +66,7 @@
 				class="py-2 hover:bg-base-200 {column.headerClass || ''} {column.sortable
 					? 'cursor-pointer select-none'
 					: ''} {sortConfig ? 'text-primary' : ''}"
-				on:click={(e) => handleSort(column, e)}
+				onclick={(e) => handleSort(column, e)}
 				aria-sort={sortConfig
 					? sortConfig.direction === 'asc'
 						? 'ascending'
@@ -87,13 +98,13 @@
 		{/each}
 
 		<!-- Actions column header -->
-		<th class="w-auto" />
+		<th class="w-auto"></th>
 	</tr>
 
 	<!-- Filter row -->
 	<tr class="border-t border-base-300 bg-base-200 bg-opacity-50">
 		{#if isSelectable}
-			<th class="w-1" />
+			<th class="w-1"></th>
 		{/if}
 
 		{#each columns.filter((col) => !col.hidden) as column}
@@ -104,7 +115,7 @@
 							<select
 								class="select select-bordered select-xs w-full max-w-xs"
 								value={filterValues[String(column.key)] || ''}
-								on:change={(e) => handleFilterChange(String(column.key), e.currentTarget.value)}
+								onchange={(e) => handleFilterChange(String(column.key), e.currentTarget.value)}
 								aria-label={`Filter ${column.label}`}
 							>
 								<option value="">All</option>
@@ -122,7 +133,7 @@
 								class="input input-xs input-bordered w-full max-w-xs"
 								value={filterValues[String(column.key)] || ''}
 								placeholder={`Filter ${column.label.toLowerCase()}...`}
-								on:input={(e) => handleFilterChange(String(column.key), e.currentTarget.value)}
+								oninput={(e) => handleFilterChange(String(column.key), e.currentTarget.value)}
 								aria-label={`Filter ${column.label}`}
 							/>
 						{/if}
@@ -135,7 +146,7 @@
 		<th class="w-auto px-2 align-bottom">
 			<!-- Tombol Reset hanya muncul jika ada filter aktif -->
 			{#if Object.values(filterValues).some((v) => v && v !== 'All')}
-				<button class="btn btn-ghost btn-xs -mb-1 text-error" on:click={() => dispatch('reset')}>
+				<button class="btn btn-ghost btn-xs -mb-1 text-error" onclick={() => dispatch('reset')}>
 					Reset
 				</button>
 			{/if}

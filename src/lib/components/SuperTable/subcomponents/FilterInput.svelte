@@ -3,10 +3,19 @@
 	import { createEventDispatcher } from 'svelte';
 	import { Search, X } from 'lucide-svelte';
 
-	export let value = '';
-	export let placeholder = 'Search...';
-	export let id = 'filter-input';
-	export let label = 'Search';
+	interface Props {
+		value?: string;
+		placeholder?: string;
+		id?: string;
+		label?: string;
+	}
+
+	let {
+		value = $bindable(''),
+		placeholder = 'Search...',
+		id = 'filter-input',
+		label = 'Search'
+	}: Props = $props();
 
 	const dispatch = createEventDispatcher();
 
@@ -34,7 +43,7 @@
 		{placeholder}
 		{value}
 		aria-label={label}
-		on:input={handleInput}
+		oninput={handleInput}
 		role="searchbox"
 	/>
 
@@ -42,7 +51,7 @@
 		<button
 			type="button"
 			class="absolute inset-y-0 right-0 flex items-center px-2 opacity-50 hover:opacity-100"
-			on:click={clearInput}
+			onclick={clearInput}
 			aria-label="Clear search"
 		>
 			<X size={16} />

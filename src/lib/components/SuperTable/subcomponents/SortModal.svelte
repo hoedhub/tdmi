@@ -1,21 +1,27 @@
 <script lang="ts" generics="T extends Record<string, any>">
+	import { run } from 'svelte/legacy';
+
 	import { createEventDispatcher, onMount, onDestroy } from 'svelte';
 	import type { ColumnDef, SortConfig } from '../types';
 	import { ArrowDown, ArrowUp, GripVertical, Trash2 } from 'lucide-svelte';
 
-	export let isOpen: boolean;
-	export let columns: ColumnDef<T>[];
-	export let currentSorts: SortConfig[];
+	interface Props {
+		isOpen: boolean;
+		columns: ColumnDef<T>[];
+		currentSorts: SortConfig[];
+	}
+
+	let { isOpen, columns, currentSorts }: Props = $props();
 
 	// Internal type to ensure stable key for Svelte's #each block
 	type InternalSortConfig = SortConfig & { id: number };
 
-	let internalSorts: InternalSortConfig[] = [];
+	let internalSorts: InternalSortConfig[] = $state([]);
 	let nextId = 0;
-	let dialog: HTMLDialogElement;
+	let dialog: HTMLDialogElement | undefined = $state();
 
 	onMount(() => {
-		if (isOpen) {
+		if (isOpen && dialog) {
 			dialog.showModal();
 			initializeState();
 		}
@@ -30,13 +36,6 @@
 		}
 	});
 
-	// When the modal opens, initialize the internal state.
-	$: if (isOpen && dialog) {
-		dialog.showModal();
-		initializeState();
-	} else if (!isOpen && dialog) {
-		dialog.close();
-	}
 
 	function handleKeydown(event: KeyboardEvent) {
 		if (isOpen && event.key === 'Escape') {
@@ -122,9 +121,18 @@
 		internalSorts = newSorts;
 		draggedIndex = null;
 	}
+	// When the modal opens, initialize the internal state.
+	run(() => {
+		if (isOpen && dialog) {
+			dialog.showModal();
+			initializeState();
+		} else if (!isOpen && dialog) {
+			dialog.close();
+		}
+	});
 </script>
 
-<dialog bind:this={dialog} class="modal" on:close={close}>
+<dialog bind:this={dialog} class="modal" onclose={close}>
 	<div class="modal-box" role="document">
 		<h3 class="text-lg font-bold" id="sort-modal-title">Manage Sorting</h3>
 		<form method="dialog">
@@ -142,9 +150,9 @@
 					class="flex items-center gap-2 rounded-lg border border-base-300 p-2"
 					role="listitem"
 					draggable="true"
-					on:dragstart={() => onDragStart(index)}
-					on:dragover={onDragOver}
-					on:drop={() => onDrop(index)}
+					ondragstart={() => onDragStart(index)}
+					ondragover={onDragOver}
+					ondrop={() => onDrop(index)}
 				>
 					<button class="btn btn-ghost btn-sm cursor-move px-1">
 						<GripVertical class="h-5 w-5 text-base-content/50" />
@@ -163,7 +171,7 @@
 
 					<button
 						class="btn btn-circle btn-ghost btn-sm"
-						on:click={() => toggleDirection(index)}
+						onclick={() => toggleDirection(index)}
 						aria-label="Toggle sort direction"
 					>
 						{#if sort.direction === 'asc'}
@@ -173,20 +181,20 @@
 						{/if}
 					</button>
 
-					<button class="btn btn-ghost btn-sm text-error" on:click={() => removeSort(index)}>
+					<button class="btn btn-ghost btn-sm text-error" onclick={() => removeSort(index)}>
 						<Trash2 class="h-4 w-4" />
 					</button>
 				</div>
 			{/each}
 		</div>
 
-		<button class="btn btn-primary btn-sm w-full" on:click={addSort}>+ Add Sort Level</button>
+		<button class="btn btn-primary btn-sm w-full" onclick={addSort}>+ Add Sort Level</button>
 
 		<div class="modal-action">
 			<form method="dialog">
 				<button class="btn">Cancel</button>
 			</form>
-			<button class="btn btn-primary" on:click={handleSave}>Apply</button>
+			<button class="btn btn-primary" onclick={handleSave}>Apply</button>
 		</div>
 	</div>
 </dialog>

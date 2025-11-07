@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { run, preventDefault } from 'svelte/legacy';
+
 	import type { PageData, ActionData } from './$types';
 	import { enhance } from '$app/forms';
 	import { success, error } from '$lib/components/toast';
@@ -19,30 +21,34 @@
 	import { invalidateAll } from '$app/navigation';
 	import { onMount } from 'svelte';
 
-	export let data: PageData;
-	export let form: ActionData;
+	interface Props {
+		data: PageData;
+		form: ActionData;
+	}
+
+	let { data, form = $bindable() }: Props = $props();
 
 	// --- State ---
-	let isLoading: { [key: string]: boolean } = {};
-	let showRoleModal = false;
-	let showRoleSelectorModal = false;
-	let formRole = { id: '', name: '', description: '' };
-	let selectedRoleId: string | null = null;
-	let activeTab: 'permissions' | 'users' = 'permissions';
+	let isLoading: { [key: string]: boolean } = $state({});
+	let showRoleModal = $state(false);
+	let showRoleSelectorModal = $state(false);
+	let formRole = $state({ id: '', name: '', description: '' });
+	let selectedRoleId: string | null = $state(null);
+	let activeTab: 'permissions' | 'users' = $state('permissions');
 
 	// State untuk manajemen checkbox
-	let initialPermissions: string[] = [];
-	let currentPermissions: string[] = [];
-	let initialUsers: string[] = [];
-	let currentUsers: string[] = [];
+	let initialPermissions: string[] = $state([]);
+	let currentPermissions: string[] = $state([]);
+	let initialUsers: string[] = $state([]);
+	let currentUsers: string[] = $state([]);
 
 	// State reaktif untuk mendeteksi perubahan
-	let permissionsChanged = false;
-	let usersChanged = false;
+	let permissionsChanged = $state(false);
+	let usersChanged = $state(false);
 
 	// --- Reactive Computations ---
-	$: formErrors = form?.errors as Record<string, unknown> | undefined;
-	$: selectedRole = data.roles.find((r) => r.id === selectedRoleId);
+	let formErrors = $derived(form?.errors as Record<string, unknown> | undefined);
+	let selectedRole = $derived(data.roles.find((r) => r.id === selectedRoleId));
 
 	// Helper untuk membandingkan array (mengabaikan urutan)
 	const areArraysEqual = (a: string[], b: string[]) => {
@@ -55,7 +61,7 @@
 	};
 
 	// Inisialisasi ulang dan deteksi perubahan saat peran atau data berubah
-	$: {
+	run(() => {
 		if (selectedRole) {
 			// Inisialisasi untuk tab Izin
 			initialPermissions = data.rolePermissionMap
@@ -75,11 +81,15 @@
 			initialUsers = [];
 			currentUsers = [];
 		}
-	}
+	});
 
 	// Deteksi perubahan secara reaktif
-	$: permissionsChanged = !areArraysEqual(initialPermissions, currentPermissions);
-	$: usersChanged = !areArraysEqual(initialUsers, currentUsers);
+	run(() => {
+		permissionsChanged = !areArraysEqual(initialPermissions, currentPermissions);
+	});
+	run(() => {
+		usersChanged = !areArraysEqual(initialUsers, currentUsers);
+	});
 
 	// --- Lifecycle ---
 	onMount(() => {
@@ -133,13 +143,16 @@
 	// --- Form Handling ---
 	const enhanceForm = (loadingKey: string, dataType?: 'permissions' | 'users') => {
 		return ({
-			form,
-			data: formData,
+			formElement,
+			formData,
 			cancel
-		}: {
-			form: HTMLFormElement;
-			data: FormData;
+		}: { // This is the type of the object passed by use:enhance
+			formData: FormData; // This is the FormData object
 			cancel: () => void;
+			action: URL; // Add action property
+			formElement: HTMLFormElement; // Add formElement property
+			controller: AbortController; // Add controller property
+			submitter: HTMLElement | null; // Add submitter property
 		}) => {
 			isLoading[loadingKey] = true;
 			isLoading = { ...isLoading };
@@ -193,7 +206,7 @@
 					<h2 class="card-title text-lg">Peran</h2>
 					<button
 						class="btn btn-square btn-primary btn-sm"
-						on:click={openNewRoleModal}
+						onclick={openNewRoleModal}
 						aria-label="Buat Peran Baru"
 					>
 						<Plus class="h-4 w-4" />
@@ -207,7 +220,7 @@
 							<a
 								href={'#'}
 								class:active={selectedRoleId === role.id}
-								on:click|preventDefault={() => selectRole(role.id)}
+								onclick={preventDefault(() => selectRole(role.id))}
 							>
 								<ShieldCheck class="h-4 w-4" />
 								{role.name}
@@ -224,7 +237,7 @@
 			<div class="border-b border-base-300 p-4 md:hidden">
 				<button
 					class="btn btn-outline w-full justify-between"
-					on:click={() => (showRoleSelectorModal = true)}
+					onclick={() => (showRoleSelectorModal = true)}
 				>
 					<span>{selectedRole?.name ?? 'Pilih Peran'}</span>
 					<ChevronsUpDown class="h-4 w-4" />
@@ -242,7 +255,7 @@
 						<div class="flex flex-shrink-0 gap-2">
 							<button
 								class="btn btn-square btn-ghost btn-sm"
-								on:click={() => openEditRoleModal(selectedRole)}
+								onclick={() => openEditRoleModal(selectedRole)}
 								aria-label="Edit Peran"
 							>
 								<Edit class="h-4 w-4" />
@@ -251,10 +264,10 @@
 								method="POST"
 								action="?/deleteRole"
 								use:enhance={enhanceForm(`delete-${selectedRole.id}`)}
-								on:submit|preventDefault={(e) => {
+								onsubmit={preventDefault((e) => {
 									if (!confirm(`Yakin ingin menghapus peran "${selectedRole.name}"?`))
 										e.preventDefault();
-								}}
+								})}
 							>
 								<input type="hidden" name="id" value={selectedRole.id} />
 								<button
@@ -275,7 +288,7 @@
 							role="tab"
 							class="tab"
 							class:tab-active={activeTab === 'permissions'}
-							on:click={() => (activeTab = 'permissions')}
+							onclick={() => (activeTab = 'permissions')}
 						>
 							<Key class="mr-2 h-4 w-4" />
 							Izin
@@ -285,7 +298,7 @@
 							role="tab"
 							class="tab"
 							class:tab-active={activeTab === 'users'}
-							on:click={() => (activeTab = 'users')}
+							onclick={() => (activeTab = 'users')}
 						>
 							<Users class="mr-2 h-4 w-4" />
 							Pengguna
@@ -312,14 +325,14 @@
 											class="checkbox checkbox-sm"
 											checked={data.permissions.length > 0 &&
 												currentPermissions.length === data.permissions.length}
-											on:change={toggleAllPermissions}
+											onchange={toggleAllPermissions}
 										/>
 										<span class="label-text text-xs font-semibold">Pilih Semua</span>
 									</label>
 									<button
 										type="button"
 										class="btn btn-ghost btn-xs"
-										on:click={resetPermissions}
+										onclick={resetPermissions}
 										disabled={!permissionsChanged}
 									>
 										<RotateCcw class="mr-1 h-3 w-3" /> Reset
@@ -336,7 +349,7 @@
 												class="checkbox"
 												value={perm.id}
 												checked={currentPermissions.includes(perm.id)}
-												on:change={() => {
+												onchange={() => {
 													if (currentPermissions.includes(perm.id)) {
 														currentPermissions = currentPermissions.filter((p) => p !== perm.id);
 													} else {
@@ -380,14 +393,14 @@
 											type="checkbox"
 											class="checkbox checkbox-sm"
 											checked={data.users.length > 0 && currentUsers.length === data.users.length}
-											on:change={toggleAllUsers}
+											onchange={toggleAllUsers}
 										/>
 										<span class="label-text text-xs font-semibold">Pilih Semua</span>
 									</label>
 									<button
 										type="button"
 										class="btn btn-ghost btn-xs"
-										on:click={resetUsers}
+										onclick={resetUsers}
 										disabled={!usersChanged}
 									>
 										<RotateCcw class="mr-1 h-3 w-3" /> Reset
@@ -404,7 +417,7 @@
 												class="checkbox"
 												value={user.id}
 												checked={currentUsers.includes(user.id)}
-												on:change={() => {
+												onchange={() => {
 													if (currentUsers.includes(user.id)) {
 														currentUsers = currentUsers.filter((u) => u !== user.id);
 													} else {
@@ -452,14 +465,14 @@
 				<h3 class="text-lg font-bold">Pilih Peran</h3>
 				<button
 					class="btn btn-circle btn-ghost btn-sm"
-					on:click={() => (showRoleSelectorModal = false)}><X /></button
+					onclick={() => (showRoleSelectorModal = false)}><X /></button
 				>
 			</div>
 			<div class="-mx-6 flex-grow overflow-y-auto">
 				<ul class="menu px-6">
 					{#each data.roles as role (role.id)}
 						<li>
-							<a href={'#'} on:click|preventDefault={() => selectRole(role.id)}>
+							<a href={'#'} onclick={preventDefault(() => selectRole(role.id))}>
 								<ShieldCheck />
 								{role.name}
 							</a>
@@ -468,7 +481,7 @@
 				</ul>
 			</div>
 			<div class="modal-action flex-shrink-0">
-				<button class="btn btn-primary w-full" on:click={openNewRoleModal}>
+				<button class="btn btn-primary w-full" onclick={openNewRoleModal}>
 					<Plus class="h-4 w-4" /> Buat Peran Baru
 				</button>
 			</div>
@@ -480,7 +493,7 @@
 {#if showRoleModal}
 	<div class="modal modal-open" transition:slide>
 		<div class="modal-box">
-			<button class="btn btn-circle btn-ghost btn-sm absolute right-2 top-2" on:click={closeModal}
+			<button class="btn btn-circle btn-ghost btn-sm absolute right-2 top-2" onclick={closeModal}
 				><X /></button
 			>
 			<h3 class="text-lg font-bold">
@@ -536,7 +549,7 @@
 					></textarea>
 				</div>
 				<div class="modal-action">
-					<button type="button" class="btn btn-ghost" on:click={closeModal}>Batal</button>
+					<button type="button" class="btn btn-ghost" onclick={closeModal}>Batal</button>
 					<button
 						type="submit"
 						class="btn btn-primary"

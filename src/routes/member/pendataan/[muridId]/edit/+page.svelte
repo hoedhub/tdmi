@@ -5,10 +5,14 @@
 	import AddMuridForm from '$lib/components/data-entry/AddMuridForm.svelte';
 	import { type FormData as MuridFormDataType } from '$lib/stores/muridForm';
 
-	export let data: PageData;
+	interface Props {
+		data: PageData;
+	}
+
+	let { data }: Props = $props();
 
 	// State untuk menampung data yang sudah ditransformasi untuk form.
-	let initialFormData: MuridFormDataType | undefined = undefined;
+	let initialFormData: MuridFormDataType | undefined = $state(undefined);
 
 	// onUpdated akan dipanggil oleh AddMuridForm setelah sukses menyimpan data.
 	async function handleFormUpdate() {

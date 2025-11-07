@@ -4,15 +4,24 @@
 	import { ChevronLeft, ChevronRight } from 'lucide-svelte';
 	import { generatePageNumbers } from '../features/pagination';
 
-	export let currentPage: number;
-	export let totalPages: number;
-	export let itemsPerPage: number;
-	export let totalItems: number;
+	interface Props {
+		currentPage: number;
+		totalPages: number;
+		itemsPerPage: number;
+		totalItems: number;
+	}
+
+	let {
+		currentPage,
+		totalPages,
+		itemsPerPage,
+		totalItems
+	}: Props = $props();
 
 	const dispatch = createEventDispatcher();
 
-	let element: HTMLDivElement;
-	let isRtl = false;
+	let element: HTMLDivElement | undefined = $state();
+	let isRtl = $state(false);
 
 	onMount(() => {
 		if (element) {
@@ -21,9 +30,9 @@
 		}
 	});
 
-	$: pages = generatePageNumbers(currentPage, totalPages);
-	$: startItem = (currentPage - 1) * itemsPerPage + 1;
-	$: endItem = Math.min(currentPage * itemsPerPage, totalItems);
+	let pages = $derived(generatePageNumbers(currentPage, totalPages));
+	let startItem = $derived((currentPage - 1) * itemsPerPage + 1);
+	let endItem = $derived(Math.min(currentPage * itemsPerPage, totalItems));
 
 	function goToPage(page: number) {
 		if (page >= 1 && page <= totalPages) {
@@ -50,7 +59,7 @@
 			<!-- Previous page -->
 			<button
 				class="btn join-item btn-sm {currentPage === 1 ? 'btn-disabled' : ''}"
-				on:click={() => goToPage(currentPage - 1)}
+				onclick={() => goToPage(currentPage - 1)}
 				disabled={currentPage === 1}
 				aria-label="Previous page"
 			>
@@ -64,7 +73,7 @@
 				{:else}
 					<button
 						class="btn join-item btn-sm {page === currentPage ? 'btn-active' : ''}"
-						on:click={() => goToPage(page)}
+						onclick={() => goToPage(page)}
 						aria-label={`Page ${page}`}
 						aria-current={page === currentPage ? 'page' : undefined}
 					>
@@ -76,7 +85,7 @@
 			<!-- Next page -->
 			<button
 				class="btn join-item btn-sm {currentPage === totalPages ? 'btn-disabled' : ''}"
-				on:click={() => goToPage(currentPage + 1)}
+				onclick={() => goToPage(currentPage + 1)}
 				disabled={currentPage === totalPages}
 				aria-label="Next page"
 			>
@@ -90,7 +99,7 @@
 				class="select select-bordered select-sm"
 				value={itemsPerPage}
 				aria-label="Items per page"
-				on:change={(e) => dispatch('itemsPerPageChange', parseInt(e.currentTarget.value))}
+				onchange={(e) => dispatch('itemsPerPageChange', parseInt(e.currentTarget.value))}
 			>
 				<option value={5}>5</option>
 				<option value={10}>10</option>

@@ -1,18 +1,29 @@
 <script lang="ts">
+	import { run } from 'svelte/legacy';
+
 	import { goto } from '$app/navigation';
 	import { error as toastError, success as toastSuccess } from '$lib/components/toast';
 	import { slide } from 'svelte/transition';
 	import { flip } from 'svelte/animate';
 	import { Lock, Unlock, Trash2, X, Pencil } from 'lucide-svelte';
 
-	export let data;
+	interface User {
+		id: string;
+		username: string;
+	}
+
+	interface Props {
+		data: { users: User[] };
+	}
+
+	let { data }: Props = $props();
 
 	// State untuk pengaturan putaran
-	let selectedUserIds = new Set<string>();
-	let periodCount = 12;
-	let periodDuration = 1;
-	let periodUnit: 'days' | 'weeks' | 'months' = 'months';
-	let startDate = new Date().toISOString().split('T')[0];
+	let selectedUserIds = $state(new Set<string>());
+	let periodCount = $state(12);
+	let periodDuration = $state(1);
+	let periodUnit: 'days' | 'weeks' | 'months' = $state('months');
+	let startDate = $state(new Date().toISOString().split('T')[0]);
 
 	// State untuk jadwal yang akan disusun
 	let generatedSchedules: Array<{
@@ -21,22 +32,22 @@
 		endDate: Date;
 		userIds: string[];
 		isLocked: boolean; // Properti baru untuk fitur kunci
-	}> = [];
+	}> = $state([]);
 
 	// State UI
-	let currentStep = 1;
-	let selectAllCheckbox: HTMLInputElement;
-	let feedbackMessage = '';
-	let isPristine = true;
+	let currentStep = $state(1);
+	let selectAllCheckbox: HTMLInputElement | undefined = $state();
+	let feedbackMessage = $state('');
+	let isPristine = $state(true);
 
 	// --- State Modal ---
-	let showUserSelectionModal = false;
-	let editingPeriodIndex: number | null = null;
-	let modalSelectedUserIds = new Set<string>();
-	let usersAssignedElsewhere = new Set<string>();
+	let showUserSelectionModal = $state(false);
+	let editingPeriodIndex: number | null = $state(null);
+	let modalSelectedUserIds = $state(new Set<string>());
+	let usersAssignedElsewhere = $state(new Set<string>());
 
 	// Cek kondisi awal (pristine) untuk menonaktifkan tombol reset
-	$: {
+	run(() => {
 		const isStateDefault =
 			selectedUserIds.size === 0 &&
 			periodCount === 12 &&
@@ -45,10 +56,10 @@
 			startDate === new Date().toISOString().split('T')[0] &&
 			currentStep === 1;
 		isPristine = isStateDefault;
-	}
+	});
 
 	// --- LOGIKA UMPAN BALIK REAL-TIME ---
-	$: {
+	run(() => {
 		const numUsers = selectedUserIds.size;
 		const numPeriods = periodCount;
 		if (numUsers > 0 && numPeriods > 0) {
@@ -62,18 +73,18 @@
 		} else {
 			feedbackMessage = '';
 		}
-	}
+	});
 
 	// --- LOGIKA UMPAN BALIK LANGKAH 2 ---
-	let assignmentCounts: Record<string, number> = {};
-	let unassignedUsers: { id: string; username: string }[] = [];
-	let multiTurnUsers: [string, number][] = [];
-	$: allPeriodsLocked = generatedSchedules.every((s) => s.isLocked);
-	$: noAssignmentsInUnlocked = generatedSchedules
+	let assignmentCounts: Record<string, number> = $state({});
+	let unassignedUsers: { id: string; username: string }[] = $state([]);
+	let multiTurnUsers: [string, number][] = $state([]);
+	let allPeriodsLocked = $derived(generatedSchedules.every((s) => s.isLocked));
+	let noAssignmentsInUnlocked = $derived(generatedSchedules
 		.filter((s) => !s.isLocked)
-		.every((s) => s.userIds.length === 0);
+		.every((s) => s.userIds.length === 0));
 
-	$: {
+	run(() => {
 		if (currentStep === 2) {
 			const counts: Record<string, number> = {};
 			const assignedIds = new Set<string>();
@@ -97,7 +108,7 @@
 			unassignedUsers = [];
 			multiTurnUsers = [];
 		}
-	}
+	});
 
 	// Fungsi untuk memilih/membatalkan semua user
 	function toggleSelectAll(event: Event) {
@@ -110,17 +121,19 @@
 	}
 
 	// Logika reaktif untuk status indeterminate checkbox "Pilih Semua"
-	$: if (selectAllCheckbox) {
-		const numUsers = selectedUserIds.size;
-		const totalUsers = data.users.length;
-		if (numUsers > 0 && numUsers < totalUsers) {
-			selectAllCheckbox.indeterminate = true;
-			selectAllCheckbox.checked = false;
-		} else {
-			selectAllCheckbox.indeterminate = false;
-			selectAllCheckbox.checked = numUsers === totalUsers && totalUsers > 0;
+	run(() => {
+		if (selectAllCheckbox) {
+			const numUsers = selectedUserIds.size;
+			const totalUsers = data.users.length;
+			if (numUsers > 0 && numUsers < totalUsers) {
+				selectAllCheckbox.indeterminate = true;
+				selectAllCheckbox.checked = false;
+			} else {
+				selectAllCheckbox.indeterminate = false;
+				selectAllCheckbox.checked = numUsers === totalUsers && totalUsers > 0;
+			}
 		}
-	}
+	});
 
 	// Fungsi untuk menghasilkan kerangka jadwal
 	function generateScheduleSlots() {
@@ -360,7 +373,7 @@
 	<div class="container mx-auto">
 		<div class="mb-6 flex flex-wrap items-center justify-between gap-4">
 			<h1 class="text-3xl font-bold text-base-content">Susun Jadwal Piket Satu Putaran</h1>
-			<button class="btn btn-outline gap-2" on:click={confirmAndReset} disabled={isPristine}>
+			<button class="btn btn-outline gap-2" onclick={confirmAndReset} disabled={isPristine}>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
 					fill="none"
@@ -401,7 +414,7 @@
 									<input
 										type="checkbox"
 										id="selectAll"
-										on:change={toggleSelectAll}
+										onchange={toggleSelectAll}
 										class="checkbox-primary checkbox"
 										bind:this={selectAllCheckbox}
 									/>
@@ -417,7 +430,7 @@
 													type="checkbox"
 													class="checkbox"
 													checked={selectedUserIds.has(user.id)}
-													on:change={() => {
+													onchange={() => {
 														selectedUserIds.has(user.id)
 															? selectedUserIds.delete(user.id)
 															: selectedUserIds.add(user.id);
@@ -500,7 +513,7 @@
 							</div>
 						</div>
 						<div class="card-actions mt-4 justify-end">
-							<button class="btn btn-primary" on:click={generateScheduleSlots}
+							<button class="btn btn-primary" onclick={generateScheduleSlots}
 								>Lanjut: Susun Jadwal</button
 							>
 						</div>
@@ -514,12 +527,12 @@
 							<div class="flex gap-2">
 								<button
 									class="btn btn-secondary"
-									on:click={() => randomizeSchedules(false)}
+									onclick={() => randomizeSchedules(false)}
 									disabled={allPeriodsLocked}>Acak Ulang</button
 								>
 								<button
 									class="btn btn-outline btn-warning"
-									on:click={unassignAll}
+									onclick={unassignAll}
 									disabled={allPeriodsLocked || noAssignmentsInUnlocked}
 									>Kosongkan Semua Petugas</button
 								>
@@ -551,7 +564,7 @@
 																<span>{getUsername(userId)}</span>
 																<button
 																	class="h-4 w-4 rounded-full bg-base-content/20 text-base-100 transition-colors hover:bg-error"
-																	on:click={() => unassignUser(i, userId)}
+																	onclick={() => unassignUser(i, userId)}
 																	disabled={schedule.isLocked}
 																	title="Hapus petugas"
 																>
@@ -567,7 +580,7 @@
 											<td class="flex items-center gap-1">
 												<button
 													class="group btn btn-ghost btn-sm"
-													on:click={() => openUserSelectionModal(i)}
+													onclick={() => openUserSelectionModal(i)}
 													disabled={schedule.isLocked}
 													title="Ubah petugas"
 												>
@@ -575,13 +588,13 @@
 												</button>
 												<button
 													class="group btn btn-ghost btn-sm"
-													on:click={() => unassignPeriod(i)}
+													onclick={() => unassignPeriod(i)}
 													disabled={schedule.isLocked || schedule.userIds.length === 0}
 													title="Kosongkan periode"
 												>
 													<Trash2 class="h-5 w-5" />
 												</button>
-												<button class="group btn btn-ghost btn-sm" on:click={() => toggleLock(i)}>
+												<button class="group btn btn-ghost btn-sm" onclick={() => toggleLock(i)}>
 													{#if schedule.isLocked}
 														<!-- Is locked, show Unlock icon -->
 														<Unlock class="h-5 w-5 text-success" />
@@ -627,8 +640,8 @@
 						{/if}
 
 						<div class="card-actions mt-6 justify-between">
-							<button class="btn btn-warning" on:click={() => (currentStep = 1)}>Kembali</button>
-							<button class="btn btn-success" on:click={saveRotationSchedule}
+							<button class="btn btn-warning" onclick={() => (currentStep = 1)}>Kembali</button>
+							<button class="btn btn-success" onclick={saveRotationSchedule}
 								>Simpan Jadwal Putaran</button
 							>
 						</div>
@@ -656,7 +669,7 @@
 								type="checkbox"
 								class="checkbox"
 								checked={modalSelectedUserIds.has(user.id)}
-								on:change={() => {
+								onchange={() => {
 									modalSelectedUserIds.has(user.id)
 										? modalSelectedUserIds.delete(user.id)
 										: modalSelectedUserIds.add(user.id);
@@ -678,8 +691,8 @@
 				</div>
 			</div>
 			<div class="modal-action">
-				<button class="btn btn-ghost" on:click={closeModal}>Batal</button>
-				<button class="btn btn-primary" on:click={saveModalSelection}>Simpan</button>
+				<button class="btn btn-ghost" onclick={closeModal}>Batal</button>
+				<button class="btn btn-primary" onclick={saveModalSelection}>Simpan</button>
 			</div>
 		</div>
 	</div>

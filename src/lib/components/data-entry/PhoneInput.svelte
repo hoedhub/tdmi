@@ -1,14 +1,28 @@
 <script lang="ts">
+	import { run } from 'svelte/legacy';
+
 	import { onMount, createEventDispatcher } from 'svelte';
 
 	// Props
-	export let value: string = '';
-	export let countryId: string = '';
-	export let countryCode: string = '';
-	export let phoneNumber: string = '';
-	export let className: string = '';
-	export let placeholder: string = 'Enter phone number';
-	export let disabled: boolean = false;
+	interface Props {
+		value?: string;
+		countryId?: string;
+		countryCode?: string;
+		phoneNumber?: string;
+		className?: string;
+		placeholder?: string;
+		disabled?: boolean;
+	}
+
+	let {
+		value = $bindable(''),
+		countryId = $bindable(''),
+		countryCode = $bindable(''),
+		phoneNumber = $bindable(''),
+		className = '',
+		placeholder = 'Enter phone number',
+		disabled = false
+	}: Props = $props();
 
 	// Type definition for country codes
 	type CountryCode = {
@@ -18,9 +32,9 @@
 	};
 
 	// State
-	let countryCodes: CountryCode[] = [];
-	let searchTerm: string = '';
-	let filteredCountryCodes: CountryCode[] = [];
+	let countryCodes: CountryCode[] = $state([]);
+	let searchTerm: string = $state('');
+	let filteredCountryCodes: CountryCode[] = $state([]);
 
 	const dispatch = createEventDispatcher<{
 		input: { value: string };
@@ -98,18 +112,18 @@
 
 	// --- Reactive Statements ---
 
-	$: {
+	run(() => {
 		// Reset phoneNumber when value is reset externally
 		if (value === '') {
 			phoneNumber = '';
 			resetCountryCode();
 		}
-	}
+	});
 
-	$: selectedCountry = countryCodes.find((c) => c.id === countryId);
+	let selectedCountry = $derived(countryCodes.find((c) => c.id === countryId));
 
 	// Filter countries based on search term
-	$: {
+	run(() => {
 		if (!searchTerm) {
 			filteredCountryCodes = countryCodes;
 		} else {
@@ -121,7 +135,7 @@
 					c.id.toLowerCase().includes(lowerCaseSearch)
 			);
 		}
-	}
+	});
 
 	// --- Lifecycle ---
 
@@ -186,7 +200,7 @@
 							type="button"
 							class="relative flex justify-between"
 							class:font-bold={country.id === countryId}
-							on:click={() => selectCountryCode(country.code, country.id)}
+							onclick={() => selectCountryCode(country.code, country.id)}
 						>
 							<span class="flex-1 text-left">{country.country}</span>
 							<span class="w-[4rem] text-right">{country.code}</span>
@@ -218,8 +232,8 @@
 		{disabled}
 		{placeholder}
 		inputmode="numeric"
-		on:input={debouncedHandleInput}
-		on:keypress={handleKeyPress}
+		oninput={debouncedHandleInput}
+		onkeypress={handleKeyPress}
 		class="input input-bordered w-48 min-w-full max-w-full flex-1 md:min-w-12"
 	/>
 </div>

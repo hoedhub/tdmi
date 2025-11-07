@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { run } from 'svelte/legacy';
+
 	import { scale } from 'svelte/transition';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
@@ -21,14 +23,18 @@
 	type Kecamatan = InferSelectModel<typeof kecamatanTable>;
 
 	// --- PROPS ---
-	export let formData: FormData | undefined = undefined;
-	export let propinsiList: Propinsi[] = [];
-	export let editedMuridId: number | undefined = undefined;
+	interface Props {
+		formData?: FormData | undefined;
+		propinsiList?: Propinsi[];
+		editedMuridId?: number | undefined;
+	}
+
+	let { formData = undefined, propinsiList = [], editedMuridId = undefined }: Props = $props();
 
 	// --- STATE ---
-	let countryId: string;
-	let countryCode: string;
-	let phoneNumber: string;
+	let countryId: string | undefined = $state();
+	let countryCode: string | undefined = $state();
+	let phoneNumber: string | undefined = $state();
 
 	const defaultFormData: FormData = {
 		nama: '',
@@ -59,19 +65,19 @@
 	let originalSelectedKokab: Kokab | null = null;
 	let originalSelectedKecamatan: Kecamatan | null = null;
 
-	let internalFormData: FormData = { ...defaultFormData };
-	let selectedPropinsi: Propinsi | null = null;
-	let selectedKokab: Kokab | null = null;
-	let selectedKecamatan: Kecamatan | null = null;
+	let internalFormData: FormData = $state({ ...defaultFormData });
+	let selectedPropinsi: Propinsi | null = $state(null);
+	let selectedKokab: Kokab | null = $state(null);
+	let selectedKecamatan: Kecamatan | null = $state(null);
 
-	let isFormModified = false;
-	let isSubmitting = false;
-	let mounted = false;
+	let isFormModified = $state(false);
+	let isSubmitting = $state(false);
+	let mounted = $state(false);
 
-	let personalInfoFormComponent: PersonalInfoForm;
+	let personalInfoFormComponent: PersonalInfoForm | undefined = $state();
 
 	// --- State untuk Similar Murids Alert ---
-	let similarMurids: any[] = [];
+	let similarMurids: any[] = $state([]);
 	let searchTimeout: NodeJS.Timeout;
 
 	// --- SIKLUS HIDUP (LIFECYCLE) ---
@@ -265,12 +271,14 @@
 	}
 
 	// --- BLOK REAKTIF ---
-	$: if (mounted) {
-		$muridFormStore.formData = internalFormData;
-		$muridFormStore.selectedPropinsi = selectedPropinsi;
-		$muridFormStore.selectedKokab = selectedKokab;
-		$muridFormStore.selectedKecamatan = selectedKecamatan;
-	}
+	run(() => {
+		if (mounted) {
+			$muridFormStore.formData = internalFormData;
+			$muridFormStore.selectedPropinsi = selectedPropinsi;
+			$muridFormStore.selectedKokab = selectedKokab;
+			$muridFormStore.selectedKecamatan = selectedKecamatan;
+		}
+	});
 </script>
 
 <form
@@ -323,7 +331,7 @@
 			<button
 				transition:scale={{ duration: 300 }}
 				type="button"
-				on:click={() => resetForm()}
+				onclick={() => resetForm()}
 				class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:hover:border-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-700"
 			>
 				Reset
@@ -332,7 +340,7 @@
 		<button
 			type="button"
 			disabled={isSubmitting}
-			on:click={handleBatal}
+			onclick={handleBatal}
 			class="btn btn-warning grow rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
 		>
 			Batal

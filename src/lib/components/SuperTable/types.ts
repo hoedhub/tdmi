@@ -89,7 +89,7 @@ export type SelectionMode = 'single' | 'multiple';
 export interface SuperTableProps<T = any> {
 	data: T[];
 	columns: ColumnDef<T>[];
-	rowKey: keyof T;
+	rowKey: keyof T | string | number | symbol;
 	mobileView?: MobileViewType;
 	initialSort?: SortConfig[];
 	itemsPerPage?: number;

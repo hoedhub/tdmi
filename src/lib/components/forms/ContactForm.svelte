@@ -10,16 +10,31 @@
 	type Kokab = InferSelectModel<typeof kokabTable>;
 	type Kecamatan = InferSelectModel<typeof kecamatanTable>;
 
-	export let formData: MuridFormData['formData'];
-	export let selectedPropinsi: Propinsi | null;
-	export let selectedKokab: Kokab | null;
-	export let selectedKecamatan: Kecamatan | null;
-	export let handleInput: () => void;
-	export let handleWilayahChange: (event: CustomEvent) => void;
-	export let countryId: string;
-	export let countryCode: string;
-	export let phoneNumber: string;
-	export let propinsiList: Propinsi[] = [];
+	interface Props {
+		formData: MuridFormData['formData'];
+		selectedPropinsi: Propinsi | null;
+		selectedKokab: Kokab | null;
+		selectedKecamatan: Kecamatan | null;
+		handleInput: () => void;
+		handleWilayahChange: (event: CustomEvent) => void;
+		countryId: string | undefined;
+		countryCode: string | undefined;
+		phoneNumber: string | undefined;
+		propinsiList?: Propinsi[];
+	}
+
+	let {
+		formData = $bindable(),
+		selectedPropinsi,
+		selectedKokab,
+		selectedKecamatan,
+		handleInput,
+		handleWilayahChange,
+		countryId = $bindable(),
+		countryCode = $bindable(),
+		phoneNumber = $bindable(),
+		propinsiList = []
+	}: Props = $props();
 </script>
 
 <fieldset class="space-y-4 rounded-lg border border-base-300 p-4">

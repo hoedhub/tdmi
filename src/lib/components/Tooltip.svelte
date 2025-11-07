@@ -2,7 +2,7 @@
 	import { tooltipStore } from '$lib/stores/tooltipStore';
 	import { fly } from 'svelte/transition';
 
-	let style = '';
+	let style = $state('');
 	tooltipStore.subscribe(($store) => {
 		if ($store.isVisible) {
 			style = `top: ${$store.position.top}px; left: ${$store.position.left}px; transform: translateY(-50%);`;

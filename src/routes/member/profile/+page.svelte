@@ -5,17 +5,21 @@
 	import { success, error } from '$lib/components/toast';
 	import { Save, RefreshCw, Eye, EyeOff } from 'lucide-svelte';
 
-	export let form: ActionData;
-	export let data: PageData;
-	let isLoading: boolean = false;
+	interface Props {
+		form: ActionData;
+		data: PageData;
+	}
 
-	let currentPassword = '';
-	let newPassword = '';
-	let confirmPassword = '';
+	let { form, data }: Props = $props();
+	let isLoading: boolean = $state(false);
 
-	let showCurrentPassword = false;
-	let showNewPassword = false;
-	let showConfirmPassword = false;
+	let currentPassword = $state('');
+	let newPassword = $state('');
+	let confirmPassword = $state('');
+
+	let showCurrentPassword = $state(false);
+	let showNewPassword = $state(false);
+	let showConfirmPassword = $state(false);
 
 	async function handleSubmit() {
 		if (isLoading) return;
@@ -139,7 +143,7 @@
 						<button
 							type="button"
 							class="absolute inset-y-0 right-0 flex items-center pr-3"
-							on:click={() => (showCurrentPassword = !showCurrentPassword)}
+							onclick={() => (showCurrentPassword = !showCurrentPassword)}
 						>
 							{#if showCurrentPassword}
 								<EyeOff class="h-5 w-5 text-gray-500" />
@@ -177,7 +181,7 @@
 						<button
 							type="button"
 							class="absolute inset-y-0 right-0 flex items-center pr-3"
-							on:click={() => (showNewPassword = !showNewPassword)}
+							onclick={() => (showNewPassword = !showNewPassword)}
 						>
 							{#if showNewPassword}
 								<EyeOff class="h-5 w-5 text-gray-500" />
@@ -215,7 +219,7 @@
 						<button
 							type="button"
 							class="absolute inset-y-0 right-0 flex items-center pr-3"
-							on:click={() => (showConfirmPassword = !showConfirmPassword)}
+							onclick={() => (showConfirmPassword = !showConfirmPassword)}
 						>
 							{#if showConfirmPassword}
 								<EyeOff class="h-5 w-5 text-gray-500" />

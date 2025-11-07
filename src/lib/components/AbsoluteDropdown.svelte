@@ -1,8 +1,10 @@
 <script lang="ts">
+	import { self } from 'svelte/legacy';
+
 	import { absoluteDropdownStore } from '$lib/stores/absoluteDropdown';
 
-	let menuElement: HTMLDivElement;
-	let menuStyle = '';
+	let menuElement: HTMLDivElement | undefined = $state();
+	let menuStyle = $state('');
 
 	absoluteDropdownStore.subscribe(($store) => {
 		if ($store.isOpen && $store.position) {
@@ -23,17 +25,18 @@
 </script>
 
 {#if $absoluteDropdownStore.isOpen && $absoluteDropdownStore.component}
-	<!-- svelte-ignore a11y-click-events-have-key-events -->
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
 	<div
 		class="fixed inset-0 z-40"
 		aria-hidden="true"
-		on:click|self={absoluteDropdownStore.close}
-	/>
+		onclick={self(absoluteDropdownStore.close)}
+	></div>
+	{@const SvelteComponent = $absoluteDropdownStore.component}
 	<div
 		bind:this={menuElement}
 		style={menuStyle}
 		class="fixed z-50 rounded-box bg-base-300 shadow-lg"
 	>
-		<svelte:component this={$absoluteDropdownStore.component} {...$absoluteDropdownStore.data} />
+		<SvelteComponent {...$absoluteDropdownStore.data} />
 	</div>
 {/if}

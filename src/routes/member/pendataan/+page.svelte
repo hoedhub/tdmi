@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { run, stopPropagation } from 'svelte/legacy';
+
 	import type { PageData } from './$types';
 	import { invalidateAll } from '$app/navigation';
 	import { SuperTable } from '$lib/components/SuperTable';
@@ -45,21 +47,25 @@
 		propinsiName: string | null;
 	}
 
-	export let data: ExtendedPageData;
-	export let form: { success?: boolean; message?: string } | null;
+	interface Props {
+		data: ExtendedPageData;
+		form: { success?: boolean; message?: string } | null;
+	}
 
-	let muridData: Murid[] = [];
-	let totalItems = data.totalItems;
-	let loading = false;
-	let pageSize = 10;
+	let { data, form }: Props = $props();
+
+	let muridData: Murid[] = $state([]);
+	let totalItems = $state(data.totalItems);
+	let loading = $state(false);
+	let pageSize = $state(10);
 	let currentPage = 1;
-	let currentSort: SortConfig[] | undefined = undefined;
+	let currentSort: SortConfig[] | undefined = $state(undefined);
 	let currentFilters: Record<string, any> = {};
 	let selectedMuridIds: number[] = [];
 
 	// --- Reactive Data from Props ---
-	$: canReadMurid = data.canReadMurid;
-	$: canWriteMurid = data.canWriteMurid;
+	let canReadMurid = $derived(data.canReadMurid);
+	let canWriteMurid = $derived(data.canWriteMurid);
 
 	function calculateAge(tglLahir: string | null): number | null {
 		if (!tglLahir) return null;
@@ -235,12 +241,14 @@
 	}
 
 	// --- Reactive Statements ---
-	$: if (form?.success) {
-		alert(form.message);
-		invalidateAll();
-	} else if (form?.message && !form?.success) {
-		alert(form.message);
-	}
+	run(() => {
+		if (form?.success) {
+			alert(form.message);
+			invalidateAll();
+		} else if (form?.message && !form?.success) {
+			alert(form.message);
+		}
+	});
 
 	// Initial data fetch on component mount
 	onMount(async () => {
@@ -280,34 +288,40 @@
 		on:rowClick={(e) => goto(`/member/pendataan/${e.detail.id}/edit`)}
 		on:selectionChange={handleSelectionChange}
 	>
-		<svelte:fragment slot="bulk-actions" let:selectedIds>
+		<!-- @migration-task: migrate this slot by hand, `bulk-actions` is an invalid identifier -->
+	<!-- @migration-task: migrate this slot by hand, `bulk-actions` is an invalid identifier -->
+	<svelte:fragment slot="bulk-actions" let:selectedIds>
 			{#if canWriteMurid && selectedIds.length === 1}
-				<button class="btn btn-secondary btn-sm" on:click={handleEditSelected}>
+				<button class="btn btn-secondary btn-sm" onclick={handleEditSelected}>
 					<Pen class="h-4 w-4" />
 					Edit Selected
 				</button>
 			{/if}
 		</svelte:fragment>
-		<svelte:fragment slot="loading-state">
+		<!-- @migration-task: migrate this slot by hand, `loading-state` is an invalid identifier -->
+	<!-- @migration-task: migrate this slot by hand, `loading-state` is an invalid identifier -->
+	<svelte:fragment slot="loading-state">
 			<div class="p-8 text-center">
 				<span class="loading loading-spinner mb-4"></span>
 				<p class="text-lg font-semibold">Memuat data...</p>
 				<p class="text-sm text-base-content/70">Harap tunggu sebentar.</p>
 			</div>
 		</svelte:fragment>
-		<svelte:fragment slot="row-actions" let:row>
+		<!-- @migration-task: migrate this slot by hand, `row-actions` is an invalid identifier -->
+	<!-- @migration-task: migrate this slot by hand, `row-actions` is an invalid identifier -->
+	<svelte:fragment slot="row-actions" let:row>
 			{#if canWriteMurid}
 				<div class="flex gap-2">
 					<a
 						href={`/member/pendataan/${row.id}/edit`}
 						class="btn btn-ghost btn-sm"
-						on:click|stopPropagation={() => {}}
+						onclick={stopPropagation(() => {})}
 					>
 						<Pen class="h-4 w-4" />
 					</a>
 					<button
 						class="btn btn-ghost btn-sm text-error"
-						on:click|stopPropagation={() => handleDeleteMurid(row.id, row.nama)}
+						onclick={stopPropagation(() => handleDeleteMurid(row.id, row.nama))}
 					>
 						<Trash class="h-4 w-4" />
 					</button>

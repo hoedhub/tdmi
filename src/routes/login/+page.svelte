@@ -6,17 +6,17 @@
 	import { Eye, EyeOff, CheckCircle2 } from 'lucide-svelte';
 	import { error, success } from '$lib/components/toast';
 
-	let rememberMe = false;
-	let showPassword = false;
-	let isLoading = false;
+	let rememberMe = $state(false);
+	let showPassword = $state(false);
+	let isLoading = $state(false);
 
 	// --- Direct Feedback on Submit ---
 	// We handle success and failure cases directly inside the submission handler
 	// for immediate and reliable feedback.
-	const handleSubmit: SubmitFunction = () => {
+	const handleSubmit: SubmitFunction = ({ action, formData, formElement, controller, submitter, cancel }) => {
 		isLoading = true;
 
-		return async ({ result }) => {
+		return async ({ result, update }) => {
 			isLoading = false; // Reset loading state after the server responds.
 
 			// On successful redirect, show a success toast.
@@ -34,6 +34,7 @@
 
 			// Let SvelteKit handle the rest (like updating the `form` prop).
 			await applyAction(result);
+			update({ reset: false });
 		};
 	};
 
@@ -78,7 +79,7 @@
 					</div>
 				{/if} -->
 
-				<form use:enhance={handleSubmit} action="./login" method="post">
+				<form action="./login" method="post">
 					<div class="form-control">
 						<label class="label" for="username">
 							<span class="label-text">Username</span>
@@ -113,7 +114,7 @@
 							<button
 								type="button"
 								class="btn btn-ghost join-item"
-								on:click={() => (showPassword = !showPassword)}
+								onclick={() => (showPassword = !showPassword)}
 								title={showPassword ? 'Hide password' : 'Show password'}
 								disabled={isLoading}
 								aria-label={showPassword ? 'Hide password' : 'Show password'}
@@ -172,7 +173,7 @@
 						type="checkbox"
 						class="toggle toggle-primary"
 						checked={true}
-						on:change={(e) => {
+						onchange={(e) => {
 							document.documentElement.setAttribute(
 								'data-theme',
 								e.currentTarget.checked ? 'dark' : 'light'

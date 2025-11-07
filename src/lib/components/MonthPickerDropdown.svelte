@@ -1,11 +1,15 @@
 <script lang="ts">
 	import { absoluteDropdownStore } from '$lib/stores/absoluteDropdown';
 
-	export let initialDate: Date = new Date();
-	export let onChange: (date: Date) => void = () => {};
+	interface Props {
+		initialDate?: Date;
+		onChange?: (date: Date) => void;
+	}
+
+	let { initialDate = new Date(), onChange = () => {} }: Props = $props();
 
 	let selectedDate = initialDate;
-	let pickerYear = selectedDate.getFullYear();
+	let pickerYear = $state(selectedDate.getFullYear());
 
 	const monthNames = [
 		'Jan',
@@ -39,9 +43,9 @@
 
 <div class="p-2">
 	<div class="flex items-center justify-between pb-2">
-		<button class="btn btn-ghost btn-xs" on:click={decrementPickerYear}>◀</button>
+		<button class="btn btn-ghost btn-xs" onclick={decrementPickerYear}>◀</button>
 		<span class="font-semibold">{pickerYear}</span>
-		<button class="btn btn-ghost btn-xs" on:click={incrementPickerYear}>▶</button>
+		<button class="btn btn-ghost btn-xs" onclick={incrementPickerYear}>▶</button>
 	</div>
 	<div class="grid grid-cols-3 gap-1">
 		{#each monthNames as month, i}
@@ -49,7 +53,7 @@
 				class="btn btn-ghost btn-sm"
 				class:btn-active={i === selectedDate.getMonth() &&
 					pickerYear === selectedDate.getFullYear()}
-				on:click={() => selectMonth(i)}
+				onclick={() => selectMonth(i)}
 			>
 				{month}
 			</button>

@@ -10,10 +10,14 @@
 		alamatLengkap: string | null;
 	}
 
-	export let similarMurids: SimilarMurid[] = [];
-	export let onclose: () => void;
+	interface Props {
+		similarMurids?: SimilarMurid[];
+		onclose: () => void;
+	}
 
-	let isCollapsed = false;
+	let { similarMurids = [], onclose }: Props = $props();
+
+	let isCollapsed = $state(false);
 	const dispatch = createEventDispatcher<{
 		nameSelect: string;
 		nameHoverStart: string;
@@ -42,13 +46,13 @@
 			<button
 				type="button"
 				class="btn btn-ghost btn-xs absolute right-2 top-2 z-10"
-				on:click={onclose}>✕</button
+				onclick={onclose}>✕</button
 			>
 
 			<div
 				class="flex cursor-pointer items-center"
-				on:click={toggleCollapse}
-				on:keypress={toggleCollapse}
+				onclick={toggleCollapse}
+				onkeypress={toggleCollapse}
 				role="button"
 				tabindex="0"
 			>
@@ -82,14 +86,14 @@
 							{#each similarMurids as murid (murid.id)}
 								<li
 									class="flex items-center justify-between px-2 py-1.5 text-sm"
-									on:mouseenter={() => dispatch('nameHoverStart', murid.nama)}
-									on:mouseleave={() => dispatch('nameHoverEnd')}
+									onmouseenter={() => dispatch('nameHoverStart', murid.nama)}
+									onmouseleave={() => dispatch('nameHoverEnd')}
 								>
 									<div>
 										<button
 											type="button"
 											class="text-left font-medium transition-colors hover:text-primary"
-											on:click={() => selectName(murid.nama)}
+											onclick={() => selectName(murid.nama)}
 										>
 											{murid.nama}
 										</button>
@@ -102,7 +106,7 @@
 									<button
 										type="button"
 										class="btn btn-outline btn-primary btn-xs ml-2 self-start"
-										on:click={() => handleEditMurid(murid.id)}
+										onclick={() => handleEditMurid(murid.id)}
 									>
 										Edit
 									</button>

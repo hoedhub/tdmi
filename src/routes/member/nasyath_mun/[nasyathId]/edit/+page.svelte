@@ -5,9 +5,13 @@
 	import { success, error } from '$lib/components/toast';
 	import { Save, RefreshCw } from 'lucide-svelte';
 
-	export let data: PageData;
-	export let form: ActionData;
-	let isLoading: boolean = false;
+	interface Props {
+		data: PageData;
+		form: ActionData;
+	}
+
+	let { data, form }: Props = $props();
+	let isLoading: boolean = $state(false);
 
 	// Helper untuk memformat tanggal YYYY-MM-DD yang diterima dari server
 	function formatDateForInput(dateString: string | null | undefined): string {
@@ -17,19 +21,19 @@
 	}
 
 	// Inisialisasi nilai form dari `data` (saat load) atau `form` (saat gagal submit)
-	let kegiatan = (form as any)?.data?.kegiatan ?? data.nasyath.kegiatan;
-	let tanggalMulai = formatDateForInput(
+	let kegiatan = $state((form as any)?.data?.kegiatan ?? data.nasyath.kegiatan);
+	let tanggalMulai = $state(formatDateForInput(
 		(form as any)?.data?.tanggalMulai ?? data.nasyath.tanggalMulai
-	);
-	let tanggalSelesai = formatDateForInput(
+	));
+	let tanggalSelesai = $state(formatDateForInput(
 		(form as any)?.data?.tanggalSelesai ?? data.nasyath.tanggalSelesai
-	);
-	let durasi = (form as any)?.data?.durasi ?? data.nasyath.durasi;
-	let jarak = (form as any)?.data?.jarak ?? data.nasyath.jarak;
-	let tempat = (form as any)?.data?.tempat ?? data.nasyath.tempat;
-	let namaKontak = (form as any)?.data?.namaKontak ?? data.nasyath.namaKontak;
-	let teleponKontak = (form as any)?.data?.teleponKontak ?? data.nasyath.teleponKontak;
-	let keterangan = (form as any)?.data?.keterangan ?? data.nasyath.keterangan;
+	));
+	let durasi = $state((form as any)?.data?.durasi ?? data.nasyath.durasi);
+	let jarak = $state((form as any)?.data?.jarak ?? data.nasyath.jarak);
+	let tempat = $state((form as any)?.data?.tempat ?? data.nasyath.tempat);
+	let namaKontak = $state((form as any)?.data?.namaKontak ?? data.nasyath.namaKontak);
+	let teleponKontak = $state((form as any)?.data?.teleponKontak ?? data.nasyath.teleponKontak);
+	let keterangan = $state((form as any)?.data?.keterangan ?? data.nasyath.keterangan);
 
 	async function handleSubmit() {
 		if (isLoading) return;

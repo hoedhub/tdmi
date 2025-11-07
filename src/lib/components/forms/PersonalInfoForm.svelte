@@ -7,20 +7,30 @@
 	import SimilarMuridsAlert from '../data-entry/SimilarMuridsAlert.svelte';
 
 	// Props
-	export let formData: FormData;
-	export let handleInput: () => void;
-	export let handleArabicInput: (event: Event) => void;
-	export let similarMurids: any[] = [];
-	export let onclose: () => void;
+	interface Props {
+		formData: FormData;
+		handleInput: () => void;
+		handleArabicInput: (event: Event) => void;
+		similarMurids?: any[];
+		onclose: () => void;
+	}
+
+	let {
+		formData = $bindable(),
+		handleInput,
+		handleArabicInput,
+		similarMurids = [],
+		onclose
+	}: Props = $props();
 
 	// State
 	let compressedFile: File | null = null;
-	let previewUrl = '';
-	let compressionError = '';
-	let photoRemoved = false;
-	let hoveredName: string | null = null; // State untuk visual hover
+	let previewUrl = $state('');
+	let compressionError = $state('');
+	let photoRemoved = $state(false);
+	let hoveredName: string | null = $state(null); // State untuk visual hover
 
-	$: displayUrl = previewUrl || (formData.fotoUrl && !photoRemoved ? formData.fotoUrl : null);
+	let displayUrl = $derived(previewUrl || (formData.fotoUrl && !photoRemoved ? formData.fotoUrl : null));
 
 	async function handleFileUpload(originalFile: File) {
 		return new Promise<File | null>((resolve) => {
@@ -99,7 +109,7 @@
 				name="nama"
 				type="text"
 				bind:value={formData.nama}
-				on:input={handleInput}
+				oninput={handleInput}
 				class="input input-bordered w-full {hoveredName ? 'text-transparent' : ''}"
 				required
 			/>
@@ -133,7 +143,7 @@
 			name="namaArab"
 			type="text"
 			bind:value={formData.namaArab}
-			on:input={(event) => {
+			oninput={(event) => {
 				handleArabicInput(event);
 				handleInput();
 			}}
@@ -155,7 +165,7 @@
 					name="gender"
 					bind:group={formData.gender}
 					value={true}
-					on:change={handleInput}
+					onchange={handleInput}
 					class="radio"
 				/>
 				<label for="pria" class="label-text cursor-pointer">Pria</label>
@@ -167,7 +177,7 @@
 					name="gender"
 					bind:group={formData.gender}
 					value={false}
-					on:change={handleInput}
+					onchange={handleInput}
 					class="radio"
 				/>
 				<label for="wanita" class="label-text cursor-pointer">Wanita</label>
@@ -185,7 +195,7 @@
 			name="nik"
 			placeholder="16 Digit Nomor Induk Kependudukan (NIK)"
 			bind:value={formData.nik}
-			on:input={handleInput}
+			oninput={handleInput}
 			maxlength={16}
 			class="input input-bordered w-full"
 		/>
@@ -220,7 +230,7 @@
 						type="file"
 						accept="image/*"
 						class="file-input file-input-bordered w-full"
-						on:change={async (e) => {
+						onchange={async (e) => {
 							const file = e.currentTarget.files?.[0];
 							if (!file) return;
 							const result = await handleFileUpload(file);
@@ -233,7 +243,7 @@
 					{#if displayUrl}
 						<button
 							type="button"
-							on:click={handleRemovePhoto}
+							onclick={handleRemovePhoto}
 							class="btn btn-outline btn-error btn-sm"
 						>
 							Hapus Foto
@@ -259,7 +269,7 @@
 			name="tglLahir"
 			type="date"
 			bind:value={formData.tglLahir}
-			on:input={handleInput}
+			oninput={handleInput}
 			class="input input-bordered w-full"
 			required
 		/>

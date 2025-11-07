@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import { createEventDispatcher } from 'svelte';
 	import { BadgeCheck, ShieldAlert, UsersRound, DatabaseBackup } from 'lucide-svelte'; // <-- Import ikon
 
@@ -15,15 +15,15 @@
 	<li>
 		<a
 			href="/admin"
-			class={$page.url.pathname === '/admin' ? 'active' : ''}
-			on:click={handleNavigation}>Dashboard Overview</a
+			class={page.url.pathname === '/admin' ? 'active' : ''}
+			onclick={handleNavigation}>Dashboard Overview</a
 		>
 	</li>
 	<li>
 		<a
 			href="/admin/users"
-			class={$page.url.pathname.startsWith('/admin/users') ? 'active' : ''}
-			on:click={handleNavigation}
+			class={page.url.pathname.startsWith('/admin/users') ? 'active' : ''}
+			onclick={handleNavigation}
 		>
 			<UsersRound class="h-5 w-5" />
 			User Management</a
@@ -32,20 +32,20 @@
 	<li>
 		<a
 			href="/admin/rbac"
-			class={$page.url.pathname.startsWith('/admin/rbac') ? 'active' : ''}
-			on:click={handleNavigation}
+			class={page.url.pathname.startsWith('/admin/rbac') ? 'active' : ''}
+			onclick={handleNavigation}
 		>
 			<ShieldAlert class="h-5 w-5" />
 			RBAC Management</a
 		>
 	</li>
 	<!-- Link baru untuk Manajemen Piket -->
-	{#if $page.data.canManagePiket}
+	{#if page.data.canManagePiket}
 		<li>
 			<a
 				href="/admin/piket"
-				class={$page.url.pathname.startsWith('/admin/piket') ? 'active' : ''}
-				on:click={handleNavigation}
+				class={page.url.pathname.startsWith('/admin/piket') ? 'active' : ''}
+				onclick={handleNavigation}
 			>
 				<BadgeCheck class="h-5 w-5" />
 				Manajemen Ruasa'
@@ -53,12 +53,12 @@
 		</li>
 	{/if}
 	<!-- Link baru untuk Backup -->
-	{#if $page.data.canCreateBackup}
+	{#if page.data.canCreateBackup}
 		<li>
 			<a
 				href="/admin/backup"
-				class={$page.url.pathname.startsWith('/admin/backup') ? 'active' : ''}
-				on:click={handleNavigation}
+				class={page.url.pathname.startsWith('/admin/backup') ? 'active' : ''}
+				onclick={handleNavigation}
 			>
 				<DatabaseBackup class="h-5 w-5" />
 				Backup
@@ -66,6 +66,6 @@
 		</li>
 	{/if}
 	<li>
-		<a href="/" on:click={handleNavigation}>Exit</a>
+		<a href="/" onclick={handleNavigation}>Exit</a>
 	</li>
 </ul>

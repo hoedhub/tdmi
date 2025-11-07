@@ -1,8 +1,12 @@
 <script lang="ts">
 	import type { FormData } from '$lib/stores/muridForm';
 
-	export let formData: FormData;
-	export let handleInput: () => void;
+	interface Props {
+		formData: FormData;
+		handleInput: () => void;
+	}
+
+	let { formData = $bindable(), handleInput }: Props = $props();
 </script>
 
 <fieldset class="space-y-4 rounded-lg border border-base-300 p-4">
@@ -23,7 +27,7 @@
 						name="qari"
 						bind:group={formData.qari}
 						value={true}
-						on:change={handleInput}
+						onchange={handleInput}
 						class="radio"
 					/>
 					<label for="qari" class="label-text cursor-pointer">
@@ -40,7 +44,7 @@
 						name="qari"
 						bind:group={formData.qari}
 						value={false}
-						on:change={handleInput}
+						onchange={handleInput}
 						class="radio"
 					/>
 					<label for="ghairu-qari" class="label-text cursor-pointer">
@@ -59,7 +63,7 @@
 		<select
 			id="marhalah"
 			name="marhalah"
-			on:input={handleInput}
+			oninput={handleInput}
 			bind:value={formData.marhalah}
 			class="select select-bordered w-full"
 			required
@@ -76,7 +80,7 @@
 				type="checkbox"
 				id="aktif"
 				name="aktif"
-				on:change={handleInput}
+				onchange={handleInput}
 				bind:checked={formData.aktif}
 				class="checkbox"
 			/>
@@ -91,7 +95,7 @@
 					type="checkbox"
 					id="partisipasi"
 					name="partisipasi"
-					on:change={handleInput}
+					onchange={handleInput}
 					bind:checked={formData.partisipasi}
 					class="checkbox"
 				/>

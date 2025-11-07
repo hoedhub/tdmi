@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { run } from 'svelte/legacy';
+
 	import { createEventDispatcher, tick } from 'svelte';
 	import { SuperTable } from '$lib/components/SuperTable';
 	import type { ColumnDef, SortConfig, FilterState } from '$lib/components/SuperTable';
@@ -18,14 +20,18 @@
 	}
 
 	// --- Props ---
-	export let showModal = false;
-	export let editedMuridId: number | undefined = undefined;
+	interface Props {
+		showModal?: boolean;
+		editedMuridId?: number | undefined;
+	}
+
+	let { showModal = false, editedMuridId = undefined }: Props = $props();
 
 	// --- State ---
-	let pageSize = 5;
-	let currentPage = 1;
-	let currentSort: SortConfig[] | undefined = undefined;
-	let currentFilters: FilterState = { columns: {} };
+	let pageSize = $state(5);
+	let currentPage = $state(1);
+	let currentSort: SortConfig[] | undefined = $state(undefined);
+	let currentFilters: FilterState = $state({ columns: {} });
 
 	const dispatch = createEventDispatcher<{
 		select: Murid;
@@ -107,9 +113,9 @@
 		);
 	}
 
-	let superTableComponent: SuperTable<Murid>;
-	let prevShowModal = showModal;
-	$: {
+	let superTableComponent: SuperTable<Murid> | undefined = $state();
+	let prevShowModal = $state(showModal);
+	run(() => {
 		if (showModal && !prevShowModal) {
 			// Load data if it's not already loaded
 			muridModalStore.loadDataIfNeeded(
@@ -128,7 +134,7 @@
 			});
 		}
 		prevShowModal = showModal;
-	}
+	});
 </script>
 
 {#if showModal}
@@ -140,7 +146,7 @@
 					bind:this={superTableComponent}
 					{columns}
 					data={$muridModalStore.muridData}
-					rowKey="id"
+					rowKey={"id" as keyof Murid}
 					itemsPerPageProp={pageSize}
 					totalItemsProp={$muridModalStore.totalItems}
 					isLoadingProp={$muridModalStore.loading}
@@ -155,12 +161,14 @@
 					dbError={$muridModalStore.hasDbError}
 					disabledRowKeys={editedMuridId ? [editedMuridId] : []}
 				>
-					<svelte:fragment slot="error-state">
+					<!-- @migration-task: migrate this slot by hand, `error-state` is an invalid identifier -->
+	<!-- @migration-task: migrate this slot by hand, `error-state` is an invalid identifier -->
+	<svelte:fragment slot="error-state">
 						<div class="p-8 text-center text-error">
 							<p>Tidak dapat memuat data.</p>
 							<button
 								class="btn btn-outline btn-sm mt-4"
-								on:click={() =>
+								onclick={() =>
 									muridModalStore.updateData(
 										currentSort,
 										currentFilters,
@@ -173,11 +181,13 @@
 							</button>
 						</div>
 					</svelte:fragment>
-					<div slot="bulk-actions" />
+					<!-- @migration-task: migrate this slot by hand, `bulk-actions` is an invalid identifier -->
+	<!-- @migration-task: migrate this slot by hand, `bulk-actions` is an invalid identifier -->
+	<div slot="bulk-actions"></div>
 				</SuperTable>
 			</div>
 			<div class="modal-action">
-				<button class="btn" on:click={closeModal}>Tutup</button>
+				<button class="btn" onclick={closeModal}>Tutup</button>
 			</div>
 		</div>
 	</div>

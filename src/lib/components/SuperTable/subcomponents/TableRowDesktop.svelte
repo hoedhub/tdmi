@@ -1,5 +1,6 @@
+<!-- @migration-task Error while migrating Svelte code: This migration would change the name of a slot making the component unusable -->
+<!-- @migration-task Error while migrating Svelte code: This migration would change the name of a slot making the component unusable -->
 <script lang="ts" generics="T extends Record<string, any>">
-	import { SvelteComponent } from 'svelte';
 	import type {
 		ColumnDef,
 		SwipeEvent,
@@ -48,7 +49,7 @@
 	}
 
 	function isSvelteComponent<T>(formatter: Formatter<T>): formatter is FormatterComponent {
-		return typeof formatter !== 'function' || formatter.prototype instanceof SvelteComponent;
+		return typeof formatter !== 'function';
 	}
 </script>
 

@@ -1,3 +1,5 @@
+<!-- @migration-task Error while migrating Svelte code: This migration would change the name of a slot making the component unusable -->
+<!-- @migration-task Error while migrating Svelte code: This migration would change the name of a slot making the component unusable -->
 <script lang="ts" generics="T extends Record<string, any>">
 	import type { ColumnDef, SortConfig, FilterState, SuperTableProps } from './types';
 	import { createEventDispatcher, onMount } from 'svelte';
@@ -90,8 +92,8 @@
 	$: totalPageCount = calculateTotalPages(totalItems, $itemsPerPage);
 	$: displayData = serverSide ? sortedData : paginateData(sortedData, $currentPage, $itemsPerPage);
 	$: allSelected =
-		displayData.length > 0 && displayData.every((row) => $selectedIds.has(row[rowKey]));
-	$: someSelected = displayData.some((row) => $selectedIds.has(row[rowKey]));
+		displayData.length > 0 && displayData.every((row) => $selectedIds.has(row[rowKey as keyof T]));
+	$: someSelected = displayData.some((row) => $selectedIds.has(row[rowKey as keyof T]));
 
 	// --- Event Handlers ---
 
@@ -183,9 +185,9 @@
 		if (selectionMode === 'multiple') {
 			const newSelectedIds = new Set($selectedIds);
 			if (event.detail.selected) {
-				displayData.forEach((row) => newSelectedIds.add(row[rowKey]));
+displayData.forEach((row) => newSelectedIds.add(row[rowKey as keyof T]));
 			} else {
-				displayData.forEach((row) => newSelectedIds.delete(row[rowKey]));
+				displayData.forEach((row) => newSelectedIds.delete(row[rowKey as keyof T]));
 			}
 			$selectedIds = newSelectedIds;
 			dispatch('selectionChange', Array.from(newSelectedIds));
@@ -199,14 +201,14 @@
 		if (selectionMode === 'single') {
 			newSelectedIds = new Set();
 			if (selected) {
-				newSelectedIds.add(row[rowKey]);
+				newSelectedIds.add(row[rowKey as keyof T]);
 			}
 		} else {
 			newSelectedIds = new Set($selectedIds);
 			if (selected) {
-				newSelectedIds.add(row[rowKey]);
+				newSelectedIds.add(row[rowKey as keyof T]);
 			} else {
-				newSelectedIds.delete(row[rowKey]);
+				newSelectedIds.delete(row[rowKey as keyof T]);
 			}
 		}
 
@@ -237,7 +239,7 @@
 	function selectAllOnPage() {
 		if (selectionMode === 'multiple') {
 			const newSelectedIds = new Set($selectedIds);
-			displayData.forEach((row) => newSelectedIds.add(row[rowKey]));
+			displayData.forEach((row) => newSelectedIds.add(row[rowKey as keyof T]));
 			$selectedIds = newSelectedIds;
 			dispatch('selectionChange', Array.from(newSelectedIds));
 		}
@@ -275,7 +277,7 @@
 				<!-- Global Filter -->
 				<div class="w-full">
 					<slot
-						name="global-filter"
+						name="globalFilter"
 						searchTerm={$filterState.global}
 						updateSearchTerm={handleGlobalFilter}
 					>
@@ -284,7 +286,7 @@
 							on:input={(e) => handleGlobalFilter(e.detail)}
 						/>
 					</slot>
-					<slot name="custom-filters" />
+					<slot name="customFilters" />
 				</div>
 
 				<!-- Toolbar -->
@@ -386,7 +388,7 @@
 								<Trash2 class="h-4 w-4" />
 								Delete Selected
 							</button>
-							<slot name="bulk-actions" selectedIds={Array.from($selectedIds)} />
+							<slot name="bulkActions" selectedIds={Array.from($selectedIds)} />
 						</div>
 					{/if}
 				</div>
@@ -400,31 +402,30 @@
 			{#if isMobile && mobileView === 'cards'}
 				<!-- Mobile Card View -->
 				{#if $isLoading}
-					<slot name="loading-state">
+					<slot name="loadingState">
 						<div class="flex w-full justify-center p-8">
 							<span class="loading loading-spinner" />
 						</div>
 					</slot>
 				{:else if data.length === 0}
-					<slot name="empty-state">
+					<slot name="emptyState">
 						<div class="p-8 text-center text-base-content/70">No data available</div>
 					</slot>
 				{:else}
-					{#each displayData as row (String(row[rowKey]))}
+					{#each displayData as row (String(row[rowKey as keyof T]))}
 						<TableRowMobileCard
 							{row}
 							columns={internalColumns}
 							rowKey={String(rowKey)}
 							isSelectable={true}
 							className={typeof rowClass === 'function' ? rowClass(row) : rowClass}
-							{cardClass}
-							{maxVisibleColumns}
-							on:select={handleSelect}
-							on:swipe={handleSwipe}
-							disabled={(disabledRowKeys || []).includes(row[rowKey])}
-						>
-							<svelte:fragment slot="row-actions" let:row>
-								<slot name="row-actions" {row} />
+							                            {cardClass}
+							                            {maxVisibleColumns}
+							                            on:select={handleSelect}
+							                            on:swipe={handleSwipe}
+							                            disabled={(disabledRowKeys || []).includes(row[rowKey as keyof T])}						>
+						<svelte:fragment slot="rowActions" let:row>
+								<slot name="rowActions" {row} />
 							</svelte:fragment>
 						</TableRowMobileCard>
 					{/each}
@@ -452,7 +453,7 @@
 										colspan={internalColumns.filter((c) => !c.hidden).length + 2}
 										class="p-8 text-center text-error"
 									>
-										<slot name="error-state">Gagal memuat data. Silakan coba lagi.</slot>
+										<slot name="errorState">Gagal memuat data. Silakan coba lagi.</slot>
 									</td>
 								</tr>
 							{:else if $isLoading}
@@ -461,8 +462,8 @@
 										colspan={internalColumns.filter((c) => !c.hidden).length + 2}
 										class="p-8 text-center"
 									>
-										<slot name="loading-state">
-											<span class="loading loading-spinner" />
+										<slot name="loadingState">
+											<span class="loading loading-spinner"></span>
 										</slot>
 									</td>
 								</tr>
@@ -472,11 +473,11 @@
 										colspan={internalColumns.filter((c) => !c.hidden).length + 2}
 										class="p-8 text-center text-base-content/70"
 									>
-										<slot name="empty-state">No data available</slot>
+										<slot name="emptyState">No data available</slot>
 									</td>
 								</tr>
 							{:else}
-								{#each displayData as row (String(row[rowKey]))}
+								{#each displayData as row (String(row[rowKey as keyof T]))}
 									<TableRowDesktop
 										{row}
 										columns={internalColumns}
@@ -485,10 +486,10 @@
 										className={typeof rowClass === 'function' ? rowClass(row) : rowClass}
 										on:select={handleSelect}
 										on:swipe={handleSwipe}
-										disabled={(disabledRowKeys || []).includes(row[rowKey])}
+										disabled={(disabledRowKeys || []).includes(row[rowKey as keyof T])}
 									>
-										<svelte:fragment slot="row-actions" let:row>
-											<slot name="row-actions" {row} />
+										<svelte:fragment slot="rowActions" let:row>
+											<slot name="rowActions" {row} />
 										</svelte:fragment>
 									</TableRowDesktop>
 								{/each}

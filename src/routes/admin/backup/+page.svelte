@@ -3,10 +3,10 @@
 	import { loading, update, success, error } from '$lib/components/toast';
 	import { Download, Loader2 } from 'lucide-svelte';
 
-	let isLoading = false;
+	let isLoading = $state(false);
 
 	// Ambil data dari load function di +page.server.ts
-	$: canCreateBackup = $page.data.canCreateBackup;
+	let canCreateBackup = $derived($page.data.canCreateBackup);
 
 	async function handleBackup() {
 		if (!canCreateBackup || isLoading) return;
@@ -73,7 +73,7 @@
 	<div class="pt-4">
 		<button
 			type="button"
-			on:click={handleBackup}
+			onclick={handleBackup}
 			disabled={!canCreateBackup || isLoading}
 			class="inline-flex items-center justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-gray-400"
 		>

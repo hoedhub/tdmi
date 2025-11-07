@@ -1,6 +1,8 @@
 <script lang="ts">
+	import { preventDefault } from 'svelte/legacy';
+
 	import { goto } from '$app/navigation';
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import { UserPen, LogOut } from 'lucide-svelte';
 	import { absoluteDropdownStore } from '$lib/stores/absoluteDropdown';
 
@@ -18,17 +20,17 @@
 	}
 </script>
 
-{#if $page.data.user}
+{#if page.data.user}
 	<ul class="menu w-52 p-2">
-		<li class="menu-title text-xs">Signed in as {$page.data.user.username}</li>
+		<li class="menu-title text-xs">Signed in as {page.data.user.username}</li>
 		<div class="divider my-0"></div>
 		<li>
-			<a href="/member/profile" on:click={absoluteDropdownStore.close}>
+			<a href="/member/profile" onclick={absoluteDropdownStore.close}>
 				<UserPen size={16} /> Edit Profile
 			</a>
 		</li>
 		<li>
-			<a href="/logout" on:click|preventDefault={logout}> <LogOut size={16} /> Logout </a>
+			<a href="/logout" onclick={preventDefault(logout)}> <LogOut size={16} /> Logout </a>
 		</li>
 	</ul>
 {/if}

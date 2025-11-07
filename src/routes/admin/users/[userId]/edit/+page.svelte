@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { run } from 'svelte/legacy';
+
 	import type { PageData as SvelteKitPageData, ActionData } from './$types';
 	import { enhance, applyAction } from '$app/forms';
 	import type { ActionResult } from '@sveltejs/kit';
@@ -43,15 +45,19 @@
 		roleHierarchy: RoleHierarchyLink[]; // <-- TAMBAHKAN INI
 	}
 
-	export let data: PageData;
-	export let form: FormActionData;
-	let isLoading: boolean = false;
+	interface Props {
+		data: PageData;
+		form: FormActionData;
+	}
 
-	let username: string = data.userToEdit.username;
-	let selectedRoles: string[] = data.userToEdit.assignedRoles;
-	let isActive: boolean | null = data.userToEdit.active;
-	let muridId: string = data.userToEdit.muridId === null ? '' : String(data.userToEdit.muridId);
-	let newPassword: string = '';
+	let { data, form }: Props = $props();
+	let isLoading: boolean = $state(false);
+
+	let username: string = $state(data.userToEdit.username);
+	let selectedRoles: string[] = $state(data.userToEdit.assignedRoles);
+	let isActive: boolean | null = $state(data.userToEdit.active);
+	let muridId: string = $state(data.userToEdit.muridId === null ? '' : String(data.userToEdit.muridId));
+	let newPassword: string = $state('');
 
 	async function handleSubmit() {
 		if (isLoading) return;
@@ -76,23 +82,27 @@
 		};
 	}
 	// Reactive assignments for form data on submission failure
-	$: if (form && 'userId' in form) {
-		// Check for a property that exists on the successful form data
-		if (form.selectedRoles !== undefined) selectedRoles = form.selectedRoles;
-		if (form.active !== undefined) isActive = form.active;
-		if (form.muridIdStr !== undefined) muridId = form.muridIdStr;
-	}
+	run(() => {
+		if (form && 'userId' in form) {
+			// Check for a property that exists on the successful form data
+			if (form.selectedRoles !== undefined) selectedRoles = form.selectedRoles;
+			if (form.active !== undefined) isActive = form.active;
+			if (form.muridIdStr !== undefined) muridId = form.muridIdStr;
+		}
+	});
 	const initialRoleNames = data.userToEdit.assignedRoles
 		.map((roleId) => data.allAvailableRoles.find((r) => r.id === roleId)?.name)
 		.filter(Boolean) as string[]; // filter(Boolean) untuk menghapus nilai undefined
 
 	// Buat daftar nama peran yang dipilih saat ini (akan berubah-ubah)
-	let currentSelectedRoleNames: string[] = [];
-	$: currentSelectedRoleNames = selectedRoles
-		.map((roleId) => data.allAvailableRoles.find((r) => r.id === roleId)?.name)
-		.filter(Boolean) as string[];
+	let currentSelectedRoleNames: string[] = $state([]);
+	run(() => {
+		currentSelectedRoleNames = selectedRoles
+			.map((roleId) => data.allAvailableRoles.find((r) => r.id === roleId)?.name)
+			.filter(Boolean) as string[];
+	});
 
-	$: roleHierarchy = data.roleHierarchy || [];
+	let roleHierarchy = $derived(data.roleHierarchy || []);
 
 	function getDirectChildren(parentRoleId: string): string[] {
 		return roleHierarchy
@@ -121,7 +131,7 @@
 		}
 	}
 
-	$: isRoleDisabled = (currentRoleId: string): boolean => {
+	let isRoleDisabled = $derived((currentRoleId: string): boolean => {
 		if (selectedRoles.includes(currentRoleId)) {
 			return false;
 		}
@@ -136,9 +146,9 @@
 			}
 		}
 		return false;
-	};
+	});
 
-	let isRoleModalOpen = false;
+	let isRoleModalOpen = $state(false);
 	function openRoleManagement() {
 		isRoleModalOpen = true;
 	}
@@ -230,7 +240,7 @@
 					<button
 						type="button"
 						class="btn btn-secondary btn-sm mb-2"
-						on:click={() => {
+						onclick={() => {
 							if (!confirm('Are you sure you want to reset the password?')) return;
 							newPassword = '123456';
 							alert('Password akan direset menjadi 123456 saat disimpan.');
@@ -257,7 +267,7 @@
 					</div>
 
 					<!-- Tombol untuk membuka modal -->
-					<button type="button" class="btn btn-outline btn-sm mt-2" on:click={openRoleManagement}>
+					<button type="button" class="btn btn-outline btn-sm mt-2" onclick={openRoleManagement}>
 						Manage Roles
 					</button>
 
@@ -329,7 +339,7 @@
 							class="checkbox-primary checkbox"
 							checked={selectedRoles.includes(role.id)}
 							disabled={isRoleDisabled(role.id)}
-							on:change={(e) => handleRoleSelection(role.id, e.currentTarget.checked)}
+							onchange={(e) => handleRoleSelection(role.id, e.currentTarget.checked)}
 						/>
 						<span class="label-text">{role.name}</span>
 					</label>
@@ -337,7 +347,7 @@
 			</div>
 
 			<div class="modal-action">
-				<button type="button" class="btn" on:click={closeRoleManagement}>Done</button>
+				<button type="button" class="btn" onclick={closeRoleManagement}>Done</button>
 			</div>
 		</div>
 	</div>

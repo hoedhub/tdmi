@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { run } from 'svelte/legacy';
+
 	import type { PageData as SvelteKitPageData, ActionData } from './$types';
 	import { enhance, applyAction } from '$app/forms';
 	import type { ActionResult } from '@sveltejs/kit';
@@ -35,15 +37,19 @@
 		roleHierarchy: RoleHierarchyLink[]; // <-- TAMBAHKAN INI
 	}
 
-	export let data: PageData;
-	export let form: FormActionData;
-	let isLoading: boolean = false;
+	interface Props {
+		data: PageData;
+		form: FormActionData;
+	}
 
-	let username: string = form?.username || '';
-	let selectedRoles: string[] = form?.selectedRoles || [];
-	let isActive: boolean | null = form?.active ?? true; // Defaultnya aktif
-	let muridId: string = form?.muridIdStr || '';
-	let password: string = '123456'; // Password field
+	let { data, form }: Props = $props();
+	let isLoading: boolean = $state(false);
+
+	let username: string = $state(form?.username || '');
+	let selectedRoles: string[] = $state(form?.selectedRoles || []);
+	let isActive: boolean | null = $state(form?.active ?? true); // Defaultnya aktif
+	let muridId: string = $state(form?.muridIdStr || '');
+	let password: string = $state('123456'); // Password field
 
 	async function handleSubmit() {
 		if (isLoading) return;
@@ -68,20 +74,24 @@
 		};
 	}
 	// Reactive assignments for form data on submission failure
-	$: if (form && 'userId' in form) {
-		// Check for a property that exists on the successful form data
-		if (form.username !== undefined) username = form.username;
-		if (form.selectedRoles !== undefined) selectedRoles = form.selectedRoles;
-		if (form.active !== undefined) isActive = form.active;
-		if (form.muridIdStr !== undefined) muridId = form.muridIdStr;
-	}
+	run(() => {
+		if (form && 'userId' in form) {
+			// Check for a property that exists on the successful form data
+			if (form.username !== undefined) username = form.username;
+			if (form.selectedRoles !== undefined) selectedRoles = form.selectedRoles;
+			if (form.active !== undefined) isActive = form.active;
+			if (form.muridIdStr !== undefined) muridId = form.muridIdStr;
+		}
+	});
 	// Buat daftar nama peran yang dipilih saat ini (akan berubah-ubah)
-	let currentSelectedRoleNames: string[] = [];
-	$: currentSelectedRoleNames = selectedRoles
-		.map((roleId) => data.allAvailableRoles.find((r) => r.id === roleId)?.name)
-		.filter(Boolean) as string[];
+	let currentSelectedRoleNames: string[] = $state([]);
+	run(() => {
+		currentSelectedRoleNames = selectedRoles
+			.map((roleId) => data.allAvailableRoles.find((r) => r.id === roleId)?.name)
+			.filter(Boolean) as string[];
+	});
 
-	$: roleHierarchy = data.roleHierarchy || [];
+	let roleHierarchy = $derived(data.roleHierarchy || []);
 
 	function getDirectChildren(parentRoleId: string): string[] {
 		return roleHierarchy
@@ -110,7 +120,7 @@
 		}
 	}
 
-	$: isRoleDisabled = (currentRoleId: string): boolean => {
+	let isRoleDisabled = $derived((currentRoleId: string): boolean => {
 		if (selectedRoles.includes(currentRoleId)) {
 			return false;
 		}
@@ -125,9 +135,9 @@
 			}
 		}
 		return false;
-	};
+	});
 
-	let isRoleModalOpen = false;
+	let isRoleModalOpen = $state(false);
 	function openRoleManagement() {
 		isRoleModalOpen = true;
 	}
@@ -233,7 +243,7 @@
 					</div>
 
 					<!-- Tombol untuk membuka modal -->
-					<button type="button" class="btn btn-outline btn-sm mt-2" on:click={openRoleManagement}>
+					<button type="button" class="btn btn-outline btn-sm mt-2" onclick={openRoleManagement}>
 						Manage Roles
 					</button>
 
@@ -305,7 +315,7 @@
 							class="checkbox-primary checkbox"
 							checked={selectedRoles.includes(role.id)}
 							disabled={isRoleDisabled(role.id)}
-							on:change={(e) => handleRoleSelection(role.id, e.currentTarget.checked)}
+							onchange={(e) => handleRoleSelection(role.id, e.currentTarget.checked)}
 						/>
 						<span class="label-text">{role.name}</span>
 					</label>
@@ -313,7 +323,7 @@
 			</div>
 
 			<div class="modal-action">
-				<button type="button" class="btn" on:click={closeRoleManagement}>Done</button>
+				<button type="button" class="btn" onclick={closeRoleManagement}>Done</button>
 			</div>
 		</div>
 	</div>

@@ -1,5 +1,7 @@
 <!-- src/lib/components/toast/ToastContainer.svelte -->
 <script lang="ts">
+	import { run } from 'svelte/legacy';
+
 	import { onMount, onDestroy } from 'svelte';
 	import { fly } from 'svelte/transition';
 	import { quintOut } from 'svelte/easing'; // A nice easing function
@@ -8,47 +10,64 @@
 	import { toastStore, _setMaxToasts } from './toastStore'; // _setMaxToasts is for internal sync
 	import type { ToastPosition, ToastContainerProps } from './types';
 
-	/**
+	
+
+	
+
+	
+
+	
+
+	
+	interface Props {
+		/**
 	 * Position of the toast container on the screen.
 	 * @default 'top-right'
 	 */
-	export let position: ToastPosition = 'top-right';
-
-	/**
+		position?: ToastPosition;
+		/**
 	 * Maximum number of toasts to display at once.
 	 * This value is also passed to the toastStore.
 	 * @default 5
 	 */
-	export let maxToasts: number = 5;
-
-	/**
+		maxToasts?: number;
+		/**
 	 * DaisyUI gap class (e.g., 'gap-2', 'gap-4') or any valid CSS gap value
 	 * for spacing between toasts within the container.
 	 * @default 'gap-2'
 	 */
-	export let spacing: string = 'gap-2';
-
-	/**
+		spacing?: string;
+		/**
 	 * The HTML element tag to use for the main container element.
 	 * @default 'div'
 	 */
-	export let containerElementTag: ToastContainerProps['containerElementTag'] = 'div';
-
-	/**
+		containerElementTag?: ToastContainerProps['containerElementTag'];
+		/**
 	 * Custom CSS class(es) to apply to the toast container element itself.
 	 */
-	export let customClass: string = '';
+		customClass?: string;
+	}
+
+	let {
+		position = 'top-right',
+		maxToasts = 5,
+		spacing = 'gap-2',
+		containerElementTag = 'div',
+		customClass = ''
+	}: Props = $props();
 
 	// Reactive statement to update the store's maxToasts if the prop changes
-	$: _setMaxToasts(maxToasts);
+	run(() => {
+		_setMaxToasts(maxToasts);
+	});
 
 	// Subscribe to the toast store
 	const toasts = toastStore; // This is the readable store
 
 	// --- Positioning Logic ---
-	let positionClasses = '';
+	let positionClasses = $state('');
 	// Map abstract position to DaisyUI toast classes or custom fixed positioning
-	$: {
+	run(() => {
 		// Default to fixed positioning as DaisyUI toast classes are sometimes limiting for dynamic content
 		let basePositioning = 'fixed z-[9999] p-4 flex'; // High z-index, padding, flex display
 		// DaisyUI specific classes can also be used: `toast`
@@ -84,7 +103,7 @@
 		}
 		// If using DaisyUI parent 'toast' class, the children don't need flex-col etc.
 		// It would be `positionClasses = 'toast z-[9999] ' + daisyPositionClass;`
-	}
+	});
 
 	// Transition parameters based on position
 	let transitionParams: {
@@ -92,8 +111,8 @@
 		y?: number;
 		duration: number;
 		easing: (t: number) => number;
-	} = { y: -30, duration: 300, easing: quintOut }; // Default for top positions
-	$: {
+	} = $state({ y: -30, duration: 300, easing: quintOut }); // Default for top positions
+	run(() => {
 		if (position.startsWith('bottom-')) {
 			transitionParams = { y: 30, duration: 300, easing: quintOut };
 		} else if (position.includes('-left')) {
@@ -104,7 +123,7 @@
 			// top-center or other new positions
 			transitionParams = { y: -30, duration: 300, easing: quintOut };
 		}
-	}
+	});
 </script>
 
 {#if $toasts && $toasts.length > 0}

@@ -5,9 +5,13 @@
 	import { success, error } from '$lib/components/toast';
 	import { Save, RefreshCw } from 'lucide-svelte';
 
-	export let form: ActionData;
-	$: formData = (form as any)?.data;
-	let isLoading: boolean = false;
+	interface Props {
+		form: ActionData;
+	}
+
+	let { form }: Props = $props();
+	let formData = $derived((form as any)?.data);
+	let isLoading: boolean = $state(false);
 
 	async function handleSubmit() {
 		if (isLoading) return;

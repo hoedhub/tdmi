@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { run, stopPropagation } from 'svelte/legacy';
+
 	import { invalidateAll } from '$app/navigation';
 	import { SuperTable } from '$lib/components/SuperTable';
 	import type { ColumnDef, SortConfig, FilterState } from '$lib/components/SuperTable';
@@ -34,57 +36,63 @@
 		canAccessPendataan?: boolean;
 	}
 
-	export let data: ExtendedPageData;
-	export let form: { success?: boolean; message?: string } | null;
+	interface Props {
+		data: ExtendedPageData;
+		form: { success?: boolean; message?: string } | null;
+	}
 
-	let users = data.users;
-	let allRoles = data.allRoles;
-	let totalItems = data.totalItems;
-	let loading = true;
-	let pageSize = 10;
+	let { data, form }: Props = $props();
+
+	let users = $state(data.users);
+	let allRoles = $state(data.allRoles);
+	let totalItems = $state(data.totalItems);
+	let loading = $state(true);
+	let pageSize = $state(10);
 	let currentPage = 1;
-	let currentSort: SortConfig[] | undefined = undefined;
+	let currentSort: SortConfig[] | undefined = $state(undefined);
 	let currentFilters: Record<string, any> = {};
 
-	let columns: ColumnDef[] = [];
-	$: if (allRoles.length > 0) {
-		columns = [
-			{ key: 'username', label: 'Username', sortable: true, filterable: 'text' },
-			{
-				key: 'assignedRoles',
-				label: 'Roles',
-				sortable: false,
-				filterable: 'select',
-				filterOptions: allRoles.map((role) => role.name),
-				formatter: (value: string[]) =>
-					value
-						.map((roleId: string) => allRoles.find((r) => r.id === roleId)?.name || roleId)
-						.join(', ') || 'No Roles'
-			},
-			{
-				key: 'active',
-				label: 'Status',
-				sortable: true,
-				filterable: 'select',
-				filterOptions: ['Active', 'Inactive'],
-				formatter: (value: boolean | null) => (value ? 'Active' : 'Inactive'),
-				cellClass: (value: boolean | null) => (value ? 'text-success' : 'text-error')
-			},
-			{
-				key: 'muridId',
-				label: 'Murid ID',
-				sortable: true,
-				formatter: (value: number | null) =>
-					value === null || value === 0 ? 'N/A' : value.toString()
-			},
-			{
-				key: 'createdAt',
-				label: 'Created At',
-				sortable: true,
-				formatter: (value: string) => new Date(value).toLocaleDateString()
-			}
-		];
-	}
+	let columns: ColumnDef[] = $state([]);
+	run(() => {
+		if (allRoles.length > 0) {
+			columns = [
+				{ key: 'username', label: 'Username', sortable: true, filterable: 'text' },
+				{
+					key: 'assignedRoles',
+					label: 'Roles',
+					sortable: false,
+					filterable: 'select',
+					filterOptions: allRoles.map((role) => role.name),
+					formatter: (value: string[]) =>
+						value
+							.map((roleId: string) => allRoles.find((r) => r.id === roleId)?.name || roleId)
+							.join(', ') || 'No Roles'
+				},
+				{
+					key: 'active',
+					label: 'Status',
+					sortable: true,
+					filterable: 'select',
+					filterOptions: ['Active', 'Inactive'],
+					formatter: (value: boolean | null) => (value ? 'Active' : 'Inactive'),
+					cellClass: (value: boolean | null) => (value ? 'text-success' : 'text-error')
+				},
+				{
+					key: 'muridId',
+					label: 'Murid ID',
+					sortable: true,
+					formatter: (value: number | null) =>
+						value === null || value === 0 ? 'N/A' : value.toString()
+				},
+				{
+					key: 'createdAt',
+					label: 'Created At',
+					sortable: true,
+					formatter: (value: string) => new Date(value).toLocaleDateString()
+				}
+			];
+		}
+	});
 
 	async function fetchTableData(
 		sort?: SortConfig[] | null,
@@ -170,12 +178,14 @@
 		}
 	}
 
-	$: if (form?.success) {
-		alert(form.message);
-		invalidateAll();
-	} else if (form?.message && !form?.success) {
-		alert(form.message);
-	}
+	run(() => {
+		if (form?.success) {
+			alert(form.message);
+			invalidateAll();
+		} else if (form?.message && !form?.success) {
+			alert(form.message);
+		}
+	});
 </script>
 
 <div class="mb-6 flex flex-wrap items-center justify-between space-y-2">
@@ -199,26 +209,30 @@
 		on:itemsPerPageChange={handleItemsPerPageChange}
 		on:rowClick={(e) => goto(`/admin/users/${e.detail.id}/edit`)}
 	>
-		<svelte:fragment slot="loading-state">
+		<!-- @migration-task: migrate this slot by hand, `loading-state` is an invalid identifier -->
+	<!-- @migration-task: migrate this slot by hand, `loading-state` is an invalid identifier -->
+	<svelte:fragment slot="loading-state">
 			<div class="p-8 text-center">
 				<span class="loading loading-spinner mb-4"></span>
 				<p class="text-lg font-semibold">Memuat data...</p>
 				<p class="text-sm text-base-content/70">Harap tunggu sebentar.</p>
 			</div>
 		</svelte:fragment>
-		<svelte:fragment slot="row-actions" let:row>
+		<!-- @migration-task: migrate this slot by hand, `row-actions` is an invalid identifier -->
+	<!-- @migration-task: migrate this slot by hand, `row-actions` is an invalid identifier -->
+	<svelte:fragment slot="row-actions" let:row>
 			<div class="flex gap-2">
 				<a
 					href={`/admin/users/${row.id}/edit`}
 					class="btn btn-ghost btn-sm"
-					on:click|stopPropagation={() => {}}
+					onclick={stopPropagation(() => {})}
 				>
 					<Pen class="h-4 w-4" />
 				</a>
 				{#if row.id !== data.user?.id}
 					<button
 						class="btn btn-ghost btn-sm text-error"
-						on:click|stopPropagation={() => handleDeleteUser(row.id, row.username)}
+						onclick={stopPropagation(() => handleDeleteUser(row.id, row.username))}
 					>
 						<Trash class="h-4 w-4" />
 					</button>

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { run } from 'svelte/legacy';
+
 	import type { PageData } from './$types';
 	import { error } from '$lib/components/toast';
 	import AddMuridForm from '$lib/components/data-entry/AddMuridForm.svelte';
@@ -26,18 +28,26 @@
 		// foto?: Uint8Array | null; // Add if foto is ever returned
 	}
 
-	export let data: PageData;
-	export let form: ActionData; // Use the custom ActionData
+	interface Props {
+		data: PageData;
+		form: ActionData;
+	}
+
+	let { data, form }: Props = $props();
 
 	// Handle form submission success/error
-	$: if (form?.message && !form?.success) {
-		error(form.message);
-	}
+	run(() => {
+		if (form?.message && !form?.success) {
+			error(form.message);
+		}
+	});
 
 	// Show success message when form is submitted successfully
-	$: if (form?.success && form?.message) {
-		// Message will be shown by the form component itself
-	}
+	run(() => {
+		if (form?.success && form?.message) {
+			// Message will be shown by the form component itself
+		}
+	});
 </script>
 
 <div class="card bg-base-100 shadow-xl">

@@ -1,5 +1,7 @@
 <script lang="ts">
-	import { page } from '$app/stores';
+	import { preventDefault } from 'svelte/legacy';
+
+	import { page } from '$app/state';
 	import { themeStore } from '$lib/stores/themeStore';
 	import { absoluteDropdownStore } from '$lib/stores/absoluteDropdown';
 	import { setPreference } from '$lib/stores/preferenceService';
@@ -44,7 +46,7 @@
 	function toggleTheme(theme: string) {
 		if ($themeStore === theme) return;
 		themeStore.set(theme);
-		setPreference($page.data.user, 'theme', theme);
+		setPreference(page.data.user, 'theme', theme);
 		absoluteDropdownStore.close();
 	}
 
@@ -58,11 +60,11 @@
 		<li>
 			<button
 				class:active={$themeStore === theme}
-				on:click|preventDefault={() => toggleTheme(theme)}
-				on:mouseover|preventDefault={() => previewTheme(theme)}
-				on:focus|preventDefault={() => previewTheme(theme)}
-				on:mouseleave|preventDefault={() => previewTheme($themeStore)}
-				on:blur|preventDefault={() => previewTheme($themeStore)}
+				onclick={preventDefault(() => toggleTheme(theme))}
+				onmouseover={preventDefault(() => previewTheme(theme))}
+				onfocus={preventDefault(() => previewTheme(theme))}
+				onmouseleave={preventDefault(() => previewTheme($themeStore))}
+				onblur={preventDefault(() => previewTheme($themeStore))}
 			>
 				{theme}
 			</button>

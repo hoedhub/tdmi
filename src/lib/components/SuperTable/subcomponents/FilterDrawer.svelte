@@ -1,3 +1,5 @@
+<!-- @migration-task Error while migrating Svelte code: Can't migrate code with afterUpdate. Please migrate by hand. -->
+<!-- @migration-task Error while migrating Svelte code: Can't migrate code with afterUpdate. Please migrate by hand. -->
 <script lang="ts">
 	import type { ColumnDef } from '../types';
 	import { afterUpdate, createEventDispatcher } from 'svelte';
@@ -55,7 +57,8 @@
 			class="fixed inset-0 bg-gray-500/75"
 			transition:fly={{ duration: 300, opacity: 0 }}
 			on:click={() => dispatch('close')}
-		/>
+			aria-label="Close filter drawer"
+		></button>
 
 		<!-- 2. Kontainer Panel Drawer -->
 		<div class="fixed inset-0 overflow-hidden">

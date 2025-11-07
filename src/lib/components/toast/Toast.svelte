@@ -1,56 +1,80 @@
 <!-- src/lib/components/toast/Toast.svelte -->
 <script lang="ts">
+	import { run } from 'svelte/legacy';
+
 	import { onMount, onDestroy } from 'svelte';
 	import type { ToastMessage, SvelteLucideIcon } from './types';
 	import { dismiss } from './toastStore'; // To dismiss itself
 	import { X } from 'lucide-svelte'; // Default close icon
 
 	// --- Props (all from ToastMessage interface) ---
-	export let id: string;
-	export let type: ToastMessage['type'];
-	export let title: ToastMessage['title'] = undefined;
-	export let message: ToastMessage['message'];
-	export let icon: ToastMessage['icon'] = undefined;
-	export let iconProps: ToastMessage['iconProps'] = { size: 24 };
-	export let duration: ToastMessage['duration']; // ms, Infinity for persistent
-	export let showCloseButton: ToastMessage['showCloseButton'];
-	export let progress: ToastMessage['progress'];
-	export let pauseOnHover: ToastMessage['pauseOnHover'];
-	export let actions: ToastMessage['actions'] = [];
-	export let customClass: ToastMessage['customClass'] = '';
-	export let allowHtml: ToastMessage['allowHtml'] = false;
 	// onDismiss is handled by the store when dismiss() is called
 	// ***** ADD THESE EXPORTED PROPS *****
-	export let onDismiss: ToastMessage['onDismiss'] = undefined; // Even if not used directly in this component's logic
-	export let createdAt: ToastMessage['createdAt']; // This prop must exist if it's passed
-
-	$: if (false) {
-		console.log(onDismiss, createdAt);
+	interface Props {
+		id: string;
+		type: ToastMessage['type'];
+		title?: ToastMessage['title'];
+		message: ToastMessage['message'];
+		icon?: ToastMessage['icon'];
+		iconProps?: ToastMessage['iconProps'];
+		duration: ToastMessage['duration'];
+		showCloseButton: ToastMessage['showCloseButton'];
+		progress: ToastMessage['progress'];
+		pauseOnHover: ToastMessage['pauseOnHover'];
+		actions?: ToastMessage['actions'];
+		customClass?: ToastMessage['customClass'];
+		allowHtml?: ToastMessage['allowHtml'];
+		onDismiss?: ToastMessage['onDismiss'];
+		createdAt: ToastMessage['createdAt'];
 	}
 
-	let timerId: number | undefined = undefined;
-	let remainingDuration: number = duration;
+	let {
+		id,
+		type,
+		title = undefined,
+		message,
+		icon = undefined,
+		iconProps = { size: 24 },
+		duration,
+		showCloseButton,
+		progress,
+		pauseOnHover,
+		actions = [],
+		customClass = '',
+		allowHtml = false,
+		onDismiss = undefined,
+		createdAt
+	}: Props = $props();
+
+	run(() => {
+		if (false) {
+			console.log(onDismiss, createdAt);
+		}
+	});
+
+	let timerId: number | undefined = $state(undefined);
+	let remainingDuration: number = $state(duration);
 	let startTime: number = Date.now();
-	let isPaused: boolean = false;
+	let isPaused: boolean = $state(false);
 
 	// --- Computed properties for styling ---
-	$: alertClass = {
+	let alertClass = $derived({
 		info: 'alert-info',
 		success: 'alert-success',
 		warning: 'alert-warning',
 		error: 'alert-error',
 		loading: 'alert-info', // Or a specific loading style
 		custom: '' // Custom type relies on customClass
-	}[type];
+	}[type]);
 
-	$: progressColorClass = {
+	let progressColorClass = $derived({
 		info: 'bg-info-content', // Or 'bg-info' for DaisyUI v3, check v4 variables
 		success: 'bg-success-content',
 		warning: 'bg-warning-content',
 		error: 'bg-error-content',
 		loading: 'bg-info-content',
 		custom: 'bg-neutral-content' // A sensible default for custom
-	}[type];
+	}[type]);
 
 	// --- Auto-dismiss Logic ---
 	function startTimer() {
@@ -90,15 +114,17 @@
 
 	// Reactive statement to restart timer if duration changes (e.g., via toastStore.update)
 	// This is a basic way; a more robust way might involve a unique key changing
-	$: if (duration && id) {
-		// Check id to ensure it's not during initial undefined state
-		remainingDuration = duration;
-		if (duration > 0 && duration !== Infinity) {
-			startTimer();
-		} else {
-			clearTimeout(timerId); // If duration becomes 0 or Infinity
+	run(() => {
+		if (duration && id) {
+			// Check id to ensure it's not during initial undefined state
+			remainingDuration = duration;
+			if (duration > 0 && duration !== Infinity) {
+				startTimer();
+			} else {
+				clearTimeout(timerId); // If duration becomes 0 or Infinity
+			}
 		}
-	}
+	});
 
 	// --- Event Handlers ---
 	function handleClose() {
@@ -116,15 +142,16 @@
 	class="alert w-full shadow-lg {alertClass} {customClass}"
 	role="alert"
 	aria-live={type === 'error' || type === 'warning' ? 'assertive' : 'polite'}
-	on:mouseenter={pauseTimer}
-	on:mouseleave={resumeTimer}
-	on:focusin={pauseTimer}
-	on:focusout={resumeTimer}
+	onmouseenter={pauseTimer}
+	onmouseleave={resumeTimer}
+	onfocusin={pauseTimer}
+	onfocusout={resumeTimer}
 >
 	<!-- Icon -->
 	{#if icon}
+		{@const SvelteComponent = icon}
 		<div class="flex-shrink-0">
-			<svelte:component this={icon} {...iconProps} />
+			<SvelteComponent {...iconProps} />
 		</div>
 	{/if}
 
@@ -151,11 +178,10 @@
 				<button
 					class="btn btn-sm {action.class ||
 						(type === 'custom' ? 'btn-outline' : `btn-outline btn-${type}`)}"
-					on:click={() => handleActionClick(action.onClick)}
+					onclick={() => handleActionClick(action.onClick)}
 				>
 					{#if action.icon}
-						<svelte:component
-							this={action.icon}
+						<action.icon
 							{...action.iconProps || { size: 16, class: 'mr-1' }}
 						/>
 					{/if}
@@ -170,7 +196,7 @@
 		<div class="flex-shrink-0">
 			<button
 				class="btn btn-circle btn-ghost btn-sm"
-				on:click={handleClose}
+				onclick={handleClose}
 				aria-label="Close notification"
 			>
 				<X size={20} />

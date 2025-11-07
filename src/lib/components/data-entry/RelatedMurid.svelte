@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { run } from 'svelte/legacy';
+
 	import { createEventDispatcher } from 'svelte';
 	import MuridModal from './MuridModal.svelte';
 
@@ -10,15 +12,25 @@
 	}
 
 	// Props
-	export let className: string = '';
-	export let placeholder: string = 'Pilih murid';
-	export let disabled: boolean = false;
-	export let initialData: { id: number; nama: string } | null | undefined = null;
-	export let editedMuridId: number | undefined = undefined;
+	interface Props {
+		className?: string;
+		placeholder?: string;
+		disabled?: boolean;
+		initialData?: { id: number; nama: string } | null | undefined;
+		editedMuridId?: number | undefined;
+	}
+
+	let {
+		className = '',
+		placeholder = 'Pilih murid',
+		disabled = false,
+		initialData = null,
+		editedMuridId = undefined
+	}: Props = $props();
 
 	// State
-	let showModal = false;
-	let selectedMurid: { id: number; nama: string } | null = null;
+	let showModal = $state(false);
+	let selectedMurid: { id: number; nama: string } | null = $state(null);
 
 	const dispatch = createEventDispatcher<{
 		change: { selectedId: number; selectedName: string };
@@ -37,7 +49,9 @@
 		dispatch('clear');
 	}
 
-	$: selectedMurid = initialData || null;
+	run(() => {
+		selectedMurid = initialData || null;
+	});
 </script>
 
 <div class="flex items-center gap-2 {className}">
@@ -45,7 +59,7 @@
 		<button
 			type="button"
 			class="btn btn-outline w-full justify-start"
-			on:click={() => (showModal = true)}
+			onclick={() => (showModal = true)}
 			{disabled}
 		>
 			{#if selectedMurid}
@@ -61,7 +75,7 @@
 		<button
 			type="button"
 			class="btn btn-circle btn-ghost btn-sm text-error hover:bg-error hover:text-error-content"
-			on:click={handleClear}
+			onclick={handleClear}
 		>
 			<svg
 				xmlns="http://www.w3.org/2000/svg"
