@@ -288,9 +288,7 @@
 		on:rowClick={(e) => goto(`/member/pendataan/${e.detail.id}/edit`)}
 		on:selectionChange={handleSelectionChange}
 	>
-		<!-- @migration-task: migrate this slot by hand, `bulk-actions` is an invalid identifier -->
-	<!-- @migration-task: migrate this slot by hand, `bulk-actions` is an invalid identifier -->
-	<svelte:fragment slot="bulk-actions" let:selectedIds>
+		<svelte:fragment slot="bulkActions" let:selectedIds>
 			{#if canWriteMurid && selectedIds.length === 1}
 				<button class="btn btn-secondary btn-sm" onclick={handleEditSelected}>
 					<Pen class="h-4 w-4" />
@@ -298,18 +296,14 @@
 				</button>
 			{/if}
 		</svelte:fragment>
-		<!-- @migration-task: migrate this slot by hand, `loading-state` is an invalid identifier -->
-	<!-- @migration-task: migrate this slot by hand, `loading-state` is an invalid identifier -->
-	<svelte:fragment slot="loading-state">
+		<svelte:fragment slot="loadingState">
 			<div class="p-8 text-center">
 				<span class="loading loading-spinner mb-4"></span>
 				<p class="text-lg font-semibold">Memuat data...</p>
 				<p class="text-sm text-base-content/70">Harap tunggu sebentar.</p>
 			</div>
 		</svelte:fragment>
-		<!-- @migration-task: migrate this slot by hand, `row-actions` is an invalid identifier -->
-	<!-- @migration-task: migrate this slot by hand, `row-actions` is an invalid identifier -->
-	<svelte:fragment slot="row-actions" let:row>
+		<svelte:fragment slot="rowActions" let:row>
 			{#if canWriteMurid}
 				<div class="flex gap-2">
 					<a

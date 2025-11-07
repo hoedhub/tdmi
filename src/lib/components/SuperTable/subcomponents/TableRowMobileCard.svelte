@@ -165,7 +165,7 @@
 		{/if}
 
 		<div class="card-actions justify-end rtl:justify-start">
-			<slot name="row-actions" {row} />
+			<slot name="rowActions" {row} />
 		</div>
 	</div>
 </div>

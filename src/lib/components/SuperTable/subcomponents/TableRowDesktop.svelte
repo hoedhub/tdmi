@@ -98,7 +98,7 @@
 	{/each}
 
 	<td class="py-1">
-		<slot name="row-actions" {row} />
+		<slot name="rowActions" {row} />
 	</td>
 </tr>
 

@@ -161,9 +161,7 @@
 					dbError={$muridModalStore.hasDbError}
 					disabledRowKeys={editedMuridId ? [editedMuridId] : []}
 				>
-					<!-- @migration-task: migrate this slot by hand, `error-state` is an invalid identifier -->
-	<!-- @migration-task: migrate this slot by hand, `error-state` is an invalid identifier -->
-	<svelte:fragment slot="error-state">
+					<svelte:fragment slot="errorState">
 						<div class="p-8 text-center text-error">
 							<p>Tidak dapat memuat data.</p>
 							<button
@@ -181,9 +179,7 @@
 							</button>
 						</div>
 					</svelte:fragment>
-					<!-- @migration-task: migrate this slot by hand, `bulk-actions` is an invalid identifier -->
-	<!-- @migration-task: migrate this slot by hand, `bulk-actions` is an invalid identifier -->
-	<div slot="bulk-actions"></div>
+					<div slot="bulkActions"></div>
 				</SuperTable>
 			</div>
 			<div class="modal-action">

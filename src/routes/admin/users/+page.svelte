@@ -209,18 +209,14 @@
 		on:itemsPerPageChange={handleItemsPerPageChange}
 		on:rowClick={(e) => goto(`/admin/users/${e.detail.id}/edit`)}
 	>
-		<!-- @migration-task: migrate this slot by hand, `loading-state` is an invalid identifier -->
-	<!-- @migration-task: migrate this slot by hand, `loading-state` is an invalid identifier -->
-	<svelte:fragment slot="loading-state">
+		<svelte:fragment slot="loadingState">
 			<div class="p-8 text-center">
 				<span class="loading loading-spinner mb-4"></span>
 				<p class="text-lg font-semibold">Memuat data...</p>
 				<p class="text-sm text-base-content/70">Harap tunggu sebentar.</p>
 			</div>
 		</svelte:fragment>
-		<!-- @migration-task: migrate this slot by hand, `row-actions` is an invalid identifier -->
-	<!-- @migration-task: migrate this slot by hand, `row-actions` is an invalid identifier -->
-	<svelte:fragment slot="row-actions" let:row>
+		<svelte:fragment slot="rowActions" let:row>
 			<div class="flex gap-2">
 				<a
 					href={`/admin/users/${row.id}/edit`}

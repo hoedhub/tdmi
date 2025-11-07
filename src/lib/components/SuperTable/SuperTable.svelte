@@ -404,7 +404,7 @@ displayData.forEach((row) => newSelectedIds.add(row[rowKey as keyof T]));
 				{#if $isLoading}
 					<slot name="loadingState">
 						<div class="flex w-full justify-center p-8">
-							<span class="loading loading-spinner" />
+							<span class="loading loading-spinner"></span>
 						</div>
 					</slot>
 				{:else if data.length === 0}
