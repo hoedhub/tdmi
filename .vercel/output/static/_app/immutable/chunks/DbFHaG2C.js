@@ -1,1 +1,0 @@
-import{w as i}from"./NNX8jiUB.js";function l(){const{subscribe:e,set:o}=i({isVisible:!1,content:"",position:{top:0,left:0}});return{subscribe:e,show:(s,t)=>{o({isVisible:!0,content:s,position:{top:t.top+t.height/2,left:t.right+8}})},hide:()=>{o({isVisible:!1,content:"",position:{top:0,left:0}})}}}const p=l(),r=i("slack-pro-light");export{r as a,p as t};

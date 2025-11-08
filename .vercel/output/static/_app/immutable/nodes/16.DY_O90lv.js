@@ -1,2 +1,0 @@
-import"../chunks/DsnmJJEf.js";import{p,f as r,s as i,a as m,t as o,b as d,c as h,d as l,r as f,n as g}from"../chunks/DGvkJv8w.js";import{s as c}from"../chunks/k-Px6GBH.js";var u=r(`<h1>Halaman Nasyath</h1> <p> </p> <p>Halaman ini hanya bisa diakses oleh pengguna dengan peran Nasyath atau peran di atasnya (Admin,
-	Naib, dll).</p>`,1);function x(e,a){p(a,!0);var t=u(),s=i(m(t),2),n=l(s,!0);f(s),g(2),o(()=>c(n,a.data.message)),d(e,t),h()}export{x as component};
