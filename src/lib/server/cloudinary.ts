@@ -1,5 +1,8 @@
 import { v2 as cloudinary } from 'cloudinary';
 import stream from 'stream';
+import { config } from 'dotenv';
+
+config({ path: '.env' });
 
 // The SDK automatically configures itself from the CLOUDINARY_URL env var.
 // No manual .config() calls are needed.
@@ -11,6 +14,9 @@ import stream from 'stream';
  * @returns The Cloudinary Public ID (e.g., "murid_photos/123").
  */
 export async function uploadFile(fileBuffer: Buffer, muridId: number): Promise<string> {
+	if (!process.env.CLOUDINARY_URL) {
+		throw new Error('CLOUDINARY_URL is not configured in the environment.');
+	}
 	return new Promise((resolve, reject) => {
 		// Standardized Public ID format: "murid_photos/[murid_id]"
 		const public_id = `murid_photos/${muridId}`;
@@ -49,6 +55,15 @@ export async function deleteFile(publicId: string): Promise<void> {
 }
 
 export function getPublicFileUrl(publicId: string): string {
-	// The official SDK method will generate the correct, fully-qualified URL.
-	return cloudinary.url(publicId, { secure: true });
+	if (!publicId) return '';
+
+	// If CLOUDINARY_URL is missing, return a placeholder or empty string instead of crashing.
+	// The SDK's auto-config might fail if it's not in process.env at the right time.
+	try {
+		// Use explicit config if needed, or just let it try.
+		return cloudinary.url(publicId, { secure: true });
+	} catch (error) {
+		console.error('Cloudinary URL generation failed. Is CLOUDINARY_URL set?', error);
+		return '';
+	}
 }

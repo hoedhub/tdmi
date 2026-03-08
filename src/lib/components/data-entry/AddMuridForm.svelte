@@ -32,9 +32,9 @@
 	let { formData = undefined, propinsiList = [], editedMuridId = undefined }: Props = $props();
 
 	// --- STATE ---
-	let countryId: string | undefined = $state();
-	let countryCode: string | undefined = $state();
-	let phoneNumber: string | undefined = $state();
+	let countryId: string = $state('id');
+	let countryCode: string = $state('+62');
+	let phoneNumber: string = $state('');
 
 	const defaultFormData: FormData = {
 		nama: '',
@@ -289,7 +289,7 @@
 >
 	<PersonalInfoForm
 		bind:this={personalInfoFormComponent}
-		formData={internalFormData}
+		bind:formData={internalFormData}
 		{handleInput}
 		{handleArabicInput}
 		{similarMurids}
@@ -298,18 +298,18 @@
 
 	<ContactForm
 		{propinsiList}
-		formData={internalFormData}
-		{selectedPropinsi}
-		{selectedKokab}
-		{selectedKecamatan}
+		bind:formData={internalFormData}
+		bind:selectedPropinsi
+		bind:selectedKokab
+		bind:selectedKecamatan
 		{handleInput}
 		{handleWilayahChange}
-		{countryId}
-		{countryCode}
-		{phoneNumber}
+		bind:countryId
+		bind:countryCode
+		bind:phoneNumber
 	/>
 
-	<IrsyadiyahForm formData={internalFormData} {handleInput} {editedMuridId} />
+	<IrsyadiyahForm bind:formData={internalFormData} {handleInput} {editedMuridId} />
 	{#if internalFormData.muhrimData}
 		<input type="hidden" name="muhrimData" value={JSON.stringify(internalFormData.muhrimData)} />
 	{/if}
@@ -322,7 +322,7 @@
 	{#if internalFormData.wiridData}
 		<input type="hidden" name="wiridData" value={JSON.stringify(internalFormData.wiridData)} />
 	{/if}
-	<StatusForm formData={internalFormData} {handleInput} />
+	<StatusForm bind:formData={internalFormData} {handleInput} />
 
 	<div
 		class="sticky bottom-0 flex w-full space-x-2 bg-white/20 p-2 backdrop-blur-xl backdrop-saturate-150 dark:bg-gray-800/20 dark:backdrop-brightness-125"

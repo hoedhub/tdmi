@@ -27,11 +27,12 @@
 	} from 'lucide-svelte';
 
 	// Initialize state from the class set by the inline script to prevent flash
-	let isSidebarCollapsed =
-		typeof document !== 'undefined' && document.documentElement.classList.contains('sidebar-collapsed');
-	let isSidebarOpen = false; // For mobile drawer state
-	let userButtonEl: HTMLButtonElement;
-	let themeButtonEl: HTMLButtonElement;
+	let isSidebarCollapsed = $state(
+		typeof document !== 'undefined' && document.documentElement.classList.contains('sidebar-collapsed')
+	);
+	let isSidebarOpen = $state(false); // For mobile drawer state
+	let userButtonEl: HTMLButtonElement | undefined = $state();
+	let themeButtonEl: HTMLButtonElement | undefined = $state();
 
 	const menuItems = [
 		{ href: '/', label: 'Dashboard', icon: Home },
@@ -41,11 +42,13 @@
 	];
 
 	function handleUserMenuClick() {
+		if (!userButtonEl) return;
 		const rect = userButtonEl.getBoundingClientRect();
 		absoluteDropdownStore.toggle(rect, UserMenu, 'up');
 	}
 
 	function handleThemeMenuClick() {
+		if (!themeButtonEl) return;
 		const rect = themeButtonEl.getBoundingClientRect();
 		absoluteDropdownStore.toggle(rect, ThemePicker, 'up');
 	}
@@ -75,9 +78,13 @@
 	});
 
 	// When the store changes, update the data-theme attribute
-	$: if (typeof document !== 'undefined') {
-		document.documentElement.setAttribute('data-theme', $themeStore);
-	}
+	$effect(() => {
+		if (typeof document !== 'undefined') {
+			document.documentElement.setAttribute('data-theme', $themeStore);
+		}
+	});
+
+	let { children }: { children?: import('svelte').Snippet } = $props();
 </script>
 
 <div class="drawer relative md:drawer-open">
@@ -108,7 +115,7 @@
 
 		<!-- Main content area -->
 		<main class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
-			<slot name="main-content" />
+			{@render children?.()}
 		</main>
 
 		<!-- Footer -->
@@ -167,11 +174,11 @@
 								class:active={item.href === '/'
 									? $page.url.pathname === '/'
 									: $page.url.pathname.startsWith(item.href)}
-								on:click={() => (isSidebarOpen = false)}
-								on:mouseenter={(e) => showTooltip(e, item.label)}
-								on:mouseleave={hideTooltip}
+								onclick={() => (isSidebarOpen = false)}
+								onmouseenter={(e) => showTooltip(e, item.label)}
+								onmouseleave={hideTooltip}
 							>
-								<svelte:component this={item.icon} size={20} class="opacity-75" />
+								<item.icon size={20} class="opacity-75" />
 								<span class:md:hidden={isSidebarCollapsed}>{item.label}</span>
 							</a>
 						</li>
@@ -186,9 +193,9 @@
 								class="flex"
 								class:md:justify-center={isSidebarCollapsed}
 								class:active={$page.url.pathname.startsWith('/admin')}
-								on:click={() => (isSidebarOpen = false)}
-								on:mouseenter={(e) => showTooltip(e, 'Admin')}
-								on:mouseleave={hideTooltip}
+								onclick={() => (isSidebarOpen = false)}
+								onmouseenter={(e) => showTooltip(e, 'Admin')}
+								onmouseleave={hideTooltip}
 							>
 								<ChartNoAxesGantt size={20} class="opacity-75" />
 								<span class:md:hidden={isSidebarCollapsed}>{'Admin'}</span>
@@ -205,15 +212,15 @@
 					<!-- Theme Picker -->
 					<button
 						bind:this={themeButtonEl}
-						on:click={handleThemeMenuClick}
+						onclick={handleThemeMenuClick}
 						class="btn btn-ghost"
 						class:w-full={!isSidebarCollapsed}
 						class:justify-start={!isSidebarCollapsed}
 						class:md:justify-center={isSidebarCollapsed}
 						class:md:px-0={isSidebarCollapsed}
 						class:md:btn-circle={isSidebarCollapsed}
-						on:mouseenter={(e) => showTooltip(e, 'Change Theme')}
-						on:mouseleave={hideTooltip}
+						onmouseenter={(e) => showTooltip(e, 'Change Theme')}
+						onmouseleave={hideTooltip}
 					>
 						<Palette size={24} />
 						<span class:md:hidden={isSidebarCollapsed} class="truncate">Theme: {$themeStore}</span>
@@ -223,15 +230,15 @@
 					{#if $page.data.user}
 						<button
 							bind:this={userButtonEl}
-							on:click={handleUserMenuClick}
+							onclick={handleUserMenuClick}
 							class="btn btn-ghost"
 							class:w-full={!isSidebarCollapsed}
 							class:justify-start={!isSidebarCollapsed}
 							class:md:justify-center={isSidebarCollapsed}
 							class:md:px-0={isSidebarCollapsed}
 							class:md:btn-circle={isSidebarCollapsed}
-							on:mouseenter={(e) => showTooltip(e, 'User Options')}
-							on:mouseleave={hideTooltip}
+							onmouseenter={(e) => showTooltip(e, 'User Options')}
+							onmouseleave={hideTooltip}
 						>
 							<UserCircle size={24} />
 							<span class:md:hidden={isSidebarCollapsed} class="truncate"
@@ -246,7 +253,7 @@
 
 	<!-- Toggle Button (Desktop Only) -->
 	<button
-		on:click={toggleSidebar}
+		onclick={toggleSidebar}
 		class="btn btn-circle btn-ghost btn-sm absolute z-40 hidden -translate-y-1/2 transition-all duration-300 md:flex"
 		class:top-9={!isSidebarCollapsed}
 		class:top-[2.25rem]={isSidebarCollapsed}

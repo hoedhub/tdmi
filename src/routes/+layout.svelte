@@ -8,7 +8,7 @@
 	import { themeStore } from '$lib/stores/themeStore';
 
 	interface Props {
-		children?: any; // Temporarily set to any for Svelte 5 migration
+		children?: import('svelte').Snippet;
 	}
 
 	let { children }: Props = $props();

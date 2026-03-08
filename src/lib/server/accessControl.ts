@@ -1,4 +1,4 @@
-import { getUserRoles, getRolePermissions, isSubRole } from './accessControlDB'; // <-- Menggunakan file baru
+import { getUserRoles, getRolesPermissions, isSubRole } from './accessControlDB'; // <-- Menggunakan file baru
 import { db } from '$lib/drizzle';
 import {
 	usersTable,
@@ -93,15 +93,8 @@ export async function userHasPermission(
 	}
 
 	// 3. Periksa apakah salah satu peran efektif memberikan izin dasar
-	let hasBasePermission = false;
-	// TODO: Optimalkan pencarian izin dengan satu query JOIN jika diperlukan.
-	for (const roleId of effectiveRoles) {
-		const permissions = await getRolePermissions(roleId);
-		if (permissions.includes(permissionId)) {
-			hasBasePermission = true;
-			break;
-		}
-	}
+	const permissions = await getRolesPermissions(effectiveRoles);
+	const hasBasePermission = permissions.includes(permissionId);
 
 	if (!hasBasePermission) {
 		return false;

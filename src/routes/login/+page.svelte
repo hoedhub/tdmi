@@ -79,7 +79,7 @@
 					</div>
 				{/if} -->
 
-				<form action="./login" method="post">
+				<form action="./login" method="post" use:enhance={handleSubmit}>
 					<div class="form-control">
 						<label class="label" for="username">
 							<span class="label-text">Username</span>

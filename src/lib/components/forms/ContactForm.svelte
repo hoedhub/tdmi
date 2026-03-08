@@ -25,14 +25,14 @@
 
 	let {
 		formData = $bindable(),
-		selectedPropinsi,
-		selectedKokab,
-		selectedKecamatan,
+		selectedPropinsi = $bindable(),
+		selectedKokab = $bindable(),
+		selectedKecamatan = $bindable(),
 		handleInput,
 		handleWilayahChange,
-		countryId = $bindable(),
-		countryCode = $bindable(),
-		phoneNumber = $bindable(),
+		countryId = $bindable('id'),
+		countryCode = $bindable('+62'),
+		phoneNumber = $bindable(''),
 		propinsiList = []
 	}: Props = $props();
 </script>
@@ -40,12 +40,12 @@
 <fieldset class="space-y-4 rounded-lg border border-base-300 p-4">
 	<legend class="px-2 font-semibold">Kontak dan Alamat</legend>
 	<Wilayah
-		{propinsiList}
-		{selectedPropinsi}
-		{selectedKokab}
-		{selectedKecamatan}
-		deskelId={formData.deskelId}
-		alamat={formData.alamat}
+		bind:propinsiList
+		bind:selectedPropinsi
+		bind:selectedKokab
+		bind:selectedKecamatan
+		bind:deskelId={formData.deskelId}
+		bind:alamat={formData.alamat}
 		on:change={handleWilayahChange}
 	/>
 	<input type="hidden" name="deskelId" bind:value={formData.deskelId} />

@@ -106,16 +106,17 @@ export async function updateUserRoles(userId: string, newRoleIds: string[]): Pro
 // --- Role & Permission Association ---
 
 /**
- * Mengambil semua ID izin yang dimiliki oleh peran tertentu dari database.
- * @param roleId - ID peran.
- * @returns Promise<string[]> - Array berisi ID izin.
+ * Mengambil semua ID izin yang dimiliki oleh peran-peran tertentu dari database.
+ * @param roleIds - Array ID peran.
+ * @returns Promise<string[]> - Array berisi ID izin unik.
  */
-export async function getRolePermissions(roleId: string): Promise<string[]> {
+export async function getRolesPermissions(roleIds: string[]): Promise<string[]> {
+	if (roleIds.length === 0) return [];
 	const permissions = await db
 		.select({ permissionId: rolePermissionsTable.permissionId })
 		.from(rolePermissionsTable)
-		.where(eq(rolePermissionsTable.roleId, roleId));
-	return permissions.map((p) => p.permissionId);
+		.where(inArray(rolePermissionsTable.roleId, roleIds));
+	return [...new Set(permissions.map((p) => p.permissionId))];
 }
 
 /**

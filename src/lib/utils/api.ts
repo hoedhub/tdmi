@@ -1,30 +1,27 @@
 // src/lib/utils/api.ts
-import _fetch from 'fetch-retry';
-
-const fetchWithRetry = _fetch(fetch);
 
 /**
- * A custom fetch wrapper that implements a retry mechanism for network resilience.
- * All client-side API calls should use this helper instead of the native `fetch`.
+ * A custom fetch wrapper that uses the native `fetch` from the environment.
+ * We no longer use 'fetch-retry' here because it causes "TypeError: unusable"
+ * on Node.js 18+ (especially Node 22) during server-side operations due to
+ * incompatible Request cloning with undici.
  *
  * @param url The URL to fetch.
- * @param options The request options, including custom retry settings.
+ * @param options The request options.
  * @returns A Promise that resolves to the Response object.
  */
-export function api(
+export async function api(
 	url: RequestInfo | URL,
 	options: RequestInit & {
+		// Retained for backward compatibility in types, but currently ignored
+		// to prevent cloning issues on Node 22.
 		retries?: number;
 		retryDelay?: number | ((attempt: number, error: Error | null, response: Response | null) => number);
 		retryOn?: number[] | ((attempt: number, error: Error | null, response: Response | null) => boolean);
-	}
+	} = {}
 ): Promise<Response> {
-	const { retries = 2, retryDelay = 1000, retryOn = [502, 503, 504], ...fetchOptions } = options;
+	// Extract options to avoid passing non-native fetch options to global.fetch
+	const { retries, retryDelay, retryOn, ...fetchOptions } = options;
 
-	return fetchWithRetry(url, {
-		...fetchOptions,
-		retries,
-		retryDelay,
-		retryOn
-	});
+	return fetch(url, fetchOptions);
 }

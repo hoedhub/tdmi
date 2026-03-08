@@ -1,7 +1,5 @@
 <!-- src/lib/components/toast/Toast.svelte -->
 <script lang="ts">
-	import { run } from 'svelte/legacy';
-
 	import { onMount, onDestroy } from 'svelte';
 	import type { ToastMessage, SvelteLucideIcon } from './types';
 	import { dismiss } from './toastStore'; // To dismiss itself
@@ -46,14 +44,9 @@
 		createdAt
 	}: Props = $props();
 
-	run(() => {
-		if (false) {
-			console.log(onDismiss, createdAt);
-		}
-	});
 
-	let timerId: number | undefined = $state(undefined);
-	let remainingDuration: number = $state(duration);
+	let timerId: number | undefined = undefined;
+	let remainingDuration: number = duration;
 	let startTime: number = Date.now();
 	let isPaused: boolean = $state(false);
 
@@ -114,7 +107,7 @@
 
 	// Reactive statement to restart timer if duration changes (e.g., via toastStore.update)
 	// This is a basic way; a more robust way might involve a unique key changing
-	run(() => {
+	$effect(() => {
 		if (duration && id) {
 			// Check id to ensure it's not during initial undefined state
 			remainingDuration = duration;

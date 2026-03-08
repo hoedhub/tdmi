@@ -1,7 +1,5 @@
 <script lang="ts">
-	import { run } from 'svelte/legacy';
-
-	import { createEventDispatcher, tick } from 'svelte';
+	import { createEventDispatcher, tick, untrack } from 'svelte';
 	import { SuperTable } from '$lib/components/SuperTable';
 	import type { ColumnDef, SortConfig, FilterState } from '$lib/components/SuperTable';
 	import { muridModalStore } from '$lib/stores/muridModalStore';
@@ -114,26 +112,27 @@
 	}
 
 	let superTableComponent: SuperTable<Murid> | undefined = $state();
-	let prevShowModal = $state(showModal);
-	run(() => {
-		if (showModal && !prevShowModal) {
-			// Load data if it's not already loaded
-			muridModalStore.loadDataIfNeeded(
-				currentSort,
-				currentFilters,
-				currentPage,
-				pageSize,
-				editedMuridId
-			);
+	
+	$effect(() => {
+		if (showModal) {
+			untrack(() => {
+				// Load data if it's not already loaded
+				muridModalStore.loadDataIfNeeded(
+					currentSort,
+					currentFilters,
+					currentPage,
+					pageSize,
+					editedMuridId
+				);
 
-			// Always clear selection when modal opens
-			tick().then(() => {
-				if (superTableComponent) {
-					superTableComponent.clearSelection();
-				}
+				// Always clear selection when modal opens
+				tick().then(() => {
+					if (superTableComponent) {
+						superTableComponent.clearSelection();
+					}
+				});
 			});
 		}
-		prevShowModal = showModal;
 	});
 </script>
 

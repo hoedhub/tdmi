@@ -24,18 +24,12 @@
 	const dispatch = createEventDispatcher();
 
 	let localFilterValues: Record<string, any> = {};
-	let hidden = true;
-	$: if (hidden && isOpen) {
-		localFilterValues = { ...filterValues };
-		hidden = false;
-	}
 
 	function applyAndClose() {
 		// Kirim semua filter yang sudah diubah ke parent
 		dispatch('applyFilters', localFilterValues);
 		// Tutup drawer
 		dispatch('close');
-		hidden = true;
 	}
 
 	function resetAndApply() {
@@ -44,7 +38,6 @@
 		// Kirim state kosong ke parent dan tutup
 		dispatch('applyFilters', {});
 		dispatch('close');
-		hidden = true;
 	}
 
 	$: hasChanges = JSON.stringify(localFilterValues) !== JSON.stringify(filterValues);
