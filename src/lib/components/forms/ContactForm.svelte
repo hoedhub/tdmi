@@ -35,11 +35,20 @@
 		phoneNumber = $bindable(''),
 		propinsiList = []
 	}: Props = $props();
+
+	let wilayahComponent: Wilayah | undefined = $state();
+
+	export function reset() {
+		if (wilayahComponent) {
+			wilayahComponent.reset();
+		}
+	}
 </script>
 
 <fieldset class="space-y-4 rounded-lg border border-base-300 p-4">
 	<legend class="px-2 font-semibold">Kontak dan Alamat</legend>
 	<Wilayah
+		bind:this={wilayahComponent}
 		bind:propinsiList
 		bind:selectedPropinsi
 		bind:selectedKokab

@@ -72,9 +72,11 @@
 
 	let isFormModified = $state(false);
 	let isSubmitting = $state(false);
+	let submittingAction = $state<string | null>(null);
 	let mounted = $state(false);
 
 	let personalInfoFormComponent: PersonalInfoForm | undefined = $state();
+	let contactFormComponent: ContactForm | undefined = $state();
 
 	// --- State untuk Similar Murids Alert ---
 	let similarMurids: any[] = $state([]);
@@ -213,9 +215,15 @@
 			personalInfoFormComponent.reset();
 		}
 
-		countryId = 'id';
-		countryCode = '+62';
-		phoneNumber = '';
+		if (contactFormComponent) {
+			contactFormComponent.reset();
+		}
+
+		if (!formData) {
+			countryId = 'id';
+			countryCode = '+62';
+			phoneNumber = '';
+		}
 
 		setTimeout(() => {
 			handleInput();
@@ -231,10 +239,13 @@
 		goto('/member/pendataan');
 	}
 
-	function handleEnhanceSubmit() {
+	function handleEnhanceSubmit({ submitter }: { submitter: HTMLElement | null }) {
 		isSubmitting = true;
+		submittingAction = submitter?.getAttribute('value') || null;
+		
 		return async ({ result }: { result: ActionResult }) => {
 			isSubmitting = false;
+			submittingAction = null;
 
 			if (result.type === 'success') {
 				const successMessage = result.data?.message || 'Data berhasil disimpan.';
@@ -244,7 +255,10 @@
 				if (result.data?.redirect) {
 					goto(result.data.redirect);
 				} else {
-					if (result.data?.murid) {
+					if (result.data?.action === 'add-again') {
+						originalFormData = { ...defaultFormData };
+						muridFormStore.reset();
+					} else if (result.data?.murid) {
 						originalFormData = { ...result.data.murid };
 					}
 				}
@@ -297,6 +311,7 @@
 	/>
 
 	<ContactForm
+		bind:this={contactFormComponent}
 		{propinsiList}
 		bind:formData={internalFormData}
 		bind:selectedPropinsi
@@ -352,7 +367,7 @@
 			disabled={isSubmitting}
 			class="btn btn-primary grow rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
 		>
-			{isSubmitting ? 'Menyimpan...' : 'Simpan & Tutup'}
+			{isSubmitting && submittingAction === 'save-and-close' ? 'Menyimpan...' : 'Simpan & Tutup'}
 		</button>
 		<button
 			type="submit"
@@ -361,7 +376,7 @@
 			disabled={isSubmitting}
 			class="btn btn-secondary grow rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
 		>
-			{isSubmitting ? 'Menyimpan...' : 'Simpan & Tambah Lagi'}
+			{isSubmitting && submittingAction === 'save-and-add' ? 'Menyimpan...' : 'Simpan & Tambah Lagi'}
 		</button>
 	</div>
 </form>

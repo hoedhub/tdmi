@@ -56,6 +56,13 @@
 	let kecamatanSearchTerm = $state('');
 	let deskelSearchTerm = $state('');
 
+	export function reset() {
+		propinsiSearchTerm = '';
+		kokabSearchTerm = '';
+		kecamatanSearchTerm = '';
+		deskelSearchTerm = '';
+	}
+
 	// --- DATA FETCHING & LOGIC ---
 
 	async function loadPropinsi() {
@@ -183,16 +190,19 @@
 			selectedKokab = null;
 			kokabList = [];
 			kokabError = false;
+			kokabSearchTerm = '';
 		}
 		if (level === 'propinsi' || level === 'kokab') {
 			selectedKecamatan = null;
 			kecamatanList = [];
 			kecamatanError = false;
+			kecamatanSearchTerm = '';
 		}
 		if (level === 'propinsi' || level === 'kokab' || level === 'kecamatan') {
 			deskelId = undefined;
 			deskelList = [];
 			deskelError = false;
+			deskelSearchTerm = '';
 		}
 	}
 
@@ -203,6 +213,7 @@
 	}
 
 	async function handlePropinsiSelect(propinsi: Propinsi) {
+		propinsiSearchTerm = '';
 		if (selectedPropinsi?.id === propinsi.id) {
 			closeDropdown();
 			return;
@@ -215,6 +226,7 @@
 	}
 
 	async function handleKokabSelect(kokab: Kokab) {
+		kokabSearchTerm = '';
 		if (selectedKokab?.id === kokab.id) {
 			closeDropdown();
 			return;
@@ -227,6 +239,7 @@
 	}
 
 	async function handleKecamatanSelect(kecamatan: Kecamatan) {
+		kecamatanSearchTerm = '';
 		if (selectedKecamatan?.id === kecamatan.id) {
 			closeDropdown();
 			return;
@@ -239,6 +252,7 @@
 	}
 
 	function handleDeskelSelect(deskel: Deskel) {
+		deskelSearchTerm = '';
 		if (deskelId === deskel.id) {
 			closeDropdown();
 			return;

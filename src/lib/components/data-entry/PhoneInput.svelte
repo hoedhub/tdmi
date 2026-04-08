@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { run } from 'svelte/legacy';
 
-	import { onMount, createEventDispatcher } from 'svelte';
+	import { onMount, createEventDispatcher, onDestroy } from 'svelte';
 
 	// Props
 	interface Props {
@@ -71,17 +71,6 @@
 		}
 	}
 
-	function debounce<T extends (event: Event) => void>(
-		fn: T,
-		delay: number
-	): (event: Event) => void {
-		let timeoutId: ReturnType<typeof setTimeout>;
-		return (event: Event) => {
-			clearTimeout(timeoutId);
-			timeoutId = setTimeout(() => fn(event), delay);
-		};
-	}
-
 	function handleInput(event: Event) {
 		const DIGIT_REGEX = /[^\d]/g;
 		const LEADING_ZEROS_REGEX = /^0+/;
@@ -94,7 +83,16 @@
 		dispatch('change');
 	}
 
-	const debouncedHandleInput = debounce(handleInput, 150);
+	let timeoutId: ReturnType<typeof setTimeout>;
+
+	function debouncedHandleInput(event: Event) {
+		clearTimeout(timeoutId);
+		timeoutId = setTimeout(() => handleInput(event), 150);
+	}
+
+	onDestroy(() => {
+		clearTimeout(timeoutId);
+	});
 
 	function selectCountryCode(code: string, id: string) {
 		if (countryId === id) return;
