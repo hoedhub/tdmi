@@ -73,9 +73,24 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 		fotoUrl = getPublicFileUrl(muridData.fotoPublicId);
 	}
 
+	const getMuridCompact = async (id: number | null) => {
+		if (!id) return undefined;
+		const res = await db
+			.select({ id: muridTable.id, nama: muridTable.nama })
+			.from(muridTable)
+			.where(eq(muridTable.id, id))
+			.get();
+		return res;
+	};
+
+	const muhrimData = await getMuridCompact(muridData.muhrimId);
+	const mursyidData = await getMuridCompact(muridData.mursyidId);
+	const baiatData = await getMuridCompact(muridData.baiatId);
+	const wiridData = await getMuridCompact(muridData.wiridId);
+
 	return {
 		user: locals.user,
-		murid: { ...muridData, fotoUrl },
+		murid: { ...muridData, fotoUrl, muhrimData, mursyidData, baiatData, wiridData },
 		canWriteMurid
 	};
 };

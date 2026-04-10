@@ -38,11 +38,11 @@
 				wiridId: data.murid.wiridId ?? undefined,
 				deskelId: data.murid.deskelId ?? undefined,
 
-				// Konversi 'string | null' dari server menjadi 'string | undefined' atau ''
-				namaArab: data.murid.namaArab ?? undefined,
-				alamat: data.murid.alamat ?? undefined,
-				nomorTelepon: data.murid.nomorTelepon ?? undefined,
-				nik: data.murid.nik ?? undefined,
+				// Konversi 'string | null' dari server menjadi 'string' ('')
+				namaArab: data.murid.namaArab ?? '',
+				alamat: data.murid.alamat ?? '',
+				nomorTelepon: data.murid.nomorTelepon ?? '',
+				nik: data.murid.nik ?? '',
 				tglLahir: data.murid.tglLahir ?? '',
 
 				// --- PERBAIKAN UTAMA DI SINI ---
@@ -54,11 +54,11 @@
 				// Ini akan digunakan oleh AddMuridForm untuk menampilkan gambar yang sudah ada.
 				fotoUrl: data.murid.fotoUrl,
 
-				// Properti lain yang tidak diinisialisasi dari data server.
-				muhrimData: undefined,
-				mursyidData: undefined,
-				baiatData: undefined,
-				wiridData: undefined
+				// Inisialisasi data relasional yang berasal dari server
+				muhrimData: data.murid.muhrimData ? { ...data.murid.muhrimData, nomorTelepon: '' } : undefined,
+				mursyidData: data.murid.mursyidData ? { ...data.murid.mursyidData, nomorTelepon: '' } : undefined,
+				baiatData: data.murid.baiatData ? { ...data.murid.baiatData, nomorTelepon: '' } : undefined,
+				wiridData: data.murid.wiridData ? { ...data.murid.wiridData, nomorTelepon: '' } : undefined
 
 				// Properti `previewFoto` tidak lagi diperlukan karena logikanya sudah
 				// ditangani di dalam AddMuridForm dengan `displayUrl`.

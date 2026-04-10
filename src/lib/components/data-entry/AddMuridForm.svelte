@@ -187,7 +187,7 @@
 		internalFormData.deskelId = deskelId;
 		internalFormData.alamat = alamat;
 
-		if (originalSelectedPropinsi === null && newPropinsi !== null) {
+		if (formData && originalSelectedPropinsi === null && newPropinsi !== null) {
 			originalSelectedPropinsi = newPropinsi;
 			originalSelectedKokab = newKokab;
 			originalSelectedKecamatan = newKecamatan;
@@ -367,16 +367,18 @@
 			disabled={isSubmitting}
 			class="btn btn-primary grow rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
 		>
-			{isSubmitting && submittingAction === 'save-and-close' ? 'Menyimpan...' : 'Simpan & Tutup'}
+			{isSubmitting && submittingAction === 'save-and-close' ? 'Menyimpan...' : (formData ? 'Simpan' : 'Simpan & Tutup')}
 		</button>
-		<button
-			type="submit"
-			name="action"
-			value="save-and-add"
-			disabled={isSubmitting}
-			class="btn btn-secondary grow rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
-		>
-			{isSubmitting && submittingAction === 'save-and-add' ? 'Menyimpan...' : 'Simpan & Tambah Lagi'}
-		</button>
+		{#if !formData}
+			<button
+				type="submit"
+				name="action"
+				value="save-and-add"
+				disabled={isSubmitting}
+				class="btn btn-secondary grow rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
+			>
+				{isSubmitting && submittingAction === 'save-and-add' ? 'Menyimpan...' : 'Simpan & Tambah Lagi'}
+			</button>
+		{/if}
 	</div>
 </form>

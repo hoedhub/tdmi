@@ -53,6 +53,9 @@
 	onMount(() => {
 		$itemsPerPage = itemsPerPageProp ?? 10;
 		$isLoading = false;
+		$currentPage = 1;
+		$selectedIds = new Set();
+		$filterState = { global: '', columns: {} };
 
 		// Initialize internal state
 		internalColumns = columns.map((col) => ({ ...col }));
