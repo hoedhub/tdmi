@@ -93,6 +93,7 @@ export interface SuperTableProps<T = any> {
 	mobileView?: MobileViewType;
 	initialSort?: SortConfig[];
 	itemsPerPage?: number;
+	currentPage?: number;
 	totalItems?: number;
 	isLoading?: boolean;
 	tableClass?: string;

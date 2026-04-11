@@ -92,9 +92,9 @@
 				? $muridFormStore.formData
 				: { ...defaultFormData };
 			originalFormData = { ...defaultFormData };
-			selectedPropinsi = $muridFormStore.selectedPropinsi;
-			selectedKokab = $muridFormStore.selectedKokab;
-			selectedKecamatan = $muridFormStore.selectedKecamatan;
+			selectedPropinsi = $muridFormStore.isModified ? $muridFormStore.selectedPropinsi : null;
+			selectedKokab = $muridFormStore.isModified ? $muridFormStore.selectedKokab : null;
+			selectedKecamatan = $muridFormStore.isModified ? $muridFormStore.selectedKecamatan : null;
 		}
 
 		originalSelectedPropinsi = selectedPropinsi;

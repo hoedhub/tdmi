@@ -26,6 +26,7 @@
 	export let mobileView: Props['mobileView'] = 'cards';
 	export let sort: Props['initialSort'] = []; // Changed from initialSort
 	export let itemsPerPageProp: Props['itemsPerPage'] = 10;
+	export let currentPageProp: Props['currentPage'] = 1;
 	export let totalItemsProp: Props['totalItems'] = undefined;
 	export let isLoadingProp: Props['isLoading'] = false;
 	export let tableClass: Props['tableClass'] = '';
@@ -53,7 +54,7 @@
 	onMount(() => {
 		$itemsPerPage = itemsPerPageProp ?? 10;
 		$isLoading = false;
-		$currentPage = 1;
+		$currentPage = currentPageProp ?? 1;
 		$selectedIds = new Set();
 		$filterState = { global: '', columns: {} };
 
@@ -80,6 +81,8 @@
 
 	// Sync loading state with prop
 	$: $isLoading = Boolean(isLoadingProp);
+	$: if (currentPageProp !== undefined) $currentPage = currentPageProp;
+	$: if (itemsPerPageProp !== undefined) $itemsPerPage = itemsPerPageProp;
 
 	// Update internal columns when prop changes
 	$: internalColumns = columns.map((col) => ({ ...col }));

@@ -58,7 +58,7 @@
 	let totalItems = $state(data.totalItems);
 	let loading = $state(false);
 	let pageSize = $state(10);
-	let currentPage = 1;
+	let currentPage = $state(1);
 	let currentSort: SortConfig[] | undefined = $state(undefined);
 	let currentFilters: Record<string, any> = {};
 	let selectedMuridIds: number[] = [];
@@ -271,12 +271,12 @@
 	{/if}
 </div>
 
-{#key muridData}
-	<SuperTable
+<SuperTable
 		data={muridData}
 		{columns}
 		rowKey="id"
 		itemsPerPageProp={pageSize}
+		currentPageProp={currentPage}
 		totalItemsProp={totalItems}
 		isLoadingProp={loading}
 		sort={currentSort}
@@ -323,4 +323,3 @@
 			{/if}
 		</svelte:fragment>
 	</SuperTable>
-{/key}
