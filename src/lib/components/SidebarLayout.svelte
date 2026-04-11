@@ -135,7 +135,7 @@
 
 		<!-- Responsive Sidebar Structure -->
 		<div
-			class="h-full w-64 bg-neutral text-neutral-content transition-all duration-300"
+			class="h-full w-64 bg-neutral text-neutral-content transition-all duration-300 sidebar-inner-container"
 			class:md:w-14={isSidebarCollapsed}
 			class:md:w-72={!isSidebarCollapsed}
 		>
@@ -150,7 +150,7 @@
 					>
 						<img
 							alt="The project logo"
-							class="h-20 w-20 rounded-full border-2 border-white transition-all duration-300"
+							class="h-20 w-20 rounded-full border-2 border-white transition-all duration-300 sidebar-logo"
 							class:md:h-10={isSidebarCollapsed}
 							class:md:w-10={isSidebarCollapsed}
 							src={logo}
@@ -179,14 +179,16 @@
 								onmouseleave={hideTooltip}
 							>
 								<item.icon size={20} class="opacity-75" />
-								<span class:md:hidden={isSidebarCollapsed}>{item.label}</span>
+								<span class:md:hidden={isSidebarCollapsed} class="sidebar-label">{item.label}</span>
 							</a>
 						</li>
 					{/each}
 
 					<!-- Admin Link -->
 					{#if $page.data.canAccessAdmin}
-						<div class="divider my-1 text-xs">{isSidebarCollapsed ? '' : 'Admin Area'}</div>
+						<div class="divider my-1 text-xs">
+							<span class:md:hidden={isSidebarCollapsed} class="sidebar-label">Admin Area</span>
+						</div>
 						<li>
 							<a
 								href={'/admin'}
@@ -198,7 +200,7 @@
 								onmouseleave={hideTooltip}
 							>
 								<ChartNoAxesGantt size={20} class="opacity-75" />
-								<span class:md:hidden={isSidebarCollapsed}>{'Admin'}</span>
+								<span class:md:hidden={isSidebarCollapsed} class="sidebar-label">{'Admin'}</span>
 							</a>
 						</li>
 					{/if}
@@ -223,7 +225,7 @@
 						onmouseleave={hideTooltip}
 					>
 						<Palette size={24} />
-						<span class:md:hidden={isSidebarCollapsed} class="truncate">Theme: {$themeStore}</span>
+						<span class:md:hidden={isSidebarCollapsed} class="truncate sidebar-label">Theme: {$themeStore}</span>
 					</button>
 
 					<!-- User Profile Dropdown -->
@@ -241,7 +243,7 @@
 							onmouseleave={hideTooltip}
 						>
 							<UserCircle size={24} />
-							<span class:md:hidden={isSidebarCollapsed} class="truncate"
+							<span class:md:hidden={isSidebarCollapsed} class="truncate sidebar-label"
 								>Halo, {$page.data.user.username}</span
 							>
 						</button>
@@ -254,7 +256,7 @@
 	<!-- Toggle Button (Desktop Only) -->
 	<button
 		onclick={toggleSidebar}
-		class="btn btn-circle btn-ghost btn-sm absolute z-40 hidden -translate-y-1/2 transition-all duration-300 md:flex"
+		class="btn btn-circle btn-ghost btn-sm absolute z-40 hidden -translate-y-1/2 transition-all duration-300 md:flex sidebar-toggle-btn"
 		class:top-9={!isSidebarCollapsed}
 		class:top-[2.25rem]={isSidebarCollapsed}
 		class:left-14={isSidebarCollapsed}
@@ -286,6 +288,35 @@
 		}
 		:global(.drawer-side.collapsed .menu li a span) {
 			display: none;
+		}
+
+		/* SSR/Hydration Flash Fix: Apply collapsed styles when html has .sidebar-collapsed */
+		:global(html.sidebar-collapsed) .sidebar-inner-container {
+			width: 3.5rem !important; /* md:w-14 */
+		}
+		:global(html.sidebar-collapsed) .sidebar-logo {
+			height: 2.5rem !important; /* md:h-10 */
+			width: 2.5rem !important; /* md:w-10 */
+		}
+		:global(html.sidebar-collapsed) .sidebar-label {
+			display: none !important;
+		}
+		:global(html.sidebar-collapsed) .sidebar-menu {
+			padding-inline: 0.5rem !important;
+		}
+		:global(html.sidebar-collapsed) .sidebar-menu li a {
+			width: 2.5rem !important;
+			height: 2.5rem !important;
+			padding: 0 !important;
+			align-items: center !important;
+			justify-content: center !important;
+		}
+		:global(html.sidebar-collapsed) .sidebar-toggle-btn {
+			top: 2.25rem !important;
+			left: 3.5rem !important; /* left-14 */
+		}
+		:global(html.sidebar-collapsed) .sidebar-toggle-btn svg {
+			transform: rotate(180deg) !important;
 		}
 	}
 </style>
