@@ -28,6 +28,8 @@ declare module 'svelte/elements' {
 	interface HTMLAttributes<T> {
 		'on:swipe'?: (e: SwipeEvent) => void;
 		'on:longpress'?: (e: LongPressEvent) => void;
+		onswipe?: (e: SwipeEvent) => void;
+		onlongpress?: (e: LongPressEvent) => void;
 	}
 }
 
@@ -91,19 +93,21 @@ export interface SuperTableProps<T = any> {
 	columns: ColumnDef<T>[];
 	rowKey: keyof T | string | number | symbol;
 	mobileView?: MobileViewType;
-	initialSort?: SortConfig[];
-	itemsPerPage?: number;
-	currentPage?: number;
-	totalItems?: number;
-	isLoading?: boolean;
+	sort?: SortConfig[];
+	itemsPerPageProp?: number;
+	currentPageProp?: number;
+	totalItemsProp?: number;
+	isLoadingProp?: boolean;
 	tableClass?: string;
 	cardClass?: string;
 	rowClass?: string | ((row: T) => string);
+	isSelectable?: boolean;
 	serverSide?: boolean; // Whether filtering/sorting/pagination is handled by the server
 	maxVisibleColumns?: number; // Max columns to show initially in mobile card view
 	dbError?: boolean; // Flag to indicate if there was a DB error
 	selectionMode?: SelectionMode;
 	disabledRowKeys?: (string | number)[];
+	containerHeight?: string;
 }
 
 export interface SuperTableEvents<T = any> {

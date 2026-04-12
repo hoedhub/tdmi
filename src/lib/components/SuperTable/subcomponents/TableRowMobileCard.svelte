@@ -75,7 +75,7 @@
 	let prioritizedColumns = $derived(columnsData.prioritizedColumns);
 	let otherColumns = $derived(columnsData.otherColumns);
 
-	let showAllFields = false;
+	let showAllFields = $state(false);
 
 	function handleLongPress(event: Event) {
 		if (disabled) return;

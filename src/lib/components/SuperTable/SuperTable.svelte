@@ -36,6 +36,7 @@
 		maxVisibleColumns = 5,
 		selectionMode = 'multiple',
 		disabledRowKeys = [],
+		containerHeight = 'h-[calc(100vh-140px)]',
 		// Snippets (Svelte 5 slots replacement)
 		globalFilter,
 		customFilters,
@@ -259,8 +260,8 @@
 		onitemsPerPageChange?.(ipp);
 	}
 
-	function handleSwipe(event: CustomEvent<{ row: T; direction: 'left' | 'right' }>) {
-		// dispatch('swipe', event.detail);
+	function handleSwipe(row: T, direction: 'left' | 'right') {
+		// handle swipe
 	}
 
 	export function clearSelection() {
@@ -302,7 +303,7 @@
 />
 
 <div
-	class="flex h-[calc(100vh-140px)] flex-col gap-0 overflow-hidden rounded-xl border border-base-300 bg-base-100 shadow-xl"
+	class="flex {containerHeight} flex-col gap-0 overflow-hidden rounded-xl border border-base-300 bg-base-100 shadow-xl"
 >
 	<!-- Unified Scroll Container - Handles both horizontal and vertical scrolling correctly -->
 	<div class="flex-1 overflow-auto bg-base-100" id="super-table-scroll-root">
@@ -362,7 +363,7 @@
 					</div>
 
 					<!-- Sort Modal Button -->
-					<div class="tooltip tooltip-bottom" data-tip="Manage sort">
+					<div class="tooltip tooltip-bottom z-50" data-tip="Manage sort">
 						<button class="btn btn-circle btn-ghost btn-sm" onclick={() => (isSortModalOpen = true)}>
 							<ArrowUpDown class="h-4 w-4" />
 						</button>
@@ -397,7 +398,7 @@
 						>
 							<div class="flex items-center gap-1">
 								<span class="text-sm font-medium text-primary">{$selectedIds.size} selected</span>
-								<div class="tooltip tooltip-bottom" data-tip="Clear selection">
+								<div class="tooltip tooltip-bottom z-50" data-tip="Clear selection">
 									<button
 										class="btn btn-circle btn-ghost btn-sm text-error"
 										onclick={clearSelection}

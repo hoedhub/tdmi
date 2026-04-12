@@ -140,7 +140,7 @@
 	<div class="modal modal-open">
 		<div class="modal-box w-11/12 max-w-5xl">
 			<h3 class="text-lg font-bold">Pilih Murid</h3>
-			<div class="py-4">
+			<div class="py-2">
 				<SuperTable
 					bind:this={superTableComponent}
 					{columns}
@@ -159,6 +159,7 @@
 					onselectionChange={handleSelect}
 					dbError={$muridModalStore.hasDbError}
 					disabledRowKeys={editedMuridId ? [editedMuridId] : []}
+					containerHeight="h-[calc(100vh-320px)]"
 				>
 					{#snippet errorState()}
 						<div class="p-8 text-center text-error">
@@ -181,7 +182,7 @@
 					{/snippet}
 				</SuperTable>
 			</div>
-			<div class="modal-action">
+			<div class="modal-action mt-2">
 				<button class="btn" onclick={closeModal}>Tutup</button>
 			</div>
 		</div>

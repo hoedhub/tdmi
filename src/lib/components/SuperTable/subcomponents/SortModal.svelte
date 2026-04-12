@@ -7,13 +7,13 @@
 
 	interface Props {
 		isOpen: boolean;
-		columns: ColumnDef<T>[];
-		currentSorts: SortConfig[];
+		columns: ColumnDef<any>[];
+		currentSort: SortConfig[];
 		onclose?: () => void;
 		onsave?: (sorts: SortConfig[]) => void;
 	}
 
-	let { isOpen, columns, currentSorts, onclose, onsave }: Props = $props();
+	let { isOpen, columns, currentSort, onclose, onsave }: Props = $props();
 
 	// Internal type to ensure stable key for Svelte's #each block
 	type InternalSortConfig = SortConfig & { id: number };
@@ -48,7 +48,7 @@
 	function initializeState() {
 		nextId = 0;
 		// Deep copy and assign unique IDs
-		internalSorts = (JSON.parse(JSON.stringify(currentSorts || [])) as SortConfig[]).map(
+		internalSorts = (JSON.parse(JSON.stringify(currentSort || [])) as SortConfig[]).map(
 			(sort) => ({
 				...sort,
 				id: nextId++

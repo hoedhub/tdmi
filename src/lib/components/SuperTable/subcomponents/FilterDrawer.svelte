@@ -9,6 +9,7 @@
 		isOpen: boolean;
 		onclose?: () => void;
 		onapplyFilters?: (filters: Record<string, any>) => void;
+		onreset?: () => void;
 	}
 
 	let {
@@ -16,7 +17,8 @@
 		filterValues = {},
 		isOpen = false,
 		onclose,
-		onapplyFilters
+		onapplyFilters,
+		onreset
 	}: Props = $props();
 
 	let previousIsOpen = $state(isOpen);
@@ -42,6 +44,7 @@
 		localFilterValues = {};
 		// Kirim state kosong ke parent dan tutup
 		onapplyFilters?.({});
+		onreset?.();
 		onclose?.();
 	}
 
