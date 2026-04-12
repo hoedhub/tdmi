@@ -69,3 +69,23 @@
 		<a href="/" onclick={handleNavigation}>Exit</a>
 	</li>
 </ul>
+
+<style>
+	.menu li > a {
+		padding-left: 1.5rem;
+		border-radius: 0 8px 8px 0;
+		margin-right: 0.5rem;
+	}
+
+	.menu li > a.active {
+		background-color: var(--fallback-p, oklch(var(--p) / 0.15));
+		border-left: 4px solid var(--fallback-p, oklch(var(--p)));
+		padding-left: calc(1.5rem - 4px);
+		font-weight: 600;
+		color: var(--fallback-p, oklch(var(--p)));
+	}
+
+	.menu li > a.active:hover {
+		background-color: var(--fallback-p, oklch(var(--p) / 0.2));
+	}
+</style>

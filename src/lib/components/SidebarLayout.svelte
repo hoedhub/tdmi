@@ -35,7 +35,7 @@
 	let themeButtonEl: HTMLButtonElement | undefined = $state();
 
 	const menuItems = [
-		{ href: '/', label: 'Dashboard', icon: Home },
+		{ href: '/member', label: 'Dashboard', icon: Home },
 		{ href: '/member/pendataan', label: 'Pendataan', icon: Users },
 		{ href: '/member/nasyath_mun', label: 'Nasyath MUN', icon: CalendarRange },
 		{ href: '/settings', label: 'Settings', icon: Settings }
@@ -161,7 +161,7 @@
 
 				<!-- Main Navigation Menu -->
 				<ul
-					class="menu flex-grow flex-col space-y-1 px-4"
+					class="menu flex-grow flex-col space-y-1 px-0"
 					class:overflow-y-auto={!isSidebarCollapsed}
 					class:overflow-visible={isSidebarCollapsed}
 				>
@@ -171,9 +171,11 @@
 								href={item.href}
 								class="flex"
 								class:md:justify-center={isSidebarCollapsed}
-								class:active={item.href === '/'
-									? $page.url.pathname === '/'
-									: $page.url.pathname.startsWith(item.href)}
+								class:active={item.href === '/member'
+									? $page.url.pathname === '/member'
+									: item.href === '/'
+										? $page.url.pathname === '/' || $page.url.pathname === ''
+										: $page.url.pathname.startsWith(item.href)}
 								onclick={() => (isSidebarOpen = false)}
 								onmouseenter={(e) => showTooltip(e, item.label)}
 								onmouseleave={hideTooltip}
@@ -271,8 +273,29 @@
 </div>
 
 <style>
+	.menu li > a {
+		padding-left: 1.5rem;
+		border-radius: 0 8px 8px 0;
+		margin-right: 0.5rem;
+	}
+
 	.menu li > a.active {
-		font-weight: 600;
+		background-color: var(--fallback-p, oklch(var(--p) / 0.25));
+		border-left: 4px solid var(--fallback-p, oklch(var(--p)));
+		padding-left: calc(1.5rem - 4px);
+		font-weight: 700;
+		color: var(--fallback-pc, oklch(var(--pc)));
+		box-shadow: inset 0 0 10px oklch(var(--p) / 0.1);
+	}
+
+	.menu li > a.active :global(svg) {
+		color: inherit;
+		opacity: 1;
+		filter: drop-shadow(0 0 2px oklch(var(--pc) / 0.3));
+	}
+
+	.menu li > a.active:hover {
+		background-color: var(--fallback-p, oklch(var(--p) / 0.25));
 	}
 
 	/* Desktop-only styles for the collapsed sidebar */
