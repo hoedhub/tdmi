@@ -1,7 +1,7 @@
 <script lang="ts" generics="T extends Record<string, any>">
 	import { run } from 'svelte/legacy';
 
-	import { createEventDispatcher, onMount, onDestroy } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import type { ColumnDef, SortConfig } from '../types';
 	import { ArrowDown, ArrowUp, GripVertical, Trash2 } from 'lucide-svelte';
 
@@ -9,9 +9,11 @@
 		isOpen: boolean;
 		columns: ColumnDef<T>[];
 		currentSorts: SortConfig[];
+		onclose?: () => void;
+		onsave?: (sorts: SortConfig[]) => void;
 	}
 
-	let { isOpen, columns, currentSorts }: Props = $props();
+	let { isOpen, columns, currentSorts, onclose, onsave }: Props = $props();
 
 	// Internal type to ensure stable key for Svelte's #each block
 	type InternalSortConfig = SortConfig & { id: number };
@@ -54,11 +56,6 @@
 		);
 	}
 
-	const dispatch = createEventDispatcher<{
-		close: void;
-		save: SortConfig[];
-	}>();
-
 	function addSort() {
 		const availableColumns = columns.filter(
 			(c) => c.sortable && !internalSorts.find((s) => s.key === c.key)
@@ -83,17 +80,17 @@
 	}
 
 	function handleSave() {
-		// Strip the internal 'id' before dispatching
+		// Strip the internal 'id' before calling onsave
 		const sortsToSave: SortConfig[] = internalSorts.map(({ key, direction }) => ({
 			key,
 			direction
 		}));
-		dispatch('save', sortsToSave);
+		onsave?.(sortsToSave);
 		close();
 	}
 
 	function close() {
-		dispatch('close');
+		onclose?.();
 	}
 
 	// Drag and drop functionality

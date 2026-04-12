@@ -281,29 +281,31 @@
 		isLoadingProp={loading}
 		sort={currentSort}
 		serverSide={true}
-		on:sort={handleSort}
-		on:filter={handleFilter}
-		on:pageChange={handlePageChange}
-		on:itemsPerPageChange={handleItemsPerPageChange}
-		on:rowClick={(e) => goto(`/member/pendataan/${e.detail.id}/edit`)}
-		on:selectionChange={handleSelectionChange}
+		onsort={handleSort}
+		onfilter={handleFilter}
+		onpageChange={handlePageChange}
+		onitemsPerPageChange={handleItemsPerPageChange}
+		onrowClick={(row) => goto(`/member/pendataan/${row.id}/edit`)}
+		onselectionChange={handleSelectionChange}
 	>
-		<svelte:fragment slot="bulkActions" let:selectedIds>
+		{#snippet bulkActions({ selectedIds })}
 			{#if canWriteMurid && selectedIds.length === 1}
 				<button class="btn btn-secondary btn-sm" onclick={handleEditSelected}>
 					<Pen class="h-4 w-4" />
 					Edit Selected
 				</button>
 			{/if}
-		</svelte:fragment>
-		<svelte:fragment slot="loadingState">
+		{/snippet}
+		
+		{#snippet loadingState()}
 			<div class="p-8 text-center">
 				<span class="loading loading-spinner mb-4"></span>
 				<p class="text-lg font-semibold">Memuat data...</p>
 				<p class="text-sm text-base-content/70">Harap tunggu sebentar.</p>
 			</div>
-		</svelte:fragment>
-		<svelte:fragment slot="rowActions" let:row>
+		{/snippet}
+
+		{#snippet rowActions({ row })}
 			{#if canWriteMurid}
 				<div class="flex gap-2">
 					<a
@@ -321,5 +323,5 @@
 					</button>
 				</div>
 			{/if}
-		</svelte:fragment>
+		{/snippet}
 	</SuperTable>

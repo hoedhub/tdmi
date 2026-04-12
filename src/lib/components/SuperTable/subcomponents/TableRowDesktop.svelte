@@ -14,38 +14,52 @@
 	import { longPress } from '../actions/longPressAction';
 	import { selectedIds } from '../stores';
 
-	export let row: T;
-	export let columns: ColumnDef<T>[];
-	export let rowKey: keyof T;
-	export let isSelectable = false;
-	export let className = '';
-	export let disabled = false;
+	interface Props {
+		row: T;
+		columns: ColumnDef<T>[];
+		rowKey: keyof T;
+		isSelectable?: boolean;
+		className?: string;
+		disabled?: boolean;
+		rowActions?: import('svelte').Snippet<[{ row: T }]>;
+		onselect?: (row: T, selected: boolean) => void;
+		onswipe?: (row: T, direction: 'left' | 'right') => void;
+		onclick?: () => void;
+	}
 
-	const dispatch = createEventDispatcher<{
-		swipe: { row: T; direction: 'left' | 'right' };
-		select: { row: T; selected: boolean };
-	}>();
+	let {
+		row,
+		columns,
+		rowKey,
+		isSelectable = false,
+		className = '',
+		disabled = false,
+		rowActions,
+		onselect,
+		onswipe,
+		onclick
+	}: Props = $props();
 
-	$: isSelected = $selectedIds.has(row[rowKey]);
+	let isSelected = $derived($selectedIds.has(row[rowKey as keyof T]));
 
 	function handleSwipe(event: SwipeEvent) {
 		if (disabled) return;
 		event.preventDefault();
-		dispatch('swipe', { row, direction: event.detail.direction });
+		onswipe?.(row, event.detail.direction);
 	}
 
 	function handleLongPress(event: Event) {
 		if (disabled) return;
 		event.preventDefault();
 		if (isSelectable) {
-			dispatch('select', { row, selected: !isSelected });
+			onselect?.(row, !isSelected);
 		}
 	}
 
 	function handleCheckboxChange(event: Event) {
 		if (disabled) return;
 		const target = event.target as HTMLInputElement;
-		dispatch('select', { row, selected: target.checked });
+		onselect?.(row, target.checked);
 	}
 
 	function isSvelteComponent<T>(formatter: Formatter<T>): formatter is FormatterComponent {
@@ -59,11 +73,18 @@
 		: ''} {disabled ? 'disabled cursor-not-allowed opacity-50' : ''}"
 	use:swipe
 	use:longPress
-	on:swipe={handleSwipe}
-	on:longpress={handleLongPress}
-	on:click={() => {
-		if (isSelectable && !disabled) {
-			dispatch('select', { row, selected: !isSelected });
+	onswipe={handleSwipe}
+	onlongpress={handleLongPress}
+	onclick={(e) => {
+		if (disabled) return;
+		// If clicking the checkbox or an interactive element, don't trigger row click
+		const target = e.target as HTMLElement;
+		if (target.closest('.checkbox') || target.closest('button') || target.closest('a')) return;
+		
+		if (onclick) {
+			onclick();
+		} else if (isSelectable) {
+			onselect?.(row, !isSelected);
 		}
 	}}
 >
@@ -74,7 +95,7 @@
 				class="checkbox checkbox-xs"
 				checked={isSelected}
 				aria-checked={isSelected}
-				on:change={handleCheckboxChange}
+				onchange={handleCheckboxChange}
 				{disabled}
 			/>
 		</td>
@@ -87,7 +108,8 @@
 		>
 			{#if column.formatter}
 				{#if isSvelteComponent(column.formatter)}
-					<svelte:component this={column.formatter} {value} {row} {column} />
+					{@const Formatter = column.formatter}
+					<Formatter {value} {row} {column} />
 				{:else}
 					{@html column.formatter(value, row, column)}
 				{/if}
@@ -98,7 +120,9 @@
 	{/each}
 
 	<td class="py-1">
-		<slot name="rowActions" {row} />
+		{#if rowActions}
+			{@render rowActions({ row })}
+		{/if}
 	</td>
 </tr>
 

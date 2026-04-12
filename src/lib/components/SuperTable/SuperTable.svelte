@@ -1,8 +1,6 @@
-<!-- @migration-task Error while migrating Svelte code: This migration would change the name of a slot making the component unusable -->
-<!-- @migration-task Error while migrating Svelte code: This migration would change the name of a slot making the component unusable -->
 <script lang="ts" generics="T extends Record<string, any>">
 	import type { ColumnDef, SortConfig, FilterState, SuperTableProps } from './types';
-	import { createEventDispatcher, onMount } from 'svelte';
+	import { onMount } from 'svelte';
 	import { filterState, selectedIds, currentPage, itemsPerPage, isLoading } from './stores';
 	import { sortData } from './features/sorting';
 	import { filterData } from './features/filtering';
@@ -18,53 +16,75 @@
 	import SortModal from './subcomponents/SortModal.svelte';
 	import { XCircle, Trash2, Columns, Funnel, ArrowUpDown } from 'lucide-svelte';
 
-	// Props
-	type Props = SuperTableProps<T>;
-	export let data: Props['data'] = [];
-	export let columns: Props['columns'] = [];
-	export let rowKey: Props['rowKey'];
-	export let mobileView: Props['mobileView'] = 'cards';
-	export let sort: Props['initialSort'] = []; // Changed from initialSort
-	export let itemsPerPageProp: Props['itemsPerPage'] = 10;
-	export let currentPageProp: Props['currentPage'] = 1;
-	export let totalItemsProp: Props['totalItems'] = undefined;
-	export let isLoadingProp: Props['isLoading'] = false;
-	export let tableClass: Props['tableClass'] = '';
-	export let cardClass: Props['cardClass'] = '';
-	export let rowClass: Props['rowClass'] = '';
-	export const isSelectable: boolean = true;
-	export let serverSide = false;
-	export let dbError: Props['dbError'] = false;
-	export let maxVisibleColumns: Props['maxVisibleColumns'] = 5;
-	export let selectionMode: Props['selectionMode'] = 'multiple';
-	export let disabledRowKeys: Props['disabledRowKeys'] = [];
+	// Define props with event handlers at the top to ensure they are initialized before use
+	let {
+		data = [],
+		columns = [],
+		rowKey,
+		mobileView = 'cards',
+		sort = [],
+		itemsPerPageProp = 10,
+		currentPageProp = 1,
+		totalItemsProp = undefined,
+		isLoadingProp = false,
+		tableClass = '',
+		cardClass = '',
+		rowClass = '',
+		isSelectable = true,
+		serverSide = false,
+		dbError = false,
+		maxVisibleColumns = 5,
+		selectionMode = 'multiple',
+		disabledRowKeys = [],
+		// Snippets (Svelte 5 slots replacement)
+		globalFilter,
+		customFilters,
+		bulkActions,
+		loadingState,
+		emptyState,
+		rowActions,
+		errorState,
+		// Event Props (Modern Svelte 5 style)
+		onfilter,
+		onsort,
+		onpageChange,
+		onitemsPerPageChange,
+		onselectionChange,
+		ondeleteSelected,
+		onrowClick
+	}: SuperTableProps<T> & {
+		globalFilter?: import('svelte').Snippet<[{ searchTerm: string | undefined, updateSearchTerm: (value: string) => void }]>;
+		customFilters?: import('svelte').Snippet;
+		bulkActions?: import('svelte').Snippet<[{ selectedIds: any[] }]>;
+		loadingState?: import('svelte').Snippet;
+		emptyState?: import('svelte').Snippet;
+		rowActions?: import('svelte').Snippet<[{ row: T }]>;
+		errorState?: import('svelte').Snippet;
+		onfilter?: (state: FilterState) => void;
+		onsort?: (sort: SortConfig[] | null) => void;
+		onpageChange?: (page: number) => void;
+		onitemsPerPageChange?: (ipp: number) => void;
+		onselectionChange?: (selected: any[]) => void;
+		ondeleteSelected?: (selected: any[]) => void;
+		onrowClick?: (row: T) => void;
+	} = $props();
 
-	const dispatch = createEventDispatcher();
+
+
 
 	// --- State Management ---
-	let internalColumns: ColumnDef<T>[] = [];
-	let filteredData: T[] = [];
-	let isFilterDrawerOpen = false;
-	let isSortModalOpen = false;
+	let internalColumns: ColumnDef<T>[] = $state([]);
+	let filteredData: T[] = $state([]);
+	let isFilterDrawerOpen = $state(false);
+	let isSortModalOpen = $state(false);
 	let filterTimeout: NodeJS.Timeout;
 	const FILTER_DEBOUNCE_MS = 300;
-	let isMobile: boolean = false;
+	let isMobile = $state(false);
 
 	// --- Lifecycle & Reactivity ---
 	onMount(() => {
-		$itemsPerPage = itemsPerPageProp ?? 10;
-		$isLoading = false;
-		$currentPage = currentPageProp ?? 1;
 		$selectedIds = new Set();
 		$filterState = { global: '', columns: {} };
-
-		// Initialize internal state
-		internalColumns = columns.map((col) => ({ ...col }));
-		if (!serverSide) {
-			filteredData = filterData(data, $filterState, internalColumns);
-		} else {
-			filteredData = data;
-		}
 
 		const onResize = () => {
 			isMobile = window.innerWidth < 768;
@@ -79,27 +99,45 @@
 		};
 	});
 
-	// Sync loading state with prop
-	$: $isLoading = Boolean(isLoadingProp);
-	$: if (currentPageProp !== undefined) $currentPage = currentPageProp;
-	$: if (itemsPerPageProp !== undefined) $itemsPerPage = itemsPerPageProp;
+	// Sync stores with props using effects
+	$effect(() => {
+		$isLoading = Boolean(isLoadingProp);
+	});
+	$effect(() => {
+		if (currentPageProp !== undefined) $currentPage = currentPageProp;
+	});
+	$effect(() => {
+		if (itemsPerPageProp !== undefined) $itemsPerPage = itemsPerPageProp;
+	});
 
-	// Update internal columns when prop changes
-	$: internalColumns = columns.map((col) => ({ ...col }));
+	// Handle internal columns synchronization
+	let internalColumnsSync = $derived(columns.map((col) => ({ ...col })));
+	$effect(() => {
+		// Only sync if the base columns prop changes meaningfully
+		internalColumns = internalColumnsSync;
+	});
 
-	// When data changes (especially in server-side mode), update filteredData
-	$: if (serverSide) {
-		filteredData = data;
-	}
+	// Reactive data handling
+	$effect(() => {
+		if (serverSide) {
+			filteredData = data;
+		} else {
+			// Re-filter when data or filterState changes
+			filteredData = filterData(data, $filterState, internalColumns);
+		}
+	});
 
 	// --- Computed Properties ---
-	$: sortedData = sortData(filteredData, sort ?? null, internalColumns);
-	$: totalItems = serverSide ? (totalItemsProp ?? 0) : sortedData.length;
-	$: totalPageCount = calculateTotalPages(totalItems, $itemsPerPage);
-	$: displayData = serverSide ? sortedData : paginateData(sortedData, $currentPage, $itemsPerPage);
-	$: allSelected =
-		displayData.length > 0 && displayData.every((row) => $selectedIds.has(row[rowKey as keyof T]));
-	$: someSelected = displayData.some((row) => $selectedIds.has(row[rowKey as keyof T]));
+	let sortedData = $derived(sortData(filteredData, sort ?? null, internalColumns));
+	let totalItems = $derived(serverSide ? (totalItemsProp ?? 0) : sortedData.length);
+	let totalPageCount = $derived(calculateTotalPages(totalItems, $itemsPerPage));
+	let displayData = $derived(
+		serverSide ? sortedData : paginateData(sortedData, $currentPage, $itemsPerPage)
+	);
+	let allSelected = $derived(
+		displayData.length > 0 && displayData.every((row) => $selectedIds.has(row[rowKey as keyof T]))
+	);
+	let someSelected = $derived(displayData.some((row) => $selectedIds.has(row[rowKey as keyof T])));
 
 	// --- Event Handlers ---
 
@@ -115,52 +153,42 @@
 		// Debounce the event dispatch to the parent (for server-side calls)
 		filterTimeout = setTimeout(() => {
 			if (serverSide) $isLoading = true;
-			dispatch('filter', state);
+			onfilter?.(state);
 		}, FILTER_DEBOUNCE_MS);
 	}
 
-	function handleSort(event: CustomEvent<{ key: string; ctrlKey: boolean }>) {
-		const { key, ctrlKey } = event.detail;
+	function handleSort(columnKey: string, ctrlKey: boolean) {
 		const currentSorts = sort ? [...sort] : [];
-		const existingIndex = currentSorts.findIndex((s) => s.key === key);
+		const existingIndex = currentSorts.findIndex((s) => s.key === columnKey);
 
 		let newSortState: SortConfig[];
 
 		if (!ctrlKey) {
 			// SINGLE SORT LOGIC
 			if (existingIndex !== -1 && currentSorts.length === 1) {
-				// The column is already being sorted
 				if (currentSorts[existingIndex].direction === 'asc') {
-					// It's 'asc', so flip to 'desc'. This becomes the ONLY sort criteria.
-					newSortState = [{ key, direction: 'desc' }];
+					newSortState = [{ key: columnKey, direction: 'desc' }];
 				} else {
-					// It's 'desc', so clear all sorting.
 					newSortState = [];
 				}
 			} else {
-				// The column was not sorted or other columns were also sorted.
-				// Make it the ONLY sort criteria, 'asc'.
-				newSortState = [{ key, direction: 'asc' }];
+				newSortState = [{ key: columnKey, direction: 'asc' }];
 			}
 		} else {
 			// MULTI SORT LOGIC
-			newSortState = currentSorts; // Start with the current sorts
+			newSortState = currentSorts;
 			if (existingIndex !== -1) {
-				// It exists, so check direction
 				if (currentSorts[existingIndex].direction === 'desc') {
-					// Was 'desc', so remove it
 					newSortState.splice(existingIndex, 1);
 				} else {
-					// Was 'asc', so flip to 'desc'
 					newSortState[existingIndex] = { ...currentSorts[existingIndex], direction: 'desc' };
 				}
 			} else {
-				// It doesn't exist, so add it as 'asc'
-				newSortState.push({ key, direction: 'asc' });
+				newSortState.push({ key: columnKey, direction: 'asc' });
 			}
 		}
 
-		dispatch('sort', newSortState.length > 0 ? newSortState : null);
+		onsort?.(newSortState.length > 0 ? newSortState : null);
 	}
 
 	function handleGlobalFilter(value: string) {
@@ -168,18 +196,17 @@
 		debouncedDispatchFilter($filterState);
 	}
 
-	function handleLiveFilterChange(event: CustomEvent<{ key: string; value: any }>) {
-		const { key, value } = event.detail;
+	function handleLiveFilterChange(key: string, value: any) {
 		// Create a new object to ensure Svelte reactivity
 		$filterState.columns = { ...$filterState.columns, [key]: value };
 		debouncedDispatchFilter($filterState);
 	}
 
-	function handleApplyDrawerFilters(event: CustomEvent<Record<string, any>>) {
-		$filterState.columns = event.detail;
+	function handleApplyDrawerFilters(filters: Record<string, any>) {
+		$filterState.columns = filters;
 		// Dispatch immediately without debounce for drawer's "Apply" button
 		if (serverSide) $isLoading = true;
-		dispatch('filter', $filterState);
+		onfilter?.($filterState);
 	}
 
 	function resetColumnFilters() {
@@ -187,21 +214,20 @@
 		debouncedDispatchFilter($filterState);
 	}
 
-	function handleSelectAll(event: CustomEvent<{ selected: boolean }>) {
+	function handleSelectAll(selected: boolean) {
 		if (selectionMode === 'multiple') {
 			const newSelectedIds = new Set($selectedIds);
-			if (event.detail.selected) {
-displayData.forEach((row) => newSelectedIds.add(row[rowKey as keyof T]));
+			if (selected) {
+				displayData.forEach((row) => newSelectedIds.add(row[rowKey as keyof T]));
 			} else {
 				displayData.forEach((row) => newSelectedIds.delete(row[rowKey as keyof T]));
 			}
 			$selectedIds = newSelectedIds;
-			dispatch('selectionChange', Array.from(newSelectedIds));
+			onselectionChange?.(Array.from(newSelectedIds));
 		}
 	}
 
-	function handleSelect(event: CustomEvent<{ row: T; selected: boolean }>) {
-		const { row, selected } = event.detail;
+	function handleSelect(row: T, selected: boolean) {
 		let newSelectedIds: Set<any>;
 
 		if (selectionMode === 'single') {
@@ -219,18 +245,18 @@ displayData.forEach((row) => newSelectedIds.add(row[rowKey as keyof T]));
 		}
 
 		$selectedIds = newSelectedIds;
-		dispatch('selectionChange', Array.from(newSelectedIds));
+		onselectionChange?.(Array.from(newSelectedIds));
 	}
 
-	function handlePageChange(event: CustomEvent<number>) {
-		$currentPage = event.detail;
-		dispatch('pageChange', event.detail);
+	function handlePageChange(page: number) {
+		$currentPage = page;
+		onpageChange?.(page);
 	}
 
-	function handleItemsPerPageChange(event: CustomEvent<number>) {
-		$itemsPerPage = event.detail;
+	function handleItemsPerPageChange(ipp: number) {
+		$itemsPerPage = ipp;
 		$currentPage = 1; // Reset to first page
-		dispatch('itemsPerPageChange', event.detail);
+		onitemsPerPageChange?.(ipp);
 	}
 
 	function handleSwipe(event: CustomEvent<{ row: T; direction: 'left' | 'right' }>) {
@@ -239,7 +265,7 @@ displayData.forEach((row) => newSelectedIds.add(row[rowKey as keyof T]));
 
 	export function clearSelection() {
 		$selectedIds = new Set();
-		dispatch('selectionChange', []);
+		onselectionChange?.([]);
 	}
 
 	function selectAllOnPage() {
@@ -247,12 +273,12 @@ displayData.forEach((row) => newSelectedIds.add(row[rowKey as keyof T]));
 			const newSelectedIds = new Set($selectedIds);
 			displayData.forEach((row) => newSelectedIds.add(row[rowKey as keyof T]));
 			$selectedIds = newSelectedIds;
-			dispatch('selectionChange', Array.from(newSelectedIds));
+			onselectionChange?.(Array.from(newSelectedIds));
 		}
 	}
 
 	function handleDeleteSelected() {
-		dispatch('deleteSelected', Array.from($selectedIds));
+		ondeleteSelected?.(Array.from($selectedIds));
 	}
 
 	function toggleColumnVisibility(key: string) {
@@ -261,45 +287,48 @@ displayData.forEach((row) => newSelectedIds.add(row[rowKey as keyof T]));
 		);
 	}
 
-	function handleSortSave(event: CustomEvent<SortConfig[]>) {
-		const newSortState = event.detail;
-		dispatch('sort', newSortState.length > 0 ? newSortState : null);
+	function handleSortSave(newSortState: SortConfig[]) {
+		onsort?.(newSortState.length > 0 ? newSortState : null);
 	}
+
 </script>
 
 <SortModal
 	isOpen={isSortModalOpen}
 	columns={internalColumns}
-	currentSorts={sort || []}
-	on:close={() => (isSortModalOpen = false)}
-	on:save={handleSortSave}
+	currentSort={sort ?? []}
+	onclose={() => (isSortModalOpen = false)}
+	onsave={handleSortSave}
 />
 
-<div class="w-full space-y-1">
-	<!-- Bulk actions and global filter section -->
-	<div class="card mb-4 bg-base-100 shadow">
-		<div class="card-body p-4">
-			<div class="flex flex-col gap-4">
-				<!-- Global Filter -->
-				<div class="w-full">
-					<slot
-						name="globalFilter"
-						searchTerm={$filterState.global}
-						updateSearchTerm={handleGlobalFilter}
-					>
-						<FilterInput
-							value={$filterState.global || ''}
-							on:input={(e) => handleGlobalFilter(e.detail)}
-						/>
-					</slot>
-					<slot name="customFilters" />
+<div
+	class="flex h-[calc(100vh-140px)] flex-col gap-0 overflow-hidden rounded-xl border border-base-300 bg-base-100 shadow-xl"
+>
+	<!-- Unified Scroll Container - Handles both horizontal and vertical scrolling correctly -->
+	<div class="flex-1 overflow-auto bg-base-100" id="super-table-scroll-root">
+		<!-- Section 1: Bulk actions and global filter -->
+		<div class="z-40 w-full border-b border-base-200 bg-base-100 p-4">
+			<div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+				<!-- Global Filter Area -->
+				<div class="min-w-0 flex-1">
+					{#if globalFilter}
+						{@render globalFilter({
+							searchTerm: $filterState.global,
+							updateSearchTerm: handleGlobalFilter
+						})}
+					{:else}
+						<FilterInput value={$filterState.global || ''} oninput={(val) => handleGlobalFilter(val)} />
+					{/if}
+					{#if customFilters}
+						{@render customFilters()}
+					{/if}
 				</div>
 
 				<!-- Toolbar -->
-				<div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+				<div class="flex flex-wrap items-center gap-x-4 gap-y-2 lg:flex-nowrap">
 					<!-- Column Visibility -->
 					<div class="dropdown">
-						<div tabindex="0" role="button" class="btn btn-sm">
+						<div tabindex="0" role="button" class="btn btn-ghost btn-sm border border-base-300">
 							<Columns class="h-4 w-4" />
 							Columns
 							<svg
@@ -314,7 +343,7 @@ displayData.forEach((row) => newSelectedIds.add(row[rowKey as keyof T]));
 						<ul
 							role="menu"
 							tabindex="0"
-							class="menu dropdown-content z-[1] w-52 rounded-box bg-base-100 p-2 shadow"
+							class="menu dropdown-content z-[40] w-52 rounded-box bg-base-100 p-2 shadow-2xl"
 						>
 							{#each internalColumns as column (column.key)}
 								<li>
@@ -322,9 +351,9 @@ displayData.forEach((row) => newSelectedIds.add(row[rowKey as keyof T]));
 										<span class="label-text">{column.label}</span>
 										<input
 											type="checkbox"
-											class="checkbox checkbox-sm"
+											class="checkbox checkbox-sm checkbox-primary"
 											checked={!column.hidden}
-											on:change={() => toggleColumnVisibility(String(column.key))}
+											onchange={() => toggleColumnVisibility(String(column.key))}
 										/>
 									</label>
 								</li>
@@ -334,10 +363,7 @@ displayData.forEach((row) => newSelectedIds.add(row[rowKey as keyof T]));
 
 					<!-- Sort Modal Button -->
 					<div class="tooltip tooltip-bottom" data-tip="Manage sort">
-						<button
-							class="btn btn-circle btn-ghost btn-sm"
-							on:click={() => (isSortModalOpen = true)}
-						>
+						<button class="btn btn-circle btn-ghost btn-sm" onclick={() => (isSortModalOpen = true)}>
 							<ArrowUpDown class="h-4 w-4" />
 						</button>
 					</div>
@@ -346,7 +372,7 @@ displayData.forEach((row) => newSelectedIds.add(row[rowKey as keyof T]));
 					{#if isMobile && mobileView === 'cards'}
 						<button
 							class="btn btn-outline btn-sm relative"
-							on:click={() => (isFilterDrawerOpen = !isFilterDrawerOpen)}
+							onclick={() => (isFilterDrawerOpen = !isFilterDrawerOpen)}
 						>
 							<Funnel class="h-4 w-4" />
 							Filters
@@ -358,9 +384,9 @@ displayData.forEach((row) => newSelectedIds.add(row[rowKey as keyof T]));
 							isOpen={isFilterDrawerOpen}
 							columns={internalColumns}
 							filterValues={$filterState.columns}
-							on:close={() => (isFilterDrawerOpen = false)}
-							on:applyFilters={handleApplyDrawerFilters}
-							on:reset={resetColumnFilters}
+							onclose={() => (isFilterDrawerOpen = false)}
+							onapplyFilters={handleApplyDrawerFilters}
+							onreset={resetColumnFilters}
 						/>
 					{/if}
 
@@ -370,11 +396,11 @@ displayData.forEach((row) => newSelectedIds.add(row[rowKey as keyof T]));
 							class="flex flex-grow flex-wrap items-center justify-end gap-x-4 gap-y-2 rtl:justify-start"
 						>
 							<div class="flex items-center gap-1">
-								<span class="text-sm text-base-content/70">{$selectedIds.size} selected</span>
+								<span class="text-sm font-medium text-primary">{$selectedIds.size} selected</span>
 								<div class="tooltip tooltip-bottom" data-tip="Clear selection">
 									<button
-										class="btn btn-circle btn-ghost btn-sm"
-										on:click={clearSelection}
+										class="btn btn-circle btn-ghost btn-sm text-error"
+										onclick={clearSelection}
 										aria-label="Clear selection"
 									>
 										<XCircle class="h-4 w-4" />
@@ -382,144 +408,156 @@ displayData.forEach((row) => newSelectedIds.add(row[rowKey as keyof T]));
 								</div>
 							</div>
 							{#if someSelected && !allSelected}
-								<button class="btn btn-link btn-sm" on:click={selectAllOnPage}>
-									Select all ({displayData.length})
+								<button class="btn btn-link btn-xs no-underline" onclick={selectAllOnPage}>
+									Select all on page ({displayData.length})
 								</button>
 							{:else if allSelected}
-								<button class="btn btn-link btn-sm" on:click={clearSelection}>
+								<button class="btn btn-link btn-xs no-underline" onclick={clearSelection}>
 									Deselect all
 								</button>
 							{/if}
-							<button class="btn btn-error btn-sm" on:click={handleDeleteSelected}>
+							<button class="btn btn-error btn-sm" onclick={handleDeleteSelected}>
 								<Trash2 class="h-4 w-4" />
 								Delete Selected
 							</button>
-							<slot name="bulkActions" selectedIds={Array.from($selectedIds)} />
+							{#if bulkActions}
+								{@render bulkActions({ selectedIds: Array.from($selectedIds) })}
+							{/if}
 						</div>
 					{/if}
 				</div>
 			</div>
 		</div>
-	</div>
 
-	<!-- Main table/cards section -->
-	<div class="card bg-base-100 shadow">
-		<div class="card-body px-0 py-0">
+		<!-- Main table section - Horizontal scroll handled by parent #super-table-scroll-root -->
+		<div class="p-0 min-w-full inline-block align-top">
 			{#if isMobile && mobileView === 'cards'}
 				<!-- Mobile Card View -->
-				{#if $isLoading}
-					<slot name="loadingState">
-						<div class="flex w-full justify-center p-8">
-							<span class="loading loading-spinner"></span>
+				<div class="w-full">
+					{#if $isLoading}
+						{#if loadingState}
+							{@render loadingState()}
+						{:else}
+							<div class="flex w-full justify-center p-8">
+								<span class="loading loading-spinner"></span>
+							</div>
+						{/if}
+					{:else if data.length === 0}
+						{#if emptyState}
+							{@render emptyState()}
+						{:else}
+							<div class="p-8 text-center text-base-content/70">No data available</div>
+						{/if}
+					{:else}
+						<div class="space-y-2 p-4">
+							{#each displayData as row (String(row[rowKey as keyof T]))}
+								<TableRowMobileCard
+									{row}
+									columns={internalColumns}
+									rowKey={String(rowKey)}
+									isSelectable={true}
+									className={typeof rowClass === 'function' ? rowClass(row) : rowClass}
+									{cardClass}
+									{maxVisibleColumns}
+									onselect={handleSelect}
+									onswipe={handleSwipe}
+									disabled={(disabledRowKeys || []).includes(row[rowKey as keyof T])}
+									{rowActions}
+								/>
+							{/each}
 						</div>
-					</slot>
-				{:else if data.length === 0}
-					<slot name="emptyState">
-						<div class="p-8 text-center text-base-content/70">No data available</div>
-					</slot>
-				{:else}
-					{#each displayData as row (String(row[rowKey as keyof T]))}
-						<TableRowMobileCard
-							{row}
-							columns={internalColumns}
-							rowKey={String(rowKey)}
-							isSelectable={true}
-							className={typeof rowClass === 'function' ? rowClass(row) : rowClass}
-							                            {cardClass}
-							                            {maxVisibleColumns}
-							                            on:select={handleSelect}
-							                            on:swipe={handleSwipe}
-							                            disabled={(disabledRowKeys || []).includes(row[rowKey as keyof T])}						>
-						<svelte:fragment slot="rowActions" let:row>
-								<slot name="rowActions" {row} />
-							</svelte:fragment>
-						</TableRowMobileCard>
-					{/each}
-				{/if}
+					{/if}
+				</div>
 			{:else}
 				<!-- Desktop Table View -->
-				<div class="overflow-x-auto">
-					<table class="table table-sm w-full {tableClass}">
-						<TableHeader
-							columns={internalColumns}
-							currentSort={sort ?? null}
-							filterValues={$filterState.columns}
-							isSelectable={true}
-							{allSelected}
-							{someSelected}
-							on:sort={handleSort}
-							on:filterChange={handleLiveFilterChange}
-							on:reset={resetColumnFilters}
-							on:selectAll={handleSelectAll}
-						/>
-						<tbody>
-							{#if dbError}
-								<tr>
-									<td
-										colspan={internalColumns.filter((c) => !c.hidden).length + 2}
-										class="p-8 text-center text-error"
-									>
-										<slot name="errorState">Gagal memuat data. Silakan coba lagi.</slot>
-									</td>
-								</tr>
-							{:else if $isLoading}
-								<tr>
-									<td
-										colspan={internalColumns.filter((c) => !c.hidden).length + 2}
-										class="p-8 text-center"
-									>
-										<slot name="loadingState">
-											<span class="loading loading-spinner"></span>
-										</slot>
-									</td>
-								</tr>
-							{:else if data.length === 0}
-								<tr>
-									<td
-										colspan={internalColumns.filter((c) => !c.hidden).length + 2}
-										class="p-8 text-center text-base-content/70"
-									>
-										<slot name="emptyState">No data available</slot>
-									</td>
-								</tr>
-							{:else}
-								{#each displayData as row (String(row[rowKey as keyof T]))}
-									<TableRowDesktop
-										{row}
-										columns={internalColumns}
-										rowKey={String(rowKey)}
-										isSelectable={true}
-										className={typeof rowClass === 'function' ? rowClass(row) : rowClass}
-										on:select={handleSelect}
-										on:swipe={handleSwipe}
-										disabled={(disabledRowKeys || []).includes(row[rowKey as keyof T])}
-									>
-										<svelte:fragment slot="rowActions" let:row>
-											<slot name="rowActions" {row} />
-										</svelte:fragment>
-									</TableRowDesktop>
-								{/each}
-							{/if}
-						</tbody>
-					</table>
-				</div>
+				<table class="table table-md w-full {tableClass}">
+					<TableHeader
+						columns={internalColumns}
+						currentSort={sort ?? null}
+						filterValues={$filterState.columns}
+						isSelectable={true}
+						{allSelected}
+						{someSelected}
+						onsort={handleSort}
+						onfilterChange={handleLiveFilterChange}
+						onreset={resetColumnFilters}
+						onselectAll={handleSelectAll}
+					/>
+					<tbody>
+						{#if dbError}
+							<tr>
+								<td
+									colspan={internalColumns.filter((c) => !c.hidden).length + 2}
+									class="p-8 text-center text-error"
+								>
+									{#if errorState}
+										{@render errorState()}
+									{:else}
+										Gagal memuat data. Silakan coba lagi.
+									{/if}
+								</td>
+							</tr>
+						{:else if $isLoading}
+							<tr>
+								<td
+									colspan={internalColumns.filter((c) => !c.hidden).length + 2}
+									class="p-8 text-center"
+								>
+									{#if loadingState}
+										{@render loadingState()}
+									{:else}
+										<span class="loading loading-spinner"></span>
+									{/if}
+								</td>
+							</tr>
+						{:else if data.length === 0}
+							<tr>
+								<td
+									colspan={internalColumns.filter((c) => !c.hidden).length + 2}
+									class="p-8 text-center text-base-content/70"
+								>
+									{#if emptyState}
+										{@render emptyState()}
+									{:else}
+										No data available
+									{/if}
+								</td>
+							</tr>
+						{:else}
+							{#each displayData as row (String(row[rowKey as keyof T]))}
+								<TableRowDesktop
+									{row}
+									columns={internalColumns}
+									rowKey={String(rowKey)}
+									isSelectable={true}
+									className={typeof rowClass === 'function' ? rowClass(row) : rowClass}
+									onselect={handleSelect}
+									onswipe={handleSwipe}
+									disabled={(disabledRowKeys || []).includes(row[rowKey as keyof T])}
+									{rowActions}
+									onclick={() => onrowClick?.(row)}
+								/>
+							{/each}
+						{/if}
+					</tbody>
+				</table>
 			{/if}
 		</div>
 	</div>
 
-	<!-- Pagination -->
-	<div class="borer card mx-0 bg-base-100 shadow">
-		<div class="card-body px-4 py-2">
-			{#if !$isLoading && totalItems > 0}
-				<PaginationControls
-					currentPage={$currentPage}
-					totalPages={totalPageCount}
-					itemsPerPage={$itemsPerPage}
-					{totalItems}
-					on:pageChange={handlePageChange}
-					on:itemsPerPageChange={handleItemsPerPageChange}
-				/>
-			{/if}
-		</div>
+	<!-- Sticky Pagination at the very bottom of the component -->
+	<div
+		class="flex-none sticky bottom-0 z-30 w-full border-t border-base-300 bg-base-100/95 p-2 px-4 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] backdrop-blur-sm"
+	>
+		{#if !$isLoading && totalItems > 0}
+			<PaginationControls
+				currentPage={$currentPage}
+				totalPages={totalPageCount}
+				itemsPerPage={$itemsPerPage}
+				{totalItems}
+				onpageChange={handlePageChange}
+				onitemsPerPageChange={handleItemsPerPageChange}
+			/>
+		{/if}
 	</div>
 </div>

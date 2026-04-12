@@ -11,6 +11,10 @@
 		allSelected?: boolean;
 		someSelected?: boolean;
 		filterValues?: Record<string, any>;
+		onfilterChange?: (columnKey: string, value: any) => void;
+		onsort?: (columnKey: string, ctrlKey: boolean) => void;
+		onreset?: () => void;
+		onselectAll?: (selected: boolean) => void;
 	}
 
 	let {
@@ -19,18 +23,20 @@
 		isSelectable = false,
 		allSelected = false,
 		someSelected = false,
-		filterValues = {}
+		filterValues = {},
+		onfilterChange,
+		onsort,
+		onreset,
+		onselectAll
 	}: Props = $props();
 
-	const dispatch = createEventDispatcher();
-
 	function handleFilterChange(columnKey: string, value: any) {
-		dispatch('filterChange', { key: columnKey, value });
+		onfilterChange?.(columnKey, value);
 	}
 
 	function handleSort(column: ColumnDef, event: MouseEvent) {
 		if (!column.sortable) return;
-		dispatch('sort', { key: String(column.key), ctrlKey: event.ctrlKey || event.metaKey });
+		onsort?.(String(column.key), event.ctrlKey || event.metaKey);
 	}
 
 	function getSortForColumn(key: string): SortConfig | undefined {
@@ -43,8 +49,8 @@
 	}
 </script>
 
-<thead>
-	<tr class="bg-base-200 bg-opacity-50">
+<thead class="sticky top-0 z-30 bg-base-200 shadow-sm">
+	<tr class="bg-base-200">
 		<!-- Selection column header -->
 		{#if isSelectable}
 			<th class="w-1 py-2">
@@ -53,7 +59,7 @@
 					class="checkbox checkbox-xs"
 					checked={allSelected}
 					indeterminate={someSelected && !allSelected}
-					onchange={(e) => dispatch('selectAll', { selected: e.currentTarget.checked })}
+					onchange={(e) => onselectAll?.(e.currentTarget.checked)}
 					aria-label="Select all rows"
 				/>
 			</th>
@@ -102,7 +108,7 @@
 	</tr>
 
 	<!-- Filter row -->
-	<tr class="border-t border-base-300 bg-base-200 bg-opacity-50">
+	<tr class="border-t border-base-300 bg-base-200">
 		{#if isSelectable}
 			<th class="w-1"></th>
 		{/if}
@@ -146,7 +152,7 @@
 		<th class="w-auto px-2 align-bottom">
 			<!-- Tombol Reset hanya muncul jika ada filter aktif -->
 			{#if Object.values(filterValues).some((v) => v && v !== 'All')}
-				<button class="btn btn-ghost btn-xs -mb-1 text-error" onclick={() => dispatch('reset')}>
+				<button class="btn btn-ghost btn-xs -mb-1 text-error" onclick={() => onreset?.()}>
 					Reset
 				</button>
 			{/if}

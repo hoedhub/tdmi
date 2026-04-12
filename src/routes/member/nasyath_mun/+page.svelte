@@ -726,13 +726,13 @@
 				itemsPerPageProp={pageSize}
 				totalItemsProp={totalItems}
 				sort={currentSort}
-				on:sort={handleSort}
-				on:filter={handleFilter}
-				on:pageChange={handlePageChange}
-				on:itemsPerPageChange={handleItemsPerPageChange}
+				onsort={handleSort}
+				onfilter={handleFilter}
+				onpageChange={handlePageChange}
+				onitemsPerPageChange={handleItemsPerPageChange}
 			>
-				<svelte:fragment slot="customFilters"
-					><div class="flex flex-col flex-wrap items-start gap-4 pt-2 md:flex-row md:items-end">
+				{#snippet customFilters()}
+					<div class="flex flex-col flex-wrap items-start gap-4 pt-2 md:flex-row md:items-end">
 						<!-- Period Selector -->
 						<div class="form-control">
 							<label class="label pb-1" for="period-type-select"
@@ -753,7 +753,7 @@
 							<div class="form-control">
 								<label class="label pb-1" for="month-select"
 									><span class="label-text">تحديد الشهر</span></label
-								>
+							>
 								<div class="join">
 									<button class="btn join-item btn-sm" onclick={previousMonth}>
 										<ChevronRight class="h-4 w-4" />
@@ -798,25 +798,28 @@
 								onclick={resetFilters}>إعادة تعيين</button
 							>
 						</div>
-					</div></svelte:fragment
-				>
-				<div slot="rowActions" let:row class="flex items-center gap-1">
-					<button
-						class="btn btn-ghost btn-xs"
-						aria-label="Edit item"
-						onclick={() => handleEdit(row.id)}><Edit class="h-4 w-4" /></button
-					>
-					<form
-						method="POST"
-						action={`/member/nasyath_mun/${row.id}/delete`}
-						use:enhance={handleDeleteSubmit}
-						onsubmit={handleSubmit}
-					>
-						<button type="submit" class="btn btn-ghost btn-xs text-error" aria-label="Delete item"
-							><Trash2 class="h-4 w-4" /></button
+					</div>
+				{/snippet}
+
+				{#snippet rowActions({ row })}
+					<div class="flex items-center gap-1">
+						<button
+							class="btn btn-ghost btn-xs"
+							aria-label="Edit item"
+							onclick={() => handleEdit(row.id)}><Edit class="h-4 w-4" /></button
 						>
-					</form>
-				</div>
+						<form
+							method="POST"
+							action={`/member/nasyath_mun/${row.id}/delete`}
+							use:enhance={handleDeleteSubmit}
+							onsubmit={handleSubmit}
+						>
+							<button type="submit" class="btn btn-ghost btn-xs text-error" aria-label="Delete item"
+								><Trash2 class="h-4 w-4" /></button
+							>
+						</form>
+					</div>
+				{/snippet}
 			</SuperTable>
 		</div>
 	{/if}

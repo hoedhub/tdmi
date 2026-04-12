@@ -193,7 +193,6 @@
 	<a href="/admin/users/new" class="btn btn-primary btn-sm"> Create New User </a>
 </div>
 
-{#key users}
 	<SuperTable
 		data={users}
 		{columns}
@@ -203,20 +202,21 @@
 		isLoadingProp={loading}
 		sort={currentSort}
 		serverSide={true}
-		on:sort={handleSort}
-		on:filter={handleFilter}
-		on:pageChange={handlePageChange}
-		on:itemsPerPageChange={handleItemsPerPageChange}
-		on:rowClick={(e) => goto(`/admin/users/${e.detail.id}/edit`)}
+		onsort={handleSort}
+		onfilter={handleFilter}
+		onpageChange={handlePageChange}
+		onitemsPerPageChange={handleItemsPerPageChange}
+		onrowClick={(row) => goto(`/admin/users/${row.id}/edit`)}
 	>
-		<svelte:fragment slot="loadingState">
+		{#snippet loadingState()}
 			<div class="p-8 text-center">
 				<span class="loading loading-spinner mb-4"></span>
 				<p class="text-lg font-semibold">Memuat data...</p>
 				<p class="text-sm text-base-content/70">Harap tunggu sebentar.</p>
 			</div>
-		</svelte:fragment>
-		<svelte:fragment slot="rowActions" let:row>
+		{/snippet}
+		
+		{#snippet rowActions({ row })}
 			<div class="flex gap-2">
 				<a
 					href={`/admin/users/${row.id}/edit`}
@@ -236,6 +236,5 @@
 					<button class="btn btn-disabled btn-sm"><Trash class="h-4 w-4" /></button>
 				{/if}
 			</div>
-		</svelte:fragment>
+		{/snippet}
 	</SuperTable>
-{/key}

@@ -2,18 +2,27 @@
 <!-- @migration-task Error while migrating Svelte code: Can't migrate code with afterUpdate. Please migrate by hand. -->
 <script lang="ts">
 	import type { ColumnDef } from '../types';
-	import { afterUpdate, createEventDispatcher } from 'svelte';
 	import { fly } from 'svelte/transition';
+	interface Props {
+		columns: ColumnDef[];
+		filterValues?: Record<string, any>;
+		isOpen: boolean;
+		onclose?: () => void;
+		onapplyFilters?: (filters: Record<string, any>) => void;
+	}
 
-	export let columns: ColumnDef[];
-	export let filterValues: Record<string, any> = {};
-	export let isOpen: boolean = false;
+	let {
+		columns,
+		filterValues = {},
+		isOpen = false,
+		onclose,
+		onapplyFilters
+	}: Props = $props();
 
-	let previousIsOpen = isOpen;
+	let previousIsOpen = $state(isOpen);
+	let localFilterValues: Record<string, any> = $state({});
 
-	// --- DIUBAH: Logika inisialisasi yang lebih baik ---
-	// Gunakan afterUpdate untuk mendeteksi saat 'isOpen' berubah dari false ke true
-	afterUpdate(() => {
+	$effect(() => {
 		if (isOpen && !previousIsOpen) {
 			// Drawer baru saja dibuka, salin filter dari parent
 			localFilterValues = { ...filterValues };
@@ -21,26 +30,22 @@
 		previousIsOpen = isOpen;
 	});
 
-	const dispatch = createEventDispatcher();
-
-	let localFilterValues: Record<string, any> = {};
-
 	function applyAndClose() {
 		// Kirim semua filter yang sudah diubah ke parent
-		dispatch('applyFilters', localFilterValues);
+		onapplyFilters?.(localFilterValues);
 		// Tutup drawer
-		dispatch('close');
+		onclose?.();
 	}
 
 	function resetAndApply() {
 		// Kosongkan filter lokal
 		localFilterValues = {};
 		// Kirim state kosong ke parent dan tutup
-		dispatch('applyFilters', {});
-		dispatch('close');
+		onapplyFilters?.({});
+		onclose?.();
 	}
 
-	$: hasChanges = JSON.stringify(localFilterValues) !== JSON.stringify(filterValues);
+	let hasChanges = $derived(JSON.stringify(localFilterValues) !== JSON.stringify(filterValues));
 </script>
 
 {#if isOpen}
@@ -49,7 +54,7 @@
 		<button
 			class="fixed inset-0 bg-gray-500/75"
 			transition:fly={{ duration: 300, opacity: 0 }}
-			on:click={() => dispatch('close')}
+			onclick={() => onclose?.()}
 			aria-label="Close filter drawer"
 		></button>
 
@@ -66,7 +71,7 @@
 							<button
 								type="button"
 								class="relative rounded-md text-gray-300 hover:text-white"
-								on:click={() => dispatch('close')}
+								onclick={() => onclose?.()}
 							>
 								<span class="sr-only">Close panel</span>
 								<svg
@@ -130,13 +135,13 @@
 									<button
 										disabled={!hasChanges}
 										class="btn btn-primary mt-4 w-full"
-										on:click={applyAndClose}
+										onclick={applyAndClose}
 									>
 										Apply
 									</button>
 									<!-- Tombol Reset hanya muncul jika ada filter aktif -->
 									{#if Object.values(localFilterValues).some((v) => v && v !== 'All')}
-										<button class="btn btn-ghost mt-4 w-full text-error" on:click={resetAndApply}>
+										<button class="btn btn-ghost mt-4 w-full text-error" onclick={resetAndApply}>
 											Reset
 										</button>
 									{/if}

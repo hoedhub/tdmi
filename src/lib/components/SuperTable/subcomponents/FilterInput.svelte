@@ -8,26 +8,26 @@
 		placeholder?: string;
 		id?: string;
 		label?: string;
+		oninput?: (value: string) => void;
 	}
 
 	let {
 		value = $bindable(''),
 		placeholder = 'Search...',
 		id = 'filter-input',
-		label = 'Search'
+		label = 'Search',
+		oninput
 	}: Props = $props();
-
-	const dispatch = createEventDispatcher();
 
 	function handleInput(event: Event) {
 		const target = event.target as HTMLInputElement;
 		value = target.value;
-		dispatch('input', value);
+		oninput?.(value);
 	}
 
 	function clearInput() {
 		value = '';
-		dispatch('input', '');
+		oninput?.('');
 	}
 </script>
 

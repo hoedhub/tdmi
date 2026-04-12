@@ -9,23 +9,24 @@
 		totalPages: number;
 		itemsPerPage: number;
 		totalItems: number;
+		onpageChange?: (page: number) => void;
+		onitemsPerPageChange?: (itemsPerPage: number) => void;
 	}
 
 	let {
 		currentPage,
 		totalPages,
 		itemsPerPage,
-		totalItems
+		totalItems,
+		onpageChange,
+		onitemsPerPageChange
 	}: Props = $props();
-
-	const dispatch = createEventDispatcher();
 
 	let element: HTMLDivElement | undefined = $state();
 	let isRtl = $state(false);
 
 	onMount(() => {
 		if (element) {
-			// Check the computed direction of the element itself or a parent
 			isRtl = getComputedStyle(element).direction === 'rtl';
 		}
 	});
@@ -36,7 +37,7 @@
 
 	function goToPage(page: number) {
 		if (page >= 1 && page <= totalPages) {
-			dispatch('pageChange', page);
+			onpageChange?.(page);
 		}
 	}
 </script>
@@ -99,7 +100,7 @@
 				class="select select-bordered select-sm"
 				value={itemsPerPage}
 				aria-label="Items per page"
-				onchange={(e) => dispatch('itemsPerPageChange', parseInt(e.currentTarget.value))}
+				onchange={(e) => onitemsPerPageChange?.(parseInt(e.currentTarget.value))}
 			>
 				<option value={5}>5</option>
 				<option value={10}>10</option>
