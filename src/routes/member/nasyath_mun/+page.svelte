@@ -347,20 +347,20 @@
 		// After navigation, fetch the table data for the now-default state.
 		await fetchNasyathData(currentSort, currentFilters, 1);
 	}
-	async function handleSort(event: CustomEvent<SortConfig[] | null>) {
-		currentSort = event.detail ?? undefined;
+	async function handleSort(sort: SortConfig[] | null) {
+		currentSort = sort ?? undefined;
 		await fetchNasyathData(currentSort, currentFilters, currentPage);
 	}
-	async function handleFilter(event: CustomEvent<FilterState>) {
-		currentFilters = event.detail;
+	async function handleFilter(filters: FilterState) {
+		currentFilters = filters;
 		await fetchNasyathData(currentSort, currentFilters, 1);
 	}
-	async function handlePageChange(event: CustomEvent<number>) {
-		currentPage = event.detail;
+	async function handlePageChange(page: number) {
+		currentPage = page;
 		await fetchNasyathData(currentSort, currentFilters, currentPage);
 	}
-	async function handleItemsPerPageChange(event: CustomEvent<number>) {
-		pageSize = event.detail;
+	async function handleItemsPerPageChange(newSize: number) {
+		pageSize = newSize;
 		await fetchNasyathData(currentSort, currentFilters, 1);
 	}
 	function handleEdit(id: number) {

@@ -131,23 +131,23 @@
 		fetchTableData(currentSort, currentFilters, currentPage);
 	});
 
-	async function handleSort(event: CustomEvent<SortConfig[] | null>) {
-		currentSort = event.detail ?? undefined;
+	async function handleSort(sort: SortConfig[] | null) {
+		currentSort = sort ?? undefined;
 		await fetchTableData(currentSort, currentFilters, currentPage);
 	}
 
-	async function handleFilter(event: CustomEvent<FilterState>) {
-		currentFilters = { ...event.detail.columns, global: event.detail.global };
+	async function handleFilter(filters: FilterState) {
+		currentFilters = { ...filters.columns, global: filters.global };
 		await fetchTableData(currentSort, currentFilters, 1);
 	}
 
-	async function handlePageChange(event: CustomEvent<number>) {
-		currentPage = event.detail;
+	async function handlePageChange(page: number) {
+		currentPage = page;
 		await fetchTableData(currentSort, currentFilters, currentPage);
 	}
 
-	async function handleItemsPerPageChange(event: CustomEvent<number>) {
-		pageSize = event.detail;
+	async function handleItemsPerPageChange(newSize: number) {
+		pageSize = newSize;
 		await fetchTableData(currentSort, currentFilters, 1);
 	}
 

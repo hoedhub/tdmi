@@ -59,6 +59,7 @@
 		<div class="join" role="group" aria-label="Pagination controls">
 			<!-- Previous page -->
 			<button
+				type="button"
 				class="btn join-item btn-sm {currentPage === 1 ? 'btn-disabled' : ''}"
 				onclick={() => goToPage(currentPage - 1)}
 				disabled={currentPage === 1}
@@ -70,9 +71,10 @@
 			<!-- Page numbers -->
 			{#each pages as page}
 				{#if page === '...'}
-					<button class="btn btn-disabled join-item btn-sm">...</button>
+					<button type="button" class="btn btn-disabled join-item btn-sm">...</button>
 				{:else}
 					<button
+						type="button"
 						class="btn join-item btn-sm {page === currentPage ? 'btn-active' : ''}"
 						onclick={() => goToPage(page)}
 						aria-label={`Page ${page}`}
@@ -85,6 +87,7 @@
 
 			<!-- Next page -->
 			<button
+				type="button"
 				class="btn join-item btn-sm {currentPage === totalPages ? 'btn-disabled' : ''}"
 				onclick={() => goToPage(currentPage + 1)}
 				disabled={currentPage === totalPages}

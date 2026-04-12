@@ -184,25 +184,25 @@
 		}
 	}
 
-	async function handleSort(event: CustomEvent<SortConfig[] | null>) {
-		currentSort = event.detail ?? undefined;
+	async function handleSort(sort: SortConfig[] | null) {
+		currentSort = sort ?? undefined;
 		await fetchTableData(currentSort, currentFilters, currentPage);
 	}
 
-	async function handleFilter(event: CustomEvent<FilterState>) {
+	async function handleFilter(filters: FilterState) {
 		// BENAR: Teruskan objek event.detail apa adanya.
 		// Strukturnya adalah { global: string, columns: { ... } }
-		currentFilters = event.detail;
+		currentFilters = filters;
 		await fetchTableData(currentSort, currentFilters, 1); // Reset ke halaman 1 saat filter
 	}
 
-	async function handlePageChange(event: CustomEvent<number>) {
-		currentPage = event.detail;
+	async function handlePageChange(page: number) {
+		currentPage = page;
 		await fetchTableData(currentSort, currentFilters, currentPage);
 	}
 
-	async function handleItemsPerPageChange(event: CustomEvent<number>) {
-		pageSize = event.detail;
+	async function handleItemsPerPageChange(newSize: number) {
+		pageSize = newSize;
 		await fetchTableData(currentSort, currentFilters, 1);
 	}
 
@@ -230,8 +230,9 @@
 		}
 	}
 
-	function handleSelectionChange(event: CustomEvent<number[]>) {
-		selectedMuridIds = event.detail;
+	function handleSelectionChange(selectedIds: number[]) {
+		console.log('Selection changed:', selectedIds);
+		selectedMuridIds = selectedIds;
 	}
 
 	function handleEditSelected() {

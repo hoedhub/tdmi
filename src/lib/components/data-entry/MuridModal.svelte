@@ -50,8 +50,8 @@
 		{ key: 'kecamatanName', label: 'Kecamatan', sortable: true, filterable: 'text' }
 	];
 
-	function handleSelect(event: CustomEvent<number[]>) {
-		const selectedId = event.detail[0];
+	function handleSelect(selectedIds: number[]) {
+		const selectedId = selectedIds[0];
 		if (selectedId) {
 			const selected = $muridModalStore.muridData.find((m) => m.id === selectedId);
 			if (selected) {
@@ -65,8 +65,8 @@
 		dispatch('close');
 	}
 
-	async function handleSort(event: CustomEvent<SortConfig[] | null>) {
-		currentSort = event.detail ?? undefined;
+	async function handleSort(sort: SortConfig[] | null) {
+		currentSort = sort ?? undefined;
 		await muridModalStore.updateData(
 			currentSort,
 			currentFilters,
@@ -76,8 +76,8 @@
 		);
 	}
 
-	async function handleFilter(event: CustomEvent<FilterState>) {
-		currentFilters = event.detail; // Store the entire filter state
+	async function handleFilter(filters: FilterState) {
+		currentFilters = filters; // Store the entire filter state
 		currentPage = 1; // Reset page on filter change
 		await muridModalStore.updateData(
 			currentSort,
@@ -88,8 +88,8 @@
 		);
 	}
 
-	async function handlePageChange(event: CustomEvent<number>) {
-		currentPage = event.detail;
+	async function handlePageChange(page: number) {
+		currentPage = page;
 		await muridModalStore.updateData(
 			currentSort,
 			currentFilters,
@@ -99,8 +99,8 @@
 		);
 	}
 
-	async function handleItemsPerPageChange(event: CustomEvent<number>) {
-		pageSize = event.detail;
+	async function handleItemsPerPageChange(newSize: number) {
+		pageSize = newSize;
 		currentPage = 1; // Reset page on items per page change
 		await muridModalStore.updateData(
 			currentSort,
@@ -152,18 +152,19 @@
 					sort={currentSort}
 					serverSide={true}
 					selectionMode="single"
-					on:sort={handleSort}
-					on:filter={handleFilter}
-					on:pageChange={handlePageChange}
-					on:itemsPerPageChange={handleItemsPerPageChange}
-					on:selectionChange={handleSelect}
+					onsort={handleSort}
+					onfilter={handleFilter}
+					onpageChange={handlePageChange}
+					onitemsPerPageChange={handleItemsPerPageChange}
+					onselectionChange={handleSelect}
 					dbError={$muridModalStore.hasDbError}
 					disabledRowKeys={editedMuridId ? [editedMuridId] : []}
 				>
-					<svelte:fragment slot="errorState">
+					{#snippet errorState()}
 						<div class="p-8 text-center text-error">
 							<p>Tidak dapat memuat data.</p>
 							<button
+								type="button"
 								class="btn btn-outline btn-sm mt-4"
 								onclick={() =>
 									muridModalStore.updateData(
@@ -177,8 +178,7 @@
 								Coba Lagi
 							</button>
 						</div>
-					</svelte:fragment>
-					<div slot="bulkActions"></div>
+					{/snippet}
 				</SuperTable>
 			</div>
 			<div class="modal-action">
