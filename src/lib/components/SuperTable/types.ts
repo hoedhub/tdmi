@@ -108,6 +108,8 @@ export interface SuperTableProps<T = any> {
 	selectionMode?: SelectionMode;
 	disabledRowKeys?: (string | number)[];
 	containerHeight?: string;
+	persistenceId?: string;
+	filterStateProp?: FilterState;
 }
 
 export interface SuperTableEvents<T = any> {

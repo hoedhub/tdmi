@@ -1,6 +1,6 @@
 <script lang="ts">
 	// 1. IMPORTS
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { page } from '$app/stores';
 	// import { Bar, Pie } from 'svelte-chartjs';
 	import {
@@ -75,7 +75,7 @@
 		}
 	}
 
-	onMount(() => {
+	onMount(async () => {
 		if (data.dbError) {
 			error(data.message || 'Gagal memuat data dashboard.');
 			// Still allow view switching, but table will show error.
@@ -121,7 +121,8 @@
 		}
 
 		// Fetch initial table data
-		fetchNasyathData(currentSort, currentFilters, 1);
+		await tick();
+		fetchNasyathData(currentSort, currentFilters, currentPage);
 	});
 
 	// --- DASHBOARD LOGIC ---
@@ -240,20 +241,21 @@
 	let loading = $state(true);
 	let dbError = false;
 	let pageSize = $state(10);
-	let currentPage = 1;
-	let currentSort: SortConfig[] | undefined = $state([
+	let currentPage = $state(1);
+	let currentSort: SortConfig[] = $state([
 		{ key: 'murid.nama', direction: 'asc' },
 		{ key: 'tanggalMulai', direction: 'asc' }
 	]);
-	let currentFilters: FilterState = { global: '', columns: {} };
+	let currentFilters: FilterState = $state({ global: '', columns: {} });
 	let dateFilter: { start: string; end: string } = $state({ start: '', end: '' });
 	let isExporting = $state(false);
 
 
 	async function fetchNasyathData(
-		sort?: SortConfig[] | null,
-		filters?: FilterState,
-		page: number = 1
+		sort: SortConfig[] | undefined = currentSort,
+		filters: FilterState = currentFilters,
+		page: number = currentPage,
+		limit: number = pageSize
 	) {
 		loading = true;
 		dbError = false;
@@ -278,7 +280,7 @@
 					sort,
 					filters: { ...filters, dateRange: finalDateFilter },
 					page,
-					pageSize
+					pageSize: limit
 				})
 			});
 			if (!response.ok) throw new Error('Gagal memuat data nasyath dari server');
@@ -348,11 +350,12 @@
 		await fetchNasyathData(currentSort, currentFilters, 1);
 	}
 	async function handleSort(sort: SortConfig[] | null) {
-		currentSort = sort ?? undefined;
+		currentSort = sort ?? [];
 		await fetchNasyathData(currentSort, currentFilters, currentPage);
 	}
 	async function handleFilter(filters: FilterState) {
 		currentFilters = filters;
+		currentPage = 1;
 		await fetchNasyathData(currentSort, currentFilters, 1);
 	}
 	async function handlePageChange(page: number) {
@@ -361,6 +364,7 @@
 	}
 	async function handleItemsPerPageChange(newSize: number) {
 		pageSize = newSize;
+		currentPage = 1;
 		await fetchNasyathData(currentSort, currentFilters, 1);
 	}
 	function handleEdit(id: number) {
@@ -723,9 +727,11 @@
 				serverSide={true}
 				isSelectable={true}
 				isLoadingProp={loading}
-				itemsPerPageProp={pageSize}
+				bind:itemsPerPageProp={pageSize}
+				bind:currentPageProp={currentPage}
 				totalItemsProp={totalItems}
-				sort={currentSort}
+				bind:sort={currentSort}
+				bind:filterStateProp={currentFilters}
 				onsort={handleSort}
 				onfilter={handleFilter}
 				onpageChange={handlePageChange}

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { run, stopPropagation } from 'svelte/legacy';
 
+	import { tick } from 'svelte';
 	import type { PageData } from './$types';
 	import { invalidateAll } from '$app/navigation';
 	import { SuperTable } from '$lib/components/SuperTable';
@@ -59,8 +60,8 @@
 	let loading = $state(false);
 	let pageSize = $state(10);
 	let currentPage = $state(1);
-	let currentSort: SortConfig[] | undefined = $state(undefined);
-	let currentFilters: Record<string, any> = {};
+	let currentSort: SortConfig[] = $state([]);
+	let currentFilters: FilterState = $state({ columns: {} });
 	let selectedMuridIds: number[] = [];
 
 	// --- Reactive Data from Props ---
@@ -156,16 +157,17 @@
 
 	// --- Functions ---
 	async function fetchTableData(
-		sort?: SortConfig[] | null,
-		filters?: Record<string, any>,
-		page: number = 1
+		sort: SortConfig[] | undefined = currentSort,
+		filters: Record<string, any> = currentFilters.columns,
+		page: number = currentPage,
+		limit: number = pageSize
 	) {
 		loading = true;
 		try {
 			const response = await api('/member/pendataan/table', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ sort, filters, page, pageSize })
+				body: JSON.stringify({ sort, filters, page, pageSize: limit })
 			});
 
 			if (!response.ok) {
@@ -185,25 +187,24 @@
 	}
 
 	async function handleSort(sort: SortConfig[] | null) {
-		currentSort = sort ?? undefined;
-		await fetchTableData(currentSort, currentFilters, currentPage);
+		currentSort = sort ?? [];
+		await fetchTableData(currentSort, currentFilters.columns, currentPage, pageSize);
 	}
 
 	async function handleFilter(filters: FilterState) {
-		// BENAR: Teruskan objek event.detail apa adanya.
-		// Strukturnya adalah { global: string, columns: { ... } }
-		currentFilters = filters;
-		await fetchTableData(currentSort, currentFilters, 1); // Reset ke halaman 1 saat filter
+		currentFilters = filters; // Save the entire filter state
+		currentPage = 1;
+		await fetchTableData(currentSort, currentFilters.columns, currentPage, pageSize);
 	}
 
 	async function handlePageChange(page: number) {
 		currentPage = page;
-		await fetchTableData(currentSort, currentFilters, currentPage);
+		await fetchTableData(currentSort, currentFilters.columns, currentPage, pageSize);
 	}
 
 	async function handleItemsPerPageChange(newSize: number) {
 		pageSize = newSize;
-		await fetchTableData(currentSort, currentFilters, 1);
+		await fetchTableData(currentSort, currentFilters.columns, 1, pageSize);
 	}
 
 	async function handleDeleteMurid(muridId: number, nama: string) {
@@ -258,7 +259,9 @@
 			return;
 		}
 		if (canReadMurid) {
-			await fetchTableData(currentSort, currentFilters, currentPage);
+			// Use tick to ensure SuperTable onMount has run and restored state
+			await tick();
+			await fetchTableData(currentSort, currentFilters.columns, currentPage, pageSize);
 		}
 	});
 </script>
@@ -276,12 +279,13 @@
 		data={muridData}
 		{columns}
 		rowKey="id"
-		itemsPerPageProp={pageSize}
-		currentPageProp={currentPage}
+		bind:itemsPerPageProp={pageSize}
+		bind:currentPageProp={currentPage}
 		totalItemsProp={totalItems}
 		isLoadingProp={loading}
-		sort={currentSort}
+		bind:sort={currentSort}
 		serverSide={true}
+		bind:filterStateProp={currentFilters}
 		onsort={handleSort}
 		onfilter={handleFilter}
 		onpageChange={handlePageChange}

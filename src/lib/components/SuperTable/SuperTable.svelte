@@ -5,6 +5,8 @@
 	import { sortData } from './features/sorting';
 	import { filterData } from './features/filtering';
 	import { paginateData, calculateTotalPages } from './features/pagination';
+	import { tablePersistence } from '$lib/stores/tablePersistence.svelte';
+	import { page } from '$app/stores';
 
 	// Components
 	import TableHeader from './subcomponents/TableHeader.svelte';
@@ -22,9 +24,9 @@
 		columns = [],
 		rowKey,
 		mobileView = 'cards',
-		sort = [],
-		itemsPerPageProp = 10,
-		currentPageProp = 1,
+		sort = $bindable([]),
+		itemsPerPageProp = $bindable(10),
+		currentPageProp = $bindable(1),
 		totalItemsProp = undefined,
 		isLoadingProp = false,
 		tableClass = '',
@@ -37,6 +39,8 @@
 		selectionMode = 'multiple',
 		disabledRowKeys = [],
 		containerHeight = 'h-[calc(100vh-140px)]',
+		persistenceId,
+		filterStateProp = $bindable({ columns: {} }),
 		// Snippets (Svelte 5 slots replacement)
 		globalFilter,
 		customFilters,
@@ -85,7 +89,24 @@
 	// --- Lifecycle & Reactivity ---
 	onMount(() => {
 		$selectedIds = new Set();
-		$filterState = { global: '', columns: {} };
+		
+		// Load persisted state if available
+		const cacheKey = persistenceId || $page.url.pathname;
+		const savedState = tablePersistence.getState(cacheKey);
+		
+		if (savedState) {
+			// Restore bound props to push back to parent
+			$currentPage = savedState.currentPage;
+			$itemsPerPage = savedState.itemsPerPage;
+			$filterState = savedState.filterState;
+			
+			currentPageProp = savedState.currentPage;
+			itemsPerPageProp = savedState.itemsPerPage;
+			sort = savedState.sort || [];
+			filterStateProp = savedState.filterState;
+		} else {
+			$filterState = { global: '', columns: {} };
+		}
 
 		const onResize = () => {
 			isMobile = window.innerWidth < 768;
@@ -100,15 +121,45 @@
 		};
 	});
 
+	// Persist state changes
+	$effect(() => {
+		const cacheKey = persistenceId || $page.url.pathname;
+		const segments = $page.url.pathname.split('/').filter(Boolean);
+		const baseArea = segments.length >= 2 ? `/${segments[0]}/${segments[1]}` : `/${segments[0] || ''}`;
+
+		tablePersistence.saveState(cacheKey, {
+			currentPage: $currentPage,
+			itemsPerPage: $itemsPerPage,
+			filterState: $filterState,
+			sort: sort,
+			baseArea
+		});
+	});
+
 	// Sync stores with props using effects
 	$effect(() => {
 		$isLoading = Boolean(isLoadingProp);
 	});
 	$effect(() => {
-		if (currentPageProp !== undefined) $currentPage = currentPageProp;
+		if (currentPageProp !== undefined && currentPageProp !== $currentPage) {
+			$currentPage = currentPageProp;
+		}
 	});
 	$effect(() => {
-		if (itemsPerPageProp !== undefined) $itemsPerPage = itemsPerPageProp;
+		if (itemsPerPageProp !== undefined && itemsPerPageProp !== $itemsPerPage) {
+			$itemsPerPage = itemsPerPageProp;
+		}
+	});
+
+	// Sync internal stores back to bound props (this pushes changes back to parent)
+	$effect(() => {
+		currentPageProp = $currentPage;
+	});
+	$effect(() => {
+		itemsPerPageProp = $itemsPerPage;
+	});
+	$effect(() => {
+		filterStateProp = $filterState;
 	});
 
 	// Handle internal columns synchronization
@@ -189,7 +240,9 @@
 			}
 		}
 
-		onsort?.(newSortState.length > 0 ? newSortState : null);
+		const finalSort = newSortState.length > 0 ? newSortState : null;
+		sort = finalSort || [];
+		onsort?.(finalSort);
 	}
 
 	function handleGlobalFilter(value: string) {

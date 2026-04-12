@@ -6,6 +6,7 @@
 	import { browser } from '$app/environment';
 	import { page } from '$app/stores';
 	import { themeStore } from '$lib/stores/themeStore';
+	import { tablePersistence } from '$lib/stores/tablePersistence.svelte';
 
 	interface Props {
 		children?: import('svelte').Snippet;
@@ -28,6 +29,11 @@
 				}
 			}
 		}
+	});
+
+	// Reset table persistence when moving away from a major functional area
+	$effect(() => {
+		tablePersistence.checkAreaChange($page.url.pathname);
 	});
 </script>
 

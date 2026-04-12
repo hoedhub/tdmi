@@ -6,7 +6,7 @@
 	import type { ColumnDef, SortConfig, FilterState } from '$lib/components/SuperTable';
 	import { goto } from '$app/navigation';
 	import { Pen, Trash } from 'lucide-svelte';
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { api } from '$lib/utils/api'; // <-- Use centralized API helper
 	import { success as toastSuccess, error as toastError, warning as toastWarning } from '$lib/components/toast'; // <-- Use centralized toast
 
@@ -48,9 +48,9 @@
 	let totalItems = $state(data.totalItems);
 	let loading = $state(true);
 	let pageSize = $state(10);
-	let currentPage = 1;
-	let currentSort: SortConfig[] | undefined = $state(undefined);
-	let currentFilters: Record<string, any> = {};
+	let currentPage = $state(1);
+	let currentSort: SortConfig[] = $state([]);
+	let currentFilters: FilterState = $state({ columns: {} });
 
 	let columns: ColumnDef[] = $state([]);
 	run(() => {
@@ -95,16 +95,23 @@
 	});
 
 	async function fetchTableData(
-		sort?: SortConfig[] | null,
-		filters?: Record<string, any>,
-		page: number = 1
+		sort: SortConfig[] | undefined = currentSort,
+		filters: FilterState = currentFilters,
+		page: number = currentPage,
+		limit: number = pageSize
 	) {
 		loading = true;
 		try {
 			const response = await api('/admin/users/table', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ sort, filters, page, pageSize })
+				body: JSON.stringify({ 
+					sort, 
+					filters: filters?.columns,
+					global: filters?.global,
+					page, 
+					pageSize: limit 
+				})
 			});
 
 			if (!response.ok) {
@@ -127,17 +134,19 @@
 		}
 	}
 
-	onMount(() => {
-		fetchTableData(currentSort, currentFilters, currentPage);
+	onMount(async () => {
+		await tick();
+		fetchTableData(currentSort, currentFilters, currentPage, pageSize);
 	});
 
 	async function handleSort(sort: SortConfig[] | null) {
-		currentSort = sort ?? undefined;
-		await fetchTableData(currentSort, currentFilters, currentPage);
+		currentSort = sort ?? [];
+		await fetchTableData(currentSort, currentFilters, currentPage, pageSize);
 	}
 
 	async function handleFilter(filters: FilterState) {
-		currentFilters = { ...filters.columns, global: filters.global };
+		currentFilters = filters;
+		currentPage = 1;
 		await fetchTableData(currentSort, currentFilters, 1);
 	}
 
@@ -148,6 +157,7 @@
 
 	async function handleItemsPerPageChange(newSize: number) {
 		pageSize = newSize;
+		currentPage = 1;
 		await fetchTableData(currentSort, currentFilters, 1);
 	}
 
@@ -197,11 +207,13 @@
 		data={users}
 		{columns}
 		rowKey="id"
-		itemsPerPageProp={pageSize}
+		bind:itemsPerPageProp={pageSize}
+		bind:currentPageProp={currentPage}
 		totalItemsProp={totalItems}
 		isLoadingProp={loading}
-		sort={currentSort}
+		bind:sort={currentSort}
 		serverSide={true}
+		bind:filterStateProp={currentFilters}
 		onsort={handleSort}
 		onfilter={handleFilter}
 		onpageChange={handlePageChange}
