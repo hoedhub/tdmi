@@ -46,6 +46,9 @@
 		kecamatanName: string | null;
 		kokabName: string | null;
 		propinsiName: string | null;
+		mursyidName: string | null;
+		baiatName: string | null;
+		wiridName: string | null;
 	}
 
 	interface Props {
@@ -108,6 +111,9 @@
 			filterOptions: ['1', '2', '3'],
 			formatter: (value: 1 | 2 | 3) => value.toString()
 		},
+		{ key: 'mursyidName', label: 'Mursyid', sortable: true, filterable: 'text' },
+		{ key: 'baiatName', label: 'Baiat', sortable: true, filterable: 'text' },
+		{ key: 'wiridName', label: 'Wirid', sortable: true, filterable: 'text' },
 		{ key: 'nomorTelepon', label: 'Telepon', sortable: true, filterable: 'text' },
 		{
 			key: 'alamat',
@@ -158,7 +164,7 @@
 	// --- Functions ---
 	async function fetchTableData(
 		sort: SortConfig[] | undefined = currentSort,
-		filters: Record<string, any> = currentFilters.columns,
+		filters: FilterState = currentFilters,
 		page: number = currentPage,
 		limit: number = pageSize
 	) {
@@ -188,23 +194,23 @@
 
 	async function handleSort(sort: SortConfig[] | null) {
 		currentSort = sort ?? [];
-		await fetchTableData(currentSort, currentFilters.columns, currentPage, pageSize);
+		await fetchTableData(currentSort, currentFilters, currentPage, pageSize);
 	}
 
 	async function handleFilter(filters: FilterState) {
 		currentFilters = filters; // Save the entire filter state
 		currentPage = 1;
-		await fetchTableData(currentSort, currentFilters.columns, currentPage, pageSize);
+		await fetchTableData(currentSort, currentFilters, currentPage, pageSize);
 	}
 
 	async function handlePageChange(page: number) {
 		currentPage = page;
-		await fetchTableData(currentSort, currentFilters.columns, currentPage, pageSize);
+		await fetchTableData(currentSort, currentFilters, currentPage, pageSize);
 	}
 
 	async function handleItemsPerPageChange(newSize: number) {
 		pageSize = newSize;
-		await fetchTableData(currentSort, currentFilters.columns, 1, pageSize);
+		await fetchTableData(currentSort, currentFilters, 1, pageSize);
 	}
 
 	async function handleDeleteMurid(muridId: number, nama: string) {
@@ -261,7 +267,7 @@
 		if (canReadMurid) {
 			// Use tick to ensure SuperTable onMount has run and restored state
 			await tick();
-			await fetchTableData(currentSort, currentFilters.columns, currentPage, pageSize);
+			await fetchTableData(currentSort, currentFilters, currentPage, pageSize);
 		}
 	});
 </script>

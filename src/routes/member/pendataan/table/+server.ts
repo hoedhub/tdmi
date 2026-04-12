@@ -10,8 +10,12 @@ import {
 	usersTable
 } from '$lib/drizzle/schema';
 import { userHasPermission } from '$lib/server/accessControl';
-import { count, eq, like, sql, asc, desc } from 'drizzle-orm';
+import { count, eq, like, sql, asc, desc, aliasedTable, and } from 'drizzle-orm';
 import { getUserRoles } from '$lib/server/accessControlDB'; // Import getUserRoles
+
+const mursyid = aliasedTable(muridTable, 'mursyid');
+const baiat = aliasedTable(muridTable, 'baiat');
+const wirid = aliasedTable(muridTable, 'wirid');
 
 export const POST: RequestHandler = async ({ request, locals }) => {
 	if (!locals.user) {
@@ -55,30 +59,6 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			}
 		}
 
-		// Build the base query with all necessary joins for selection
-		const baseSelectQuery = db
-			.select({
-				murid: muridTable,
-				deskel: deskelTable,
-				kecamatan: kecamatanTable,
-				kokab: kokabTable,
-				prop: propTable
-			})
-			.from(muridTable)
-			.leftJoin(deskelTable, eq(muridTable.deskelId, deskelTable.id))
-			.leftJoin(kecamatanTable, eq(deskelTable.idKecamatan, kecamatanTable.id))
-			.leftJoin(kokabTable, eq(kecamatanTable.idKokab, kokabTable.id))
-			.leftJoin(propTable, eq(kokabTable.idProp, propTable.id));
-
-		// Build the base query for counting (same joins)
-		const baseCountQuery = db
-			.select({ count: count() })
-			.from(muridTable)
-			.leftJoin(deskelTable, eq(muridTable.deskelId, deskelTable.id))
-			.leftJoin(kecamatanTable, eq(deskelTable.idKecamatan, kecamatanTable.id))
-			.leftJoin(kokabTable, eq(kecamatanTable.idKokab, kokabTable.id))
-			.leftJoin(propTable, eq(kokabTable.idProp, propTable.id));
-
 		// Apply filters
 		const conditions: any[] = [];
 		if (excludeId) {
@@ -106,11 +86,21 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 							conditions.push(eq(muridTable.marhalah, parseInt(value) as 1 | 2 | 3));
 						}
 						// Handle territory name filters
-						else if (key === 'alamat') {
+						else if (key === 'alamat' || key === 'mursyidName' || key === 'baiatName' || key === 'wiridName') {
 							const searchVal = `%${value}%`;
-							conditions.push(
-								sql`(${muridTable.alamat} LIKE ${searchVal} OR ${deskelTable.deskel} LIKE ${searchVal} OR ${kecamatanTable.kecamatan} LIKE ${searchVal} OR ${kokabTable.kokab} LIKE ${searchVal} OR ${propTable.propinsi} LIKE ${searchVal})`
-							);
+							const cols = [];
+							if (key === 'alamat') {
+								cols.push(muridTable.alamat, deskelTable.deskel, kecamatanTable.kecamatan, kokabTable.kokab, propTable.propinsi);
+							} else if (key === 'mursyidName') {
+								cols.push(mursyid.nama);
+							} else if (key === 'baiatName') {
+								cols.push(baiat.nama);
+							} else if (key === 'wiridName') {
+								cols.push(wirid.nama);
+							}
+							
+							const searchConditions = cols.map(c => sql`${c} LIKE ${searchVal}`);
+							conditions.push(sql`(${sql.join(searchConditions, sql` OR `)})`);
 						}
 						// Handle general text search on specific muridTable columns
 						else if (
@@ -135,20 +125,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			conditions.push(eq(propTable.id, userPropinsiId));
 		}
 
-		// Apply conditions to the main query
-		let query = baseSelectQuery.$dynamic();
-		let countQuery = baseCountQuery.$dynamic();
-
-		if (conditions.length > 0) {
-			const whereClause = sql.join(conditions, sql` AND `);
-			query = query.where(whereClause);
-			countQuery = countQuery.where(whereClause);
-		}
-
-		// Get total count before pagination
-		const totalItemsResult = await countQuery.get();
-		const totalItems = totalItemsResult?.count || 0;
-
+		// Build the where clause
+		const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+		
 		// Apply sorting
 		const orderByClauses = [];
 		if (sort && Array.isArray(sort) && sort.length > 0) {
@@ -157,6 +136,15 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 				switch (sortConfig.key) {
 					case 'alamat':
 						sortColumn = muridTable.alamat;
+						break;
+					case 'mursyidName':
+						sortColumn = mursyid.nama;
+						break;
+					case 'baiatName':
+						sortColumn = baiat.nama;
+						break;
+					case 'wiridName':
+						sortColumn = wirid.nama;
 						break;
 					default:
 						sortColumn = (muridTable as any)[sortConfig.key];
@@ -174,13 +162,57 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			orderByClauses.push(asc(muridTable.id));
 		}
 
-		query = query
+		// Count query — use a scalar subquery to avoid deep join chain type inference issues
+		const totalItemsRaw = await db
+			.select({ count: count() })
+			.from(muridTable)
+			.leftJoin(deskelTable, eq(muridTable.deskelId, deskelTable.id))
+			.leftJoin(kecamatanTable, eq(deskelTable.idKecamatan, kecamatanTable.id))
+			.leftJoin(kokabTable, eq(kecamatanTable.idKokab, kokabTable.id))
+			.leftJoin(propTable, eq(kokabTable.idProp, propTable.id))
+			.leftJoin(mursyid, eq(muridTable.mursyidId, mursyid.id))
+			.leftJoin(baiat, eq(muridTable.baiatId, baiat.id))
+			.leftJoin(wirid, eq(muridTable.wiridId, wirid.id))
+			.where(whereClause)
+			.all();
+
+		const totalItems = (totalItemsRaw[0] as { count: number } | undefined)?.count || 0;
+
+		type MuridRow = {
+			murid: typeof muridTable.$inferSelect;
+			deskel: typeof deskelTable.$inferSelect | null;
+			kecamatan: typeof kecamatanTable.$inferSelect | null;
+			kokab: typeof kokabTable.$inferSelect | null;
+			prop: typeof propTable.$inferSelect | null;
+			mursyidName: string | null;
+			baiatName: string | null;
+			wiridName: string | null;
+		};
+
+		const murid: MuridRow[] = await db
+			.select({
+				murid: muridTable,
+				deskel: deskelTable,
+				kecamatan: kecamatanTable,
+				kokab: kokabTable,
+				prop: propTable,
+				mursyidName: mursyid.nama,
+				baiatName: baiat.nama,
+				wiridName: wirid.nama
+			})
+			.from(muridTable)
+			.leftJoin(deskelTable, eq(muridTable.deskelId, deskelTable.id))
+			.leftJoin(kecamatanTable, eq(deskelTable.idKecamatan, kecamatanTable.id))
+			.leftJoin(kokabTable, eq(kecamatanTable.idKokab, kokabTable.id))
+			.leftJoin(propTable, eq(kokabTable.idProp, propTable.id))
+			.leftJoin(mursyid, eq(muridTable.mursyidId, mursyid.id))
+			.leftJoin(baiat, eq(muridTable.baiatId, baiat.id))
+			.leftJoin(wirid, eq(muridTable.wiridId, wirid.id))
+			.where(whereClause)
 			.orderBy(...orderByClauses)
 			.limit(pageSize)
-			.offset(offset);
-
-		// Apply sorting and pagination in a single chain
-		const murid = await query.all();
+			.offset(offset)
+			.all() as MuridRow[];
 
 		// Apply pagination
 		// const murid = await finalQuery.limit(pageSize).offset(offset).all();
@@ -191,7 +223,10 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			deskelName: m.deskel?.deskel || null,
 			kecamatanName: m.kecamatan?.kecamatan || null,
 			kokabName: m.kokab?.kokab || null,
-			propinsiName: m.prop?.propinsi || null
+			propinsiName: m.prop?.propinsi || null,
+			mursyidName: m.mursyidName || null,
+			baiatName: m.baiatName || null,
+			wiridName: m.wiridName || null
 		}));
 
 		return json({
