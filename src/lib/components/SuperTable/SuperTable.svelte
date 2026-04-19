@@ -1,6 +1,7 @@
 <script lang="ts" generics="T extends Record<string, any>">
 	import type { ColumnDef, SortConfig, FilterState, SuperTableProps } from './types';
 	import { onMount } from 'svelte';
+	import { fly } from 'svelte/transition';
 	import { filterState, selectedIds, currentPage, itemsPerPage, isLoading } from './stores';
 	import { sortData } from './features/sorting';
 	import { filterData } from './features/filtering';
@@ -360,8 +361,8 @@
 >
 	<!-- Unified Scroll Container - Handles both horizontal and vertical scrolling correctly -->
 	<div class="flex-1 overflow-auto bg-base-100" id="super-table-scroll-root">
-		<!-- Section 1: Bulk actions and global filter -->
-		<div class="sticky top-0 z-40 w-full border-b border-base-200 bg-base-100 p-4 shadow-sm">
+		<!-- Section 1: Global filter and general actions -->
+		<div class="z-40 w-full border-b border-base-200 bg-base-100 p-4">
 			<div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
 				<!-- Global Filter Area -->
 				<div class="min-w-0 flex-1">
@@ -442,42 +443,6 @@
 							onapplyFilters={handleApplyDrawerFilters}
 							onreset={resetColumnFilters}
 						/>
-					{/if}
-
-					<!-- Bulk Selection Actions -->
-					{#if selectionMode === 'multiple' && $selectedIds.size > 0}
-						<div
-							class="flex flex-grow flex-wrap items-center justify-end gap-x-4 gap-y-2 rtl:justify-start"
-						>
-							<div class="flex items-center gap-1">
-								<span class="text-sm font-medium text-primary">{$selectedIds.size} selected</span>
-								<div class="tooltip tooltip-bottom z-50" data-tip="Clear selection">
-									<button
-										class="btn btn-circle btn-ghost btn-sm text-error"
-										onclick={clearSelection}
-										aria-label="Clear selection"
-									>
-										<XCircle class="h-4 w-4" />
-									</button>
-								</div>
-							</div>
-							{#if someSelected && !allSelected}
-								<button class="btn btn-link btn-xs no-underline" onclick={selectAllOnPage}>
-									Select all on page ({displayData.length})
-								</button>
-							{:else if allSelected}
-								<button class="btn btn-link btn-xs no-underline" onclick={clearSelection}>
-									Deselect all
-								</button>
-							{/if}
-							<button class="btn btn-error btn-sm" onclick={handleDeleteSelected}>
-								<Trash2 class="h-4 w-4" />
-								Delete Selected
-							</button>
-							{#if bulkActions}
-								{@render bulkActions({ selectedIds: Array.from($selectedIds) })}
-							{/if}
-						</div>
 					{/if}
 				</div>
 			</div>
@@ -598,6 +563,37 @@
 			{/if}
 		</div>
 	</div>
+
+	<!-- Floating Bulk Actions Bar -->
+	{#if selectionMode === 'multiple' && $selectedIds.size > 0}
+		<div 
+			transition:fly={{ y: 20, duration: 300 }}
+			class="absolute bottom-20 left-1/2 -translate-x-1/2 z-50"
+		>
+			<div class="flex items-center gap-4 bg-neutral text-neutral-content px-6 py-3 rounded-full shadow-2xl">
+				<div class="flex items-center gap-2 border-r border-neutral-content/20 pr-4">
+					<span class="badge badge-primary font-bold">{$selectedIds.size}</span>
+					<span class="text-sm font-medium">terpilih</span>
+				</div>
+				
+				<div class="flex items-center gap-2">
+					{#if bulkActions}
+						{@render bulkActions({ selectedIds: Array.from($selectedIds) })}
+					{/if}
+					<button class="btn btn-error btn-sm rounded-full" onclick={handleDeleteSelected}>
+						<Trash2 class="h-4 w-4" />
+						Hapus
+					</button>
+				</div>
+
+				<div class="border-l border-neutral-content/20 pl-4 ml-2">
+					<button class="btn btn-ghost btn-sm btn-circle text-neutral-content/70 hover:text-white" onclick={clearSelection} title="Batal Pilih Semua">
+						<XCircle class="h-5 w-5" />
+					</button>
+				</div>
+			</div>
+		</div>
+	{/if}
 
 	<!-- Sticky Pagination at the very bottom of the component -->
 	<div
