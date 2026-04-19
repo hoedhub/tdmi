@@ -2,6 +2,7 @@
 	import type { PageData } from './$types';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
+	import { page } from '$app/stores';
 	import AddMuridForm from '$lib/components/data-entry/AddMuridForm.svelte';
 	import { type FormData as MuridFormDataType } from '$lib/stores/muridForm';
 
@@ -13,6 +14,8 @@
 
 	// State untuk menampung data yang sudah ditransformasi untuk form.
 	let initialFormData: MuridFormDataType | undefined = $state(undefined);
+	
+	let returnUrl = $derived($page.url.searchParams.get('from') === 'table' ? '/member/pendataan' : `/member/pendataan/${data.murid?.id}`);
 
 	// onUpdated akan dipanggil oleh AddMuridForm setelah sukses menyimpan data.
 	async function handleFormUpdate() {
@@ -80,7 +83,7 @@
           - `fotoUrl` berisi string URL gambar (atau null)
           Ini akan cocok dengan prop yang diharapkan oleh AddMuridForm.
         -->
-				<AddMuridForm formData={initialFormData} editedMuridId={data.murid.id} />
+				<AddMuridForm formData={initialFormData} editedMuridId={data.murid.id} {returnUrl} />
 			{:else}
 				<div class="flex items-center justify-center p-8">
 					<span class="loading loading-spinner loading-lg"></span>

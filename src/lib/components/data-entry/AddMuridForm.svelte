@@ -27,9 +27,10 @@
 		formData?: FormData | undefined;
 		propinsiList?: Propinsi[];
 		editedMuridId?: number | undefined;
+		returnUrl?: string | undefined;
 	}
 
-	let { formData = undefined, propinsiList = [], editedMuridId = undefined }: Props = $props();
+	let { formData = undefined, propinsiList = [], editedMuridId = undefined, returnUrl = undefined }: Props = $props();
 
 	// --- STATE ---
 	let countryId: string = $state('id');
@@ -236,7 +237,13 @@
 			return;
 		}
 		resetForm(false);
-		goto('/member/pendataan');
+		if (returnUrl) {
+			goto(returnUrl);
+		} else if (editedMuridId) {
+			goto(`/member/pendataan/${editedMuridId}`);
+		} else {
+			goto('/member/pendataan');
+		}
 	}
 
 	function handleEnhanceSubmit({ submitter }: { submitter: HTMLElement | null }) {
@@ -301,6 +308,10 @@
 	use:enhance={handleEnhanceSubmit}
 	class="space-y-6"
 >
+	{#if returnUrl}
+		<input type="hidden" name="returnUrl" value={returnUrl} />
+	{/if}
+
 	<PersonalInfoForm
 		bind:this={personalInfoFormComponent}
 		bind:formData={internalFormData}

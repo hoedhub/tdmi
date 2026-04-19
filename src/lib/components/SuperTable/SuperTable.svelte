@@ -361,7 +361,7 @@
 	<!-- Unified Scroll Container - Handles both horizontal and vertical scrolling correctly -->
 	<div class="flex-1 overflow-auto bg-base-100" id="super-table-scroll-root">
 		<!-- Section 1: Bulk actions and global filter -->
-		<div class="z-40 w-full border-b border-base-200 bg-base-100 p-4">
+		<div class="sticky top-0 z-40 w-full border-b border-base-200 bg-base-100 p-4 shadow-sm">
 			<div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
 				<!-- Global Filter Area -->
 				<div class="min-w-0 flex-1">

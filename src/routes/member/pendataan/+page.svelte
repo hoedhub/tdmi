@@ -244,7 +244,7 @@
 
 	function handleEditSelected() {
 		if (selectedMuridIds.length === 1) {
-			goto(`/member/pendataan/${selectedMuridIds[0]}/edit`);
+			goto(`/member/pendataan/${selectedMuridIds[0]}/edit?from=table`);
 		}
 	}
 
@@ -296,7 +296,7 @@
 		onfilter={handleFilter}
 		onpageChange={handlePageChange}
 		onitemsPerPageChange={handleItemsPerPageChange}
-		onrowClick={(row) => goto(`/member/pendataan/${row.id}/edit`)}
+		onrowClick={(row) => goto(`/member/pendataan/${row.id}`)}
 		onselectionChange={handleSelectionChange}
 	>
 		{#snippet bulkActions({ selectedIds })}
@@ -320,7 +320,7 @@
 			{#if canWriteMurid}
 				<div class="flex gap-2">
 					<a
-						href={`/member/pendataan/${row.id}/edit`}
+						href={`/member/pendataan/${row.id}/edit?from=table`}
 						class="btn btn-ghost btn-sm"
 						onclick={stopPropagation(() => {})}
 					>

@@ -108,6 +108,7 @@ export const actions: Actions = {
 
 		const formData = await request.formData();
 		const action = formData.get('action');
+		const returnUrl = formData.get('returnUrl')?.toString();
 
 		const deskelId = parseInt(formData.get('deskelId')?.toString() || '0');
 
@@ -177,7 +178,7 @@ export const actions: Actions = {
 				return {
 					success: true,
 					message: 'Data murid berhasil diperbarui.',
-					redirect: '/member/pendataan'
+					redirect: returnUrl || `/member/pendataan/${muridId}`
 				};
 			} else {
 				// Default action is 'save', so we stay on the page
