@@ -15,3 +15,9 @@ Pendataan Ahbab Nasional
 
 https://docs.google.com/spreadsheets/d/1OJwAnCaYnAPZv79WVPswhokudSm0f9cy43P9Oy_7KdA/edit?usp=drive_link
 Pendataan Sayyidaat Nasional
+
+Loading ondoubleclick
+Back to jaringan
+toggle atas bawah
+pisah overlaped lines
+default pause/tampilan web kacau/tampilan silsilah jadi web
