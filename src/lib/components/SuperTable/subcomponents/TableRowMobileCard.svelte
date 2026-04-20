@@ -27,6 +27,7 @@
 		rowActions?: import('svelte').Snippet<[{ row: T }]>;
 		onselect?: (row: T, selected: boolean) => void;
 		onswipe?: (row: T, direction: 'left' | 'right') => void;
+		onclick?: (row: T) => void;
 	}
 
 	let {
@@ -40,7 +41,8 @@
 		disabled = false,
 		rowActions,
 		onselect,
-		onswipe
+		onswipe,
+		onclick
 	}: Props = $props();
 
 	let isSelected = $derived($selectedIds.has(row[rowKey as keyof T]));
@@ -93,10 +95,16 @@
 <div
 	class="card {cardClass} {className} {isSelected ? 'ring-2 ring-primary' : ''} {disabled
 		? 'disabled cursor-not-allowed opacity-50'
-		: ''}"
+		: ''} {onclick && !disabled ? 'cursor-pointer active:scale-[0.99] transition-transform' : ''}"
 	use:swipe
 	use:longPress
 	onlongpress={handleLongPress}
+	onclick={(e) => {
+		// Ignore if click came from checkbox or button inside the card
+		const target = e.target as HTMLElement;
+		if (target.closest('input, button, a')) return;
+		if (!disabled) onclick?.(row);
+	}}
 >
 	<!-- on:swipe={handleSwipe} -->
 	<div class="card-body">

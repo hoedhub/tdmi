@@ -482,6 +482,7 @@
 									onswipe={handleSwipe}
 									disabled={(disabledRowKeys || []).includes(row[rowKey as keyof T])}
 									{rowActions}
+									onclick={onrowClick ? (row) => onrowClick!(row) : undefined}
 								/>
 							{/each}
 						</div>

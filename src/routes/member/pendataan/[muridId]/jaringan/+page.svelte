@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import type { PageData } from './$types';
-	import { ArrowLeft, Maximize, ZoomIn, ZoomOut, RefreshCw, Download, ListTree, GitMerge, Play, Pause, ArrowUpToLine, ArrowDownToLine } from 'lucide-svelte';
+	import { ArrowLeft, Maximize, ZoomIn, ZoomOut, RefreshCw, Download, ListTree, GitMerge, Play, Pause, ArrowUpToLine, ArrowDownToLine, ChevronUp, ChevronDown, Filter } from 'lucide-svelte';
 	import { goto } from '$app/navigation';
 
 	interface Props {
@@ -23,6 +23,8 @@
 	let isHierarchical = $state(true);
 	let layoutDirection = $state<'DU' | 'UD'>('DU');
 	let isPhysicsEnabled = $state(true);
+	let showEdgeLabels = $state(false);
+	let isFilterOpen = $state(true);
 	let edgeFilters = $state({
 		Mursyid: true,
 		Muhrim: true,
@@ -68,6 +70,7 @@
 			
 			return {
 				...edge,
+				label: showEdgeLabels ? edge.label : undefined,
 				smooth: {
 					enabled: true,
 					type: 'curvedCW',
@@ -91,13 +94,27 @@
 			nodes: {
 				shape: 'dot',
 				size: 16,
-				font: { size: 14, face: 'Inter, sans-serif' },
+				font: { 
+					size: 14, 
+					face: 'Inter, sans-serif',
+					strokeWidth: 3,
+					strokeColor: 'rgba(255,255,255,0.85)',
+					color: '#1f2937'
+				},
 				borderWidth: 2,
 				shadow: true
 			},
 			edges: {
 				width: 2,
 				shadow: true,
+				font: { 
+					size: 12, 
+					face: 'Inter, sans-serif',
+					strokeWidth: 3,
+					strokeColor: 'rgba(255,255,255,0.85)',
+					color: '#1f2937',
+					align: 'middle'
+				},
 				smooth: { type: 'dynamic' }
 			},
 			groups: {
@@ -218,6 +235,7 @@
 		// Watch filter changes
 		// Destructure to trigger reactivity
 		const { Mursyid, Muhrim, Baiat, Wirid } = edgeFilters;
+		const _labels = showEdgeLabels;
 		if (typeof window !== 'undefined' && network) {
 			applyFilters();
 		}
@@ -319,9 +337,19 @@
 	<!-- Canvas Area -->
 	<div class="flex-1 relative bg-base-100 rounded-xl shadow-inner border border-base-200 overflow-hidden">
 		<!-- Legend & Filters -->
-		<div class="absolute top-4 left-4 z-10 bg-base-100/90 backdrop-blur-sm p-4 rounded-xl shadow-lg border border-base-200 text-sm pointer-events-auto">
-			<h3 class="font-bold mb-3 border-b border-base-300 pb-2">Filter Relasi</h3>
-			<div class="space-y-2">
+		<div class="absolute top-4 left-4 z-10 bg-base-100/90 backdrop-blur-sm rounded-xl shadow-lg border border-base-200 text-sm pointer-events-auto overflow-hidden transition-all duration-300 whitespace-nowrap {isFilterOpen ? 'w-56' : 'w-[46px]'}">
+			<button class="w-full flex items-center justify-between p-3 font-bold bg-base-200/50 hover:bg-base-200 cursor-pointer {isFilterOpen ? 'border-b border-base-300' : ''}" onclick={() => isFilterOpen = !isFilterOpen}>
+				<div class="flex items-center gap-2">
+					<Filter class="h-4 w-4" />
+					{#if isFilterOpen}<span>Filter Relasi</span>{/if}
+				</div>
+				{#if isFilterOpen}
+					<ChevronUp class="h-4 w-4 text-base-content/50" />
+				{/if}
+			</button>
+
+			{#if isFilterOpen}
+			<div class="p-4 space-y-2">
 				<label class="flex items-center gap-3 cursor-pointer hover:bg-base-200 p-1 rounded-md transition-colors">
 					<input type="checkbox" bind:checked={edgeFilters.Mursyid} class="checkbox checkbox-xs border-rose-600 checked:bg-rose-600" />
 					<div class="w-4 h-1 bg-rose-600 rounded"></div> <span class="font-medium text-xs">Mursyid</span>
@@ -338,16 +366,25 @@
 					<input type="checkbox" bind:checked={edgeFilters.Wirid} class="checkbox checkbox-xs border-sky-600 checked:bg-sky-600" />
 					<div class="w-4 h-1 bg-sky-600 rounded"></div> <span class="font-medium text-xs">Wirid</span>
 				</label>
+				
+				<div class="mt-3 pt-3 border-t border-base-300">
+					<label class="flex items-center justify-between cursor-pointer hover:bg-base-200 p-1 rounded-md transition-colors">
+						<span class="font-medium text-xs">Tampilkan Label Garis</span>
+						<input type="checkbox" bind:checked={showEdgeLabels} class="toggle toggle-xs toggle-primary" />
+					</label>
+				</div>
+
 				<div class="mt-3 pt-3 border-t border-base-300 flex items-center gap-3">
 					<div class="w-3 h-3 bg-amber-500 rounded-full border border-amber-700 ml-1"></div> <span class="font-medium text-xs">Node Pusat</span>
 				</div>
 				<div class="flex items-center gap-3 mt-1">
 					<div class="w-3 h-3 bg-gray-100 rounded-full border border-gray-400 ml-1"></div> <span class="font-medium text-xs">Node Murid</span>
 				</div>
+				<div class="mt-2 pt-2 text-[10px] text-base-content/50 border-t border-base-300">
+					* Klik ganda node untuk profil
+				</div>
 			</div>
-			<div class="mt-3 pt-2 text-[10px] text-base-content/50 border-t border-base-300">
-				* Klik ganda node untuk profil
-			</div>
+			{/if}
 		</div>
 
 		<!-- Loading Overlay -->
