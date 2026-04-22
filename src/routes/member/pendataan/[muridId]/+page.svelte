@@ -2,6 +2,7 @@
 	import type { PageData } from './$types';
 	import {
 		User,
+		Users,
 		MapPin,
 		Phone,
 		Calendar,
@@ -22,6 +23,10 @@
 	let detail = $derived(data.detail);
 	let murid = $derived(detail.murid);
 	let recentNasyath = $derived(data.recentNasyath);
+	let mustarsyadList = $derived(data.mustarsyadList);
+	let mustarsyadPria = $derived(mustarsyadList.filter((m: any) => m.gender === true));
+	let mustarsyadWanita = $derived(mustarsyadList.filter((m: any) => m.gender === false));
+	let hasMultipleGenders = $derived(mustarsyadPria.length > 0 && mustarsyadWanita.length > 0);
 
 	function calculateAge(tglLahir: string | null): number | null {
 		if (!tglLahir) return null;
@@ -53,6 +58,13 @@
 			.filter(Boolean)
 			.join(', ')
 	);
+
+	function getIrsyadLabel(hasMustarsyad: number, gender: boolean): string {
+		if (hasMustarsyad > 0) {
+			return gender ? 'Mursyid' : 'Mursyidah';
+		}
+		return gender ? 'Murid' : 'Muridah';
+	}
 </script>
 
 <svelte:head>
@@ -178,7 +190,7 @@
 			<!-- Spiritual Relations -->
 			<div class="card bg-base-100 shadow-xl border border-base-200">
 				<div class="card-body">
-					<h2 class="card-title text-lg border-b pb-2 mb-2"><Shield class="h-5 w-5" /> Hubungan Pembinaan</h2>
+					<h2 class="card-title text-lg border-b pb-2 mb-2"><Shield class="h-5 w-5" /> Irsyadiyah</h2>
 					
 					<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 						<div class="bg-base-200/50 p-4 rounded-lg border border-base-200">
@@ -210,6 +222,113 @@
 							</div>
 						</div>
 					</div>
+				</div>
+			</div>
+
+			<!-- Mustarsyad -->
+			<div class="card bg-base-100 shadow-xl border border-base-200">
+				<div class="card-body">
+					<h2 class="card-title text-lg border-b pb-2 mb-3">
+						<Users class="h-5 w-5" /> Mustarsyad
+						<span class="badge badge-neutral ml-1">{mustarsyadList.length}</span>
+					</h2>
+
+					{#snippet mustarsyadTable(list: typeof mustarsyadList)}
+						<div class="overflow-x-auto">
+							<table class="table table-sm w-full">
+								<thead>
+									<tr>
+										<th>Nama</th>
+										<th>No. Telp</th>
+										<th class="text-center">Umur</th>
+										<th class="text-center">Baca Arab</th>
+										<th class="text-center">Marhalah</th>
+										<th class="text-center">Irsyad</th>
+										<th class="text-center">Aktif</th>
+										<th class="text-center">Partisipasi</th>
+									</tr>
+								</thead>
+								<tbody>
+									{#each list as m}
+										<tr class="hover">
+											<td>
+												<a
+													href={`/member/pendataan/${m.id}`}
+													class="font-medium link link-hover text-primary flex items-center gap-1"
+												>
+													{m.nama}
+													{#if m.gender}
+														<span class="text-blue-400 text-xs" title="Pria">♂</span>
+													{:else}
+														<span class="text-pink-400 text-xs" title="Wanita">♀</span>
+													{/if}
+												</a>
+											</td>
+											<td class="text-sm">{m.nomorTelepon || '-'}</td>
+											<td class="text-center text-sm">
+												{#if m.tglLahir}
+													{calculateAge(m.tglLahir)} thn
+												{:else}
+													-
+												{/if}
+											</td>
+											<td class="text-center">
+												<span class={`badge badge-sm ${m.qari ? 'badge-success' : 'badge-ghost'}`}>
+													{m.qari ? 'Ya' : 'Tidak'}
+												</span>
+											</td>
+											<td class="text-center">
+												<span class="badge badge-sm badge-primary badge-outline">M{m.marhalah}</span>
+											</td>
+											<td class="text-center">
+												<span class={`badge badge-sm ${m.hasMustarsyad > 0 ? 'badge-info' : 'badge-ghost'}`}>
+													{getIrsyadLabel(m.hasMustarsyad, m.gender)}
+												</span>
+											</td>
+											<td class="text-center">
+												<span class={`badge badge-sm ${m.aktif ? 'badge-success' : 'badge-error'}`}>
+													{m.aktif ? 'Aktif' : 'Tidak'}
+												</span>
+											</td>
+											<td class="text-center">
+												<span class={`badge badge-sm ${m.partisipasi ? 'badge-info' : 'badge-ghost'}`}>
+													{m.partisipasi ? 'Ya' : 'Tidak'}
+												</span>
+											</td>
+										</tr>
+									{/each}
+								</tbody>
+							</table>
+						</div>
+					{/snippet}
+
+					{#if mustarsyadList.length > 0}
+						{#if hasMultipleGenders}
+							<div class="space-y-5">
+								<div>
+									<p class="text-sm font-semibold text-base-content/60 mb-2 flex items-center gap-1">
+										<span class="text-blue-500">♂</span> Laki-laki
+										<span class="badge badge-xs badge-ghost">{mustarsyadPria.length}</span>
+									</p>
+									{@render mustarsyadTable(mustarsyadPria)}
+								</div>
+								<div>
+									<p class="text-sm font-semibold text-base-content/60 mb-2 flex items-center gap-1">
+										<span class="text-pink-500">♀</span> Perempuan
+										<span class="badge badge-xs badge-ghost">{mustarsyadWanita.length}</span>
+									</p>
+									{@render mustarsyadTable(mustarsyadWanita)}
+								</div>
+							</div>
+						{:else}
+							{@render mustarsyadTable(mustarsyadList)}
+						{/if}
+					{:else}
+						<div class="text-center p-6 text-base-content/60">
+							<Users class="h-8 w-8 mx-auto mb-2 opacity-50" />
+							<p>Belum ada mustarsyad untuk murid ini.</p>
+						</div>
+					{/if}
 				</div>
 			</div>
 

@@ -159,7 +159,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 		// Apply default sort if no custom sort was successfully added
 		if (orderByClauses.length === 0) {
-			orderByClauses.push(asc(muridTable.id));
+			orderByClauses.push(asc(muridTable.nama));
 		}
 
 		// Count query — use a scalar subquery to avoid deep join chain type inference issues

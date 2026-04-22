@@ -2,7 +2,7 @@ import { error, redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { db } from '$lib/drizzle';
 import { muridTable, deskelTable, kecamatanTable, kokabTable, propTable, nasyathTable } from '$lib/drizzle/schema';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, asc, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/sqlite-core';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
@@ -60,6 +60,25 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			.orderBy(desc(nasyathTable.tanggalMulai))
 			.limit(5);
 
+		// Fetch mustarsyad: murid whose mursyidId = this murid
+		// Include subquery to check if each mustarsyad also has their own mustarsyad
+		const mustarsyadList = await db
+			.select({
+				id: muridTable.id,
+				nama: muridTable.nama,
+				gender: muridTable.gender,
+				nomorTelepon: muridTable.nomorTelepon,
+				tglLahir: muridTable.tglLahir,
+				qari: muridTable.qari,
+				marhalah: muridTable.marhalah,
+				aktif: muridTable.aktif,
+				partisipasi: muridTable.partisipasi,
+				hasMustarsyad: sql<number>`(SELECT COUNT(*) FROM murid AS sub WHERE sub.mursyid_id = murid.id)`.as('has_mustarsyad')
+			})
+			.from(muridTable)
+			.where(eq(muridTable.mursyidId, muridId))
+			.orderBy(asc(muridTable.nama));
+
 		// Permissions
 		// Assuming we can derive basic permissions here
 		// The parent layout usually provides this, but we can pass it down if needed.
@@ -67,7 +86,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 		return {
 			detail: results[0],
-			recentNasyath: nasyathResults
+			recentNasyath: nasyathResults,
+			mustarsyadList
 		};
 	} catch (err) {
 		console.error('Error fetching murid detail:', err);
