@@ -6,6 +6,7 @@ import { userHasPermission } from '$lib/server/accessControl';
 import { getAllRoles } from '$lib/server/accessControlDB';
 import { countDistinct, asc, desc, like, eq, and, or, sql } from 'drizzle-orm';
 import type { SQL } from 'drizzle-orm';
+import { buildAdvancedFilter, type ColumnMapping } from '$lib/server/superTableFilters';
 
 export const POST: RequestHandler = async ({ request, locals }) => {
 	if (!locals.user) {
@@ -28,14 +29,34 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 					or(like(usersTable.username, globalValue), like(rolesTable.name, globalValue))
 				);
 			}
-			if (filters.username) {
-				conditions.push(like(usersTable.username, `%${filters.username}%`));
+			if (filters.columns) {
+				if (filters.columns.username) {
+					conditions.push(like(usersTable.username, `%${filters.columns.username}%`));
+				}
+				if (filters.columns.active && filters.columns.active !== 'All') {
+					conditions.push(eq(usersTable.active, filters.columns.active === 'Active'));
+				}
+				if (filters.columns.assignedRoles) {
+					conditions.push(like(rolesTable.name, `%${filters.columns.assignedRoles}%`));
+				}
 			}
-			if (filters.active && filters.active !== 'All') {
-				conditions.push(eq(usersTable.active, filters.active === 'Active'));
-			}
-			if (filters.assignedRoles) {
-				conditions.push(like(rolesTable.name, `%${filters.assignedRoles}%`));
+
+			// Apply advanced filters if present
+			if (filters.advanced) {
+				const columnMapping: ColumnMapping = {
+					username: usersTable.username,
+					active: {
+						column: usersTable.active,
+						transform: (v: string) => v === 'Active' || v === 'true'
+					},
+					assignedRoles: rolesTable.name,
+					createdAt: usersTable.createdAt
+				};
+
+				const advancedFilter = buildAdvancedFilter(filters.advanced, columnMapping);
+				if (advancedFilter) {
+					conditions.push(advancedFilter);
+				}
 			}
 		}
 

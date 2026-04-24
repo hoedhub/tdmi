@@ -4,7 +4,41 @@ import { SvelteComponent } from 'svelte';
 
 // Basic types
 export type SortDirection = 'asc' | 'desc';
-export type FilterType = 'text' | 'select' | 'date';
+export type FilterType = 'text' | 'select' | 'date' | 'number';
+
+// Advanced filter operators
+export type FilterOperator =
+	| 'contains'
+	| 'not_contains'
+	| 'equals'
+	| 'not_equals'
+	| 'starts_with'
+	| 'ends_with'
+	| 'is_empty'
+	| 'is_not_empty'
+	| 'date_before'
+	| 'date_after'
+	| 'date_between'
+	| 'date_equals'
+	| 'num_equals'
+	| 'num_not_equals'
+	| 'num_gt'
+	| 'num_gte'
+	| 'num_lt'
+	| 'num_lte';
+
+export interface AdvancedFilterCondition {
+	id: number;
+	columnKey: string;
+	operator: FilterOperator;
+	value: string;
+	value2?: string; // for 'date_between'
+}
+
+export interface AdvancedFilterState {
+	conditions: AdvancedFilterCondition[];
+	logic: 'AND' | 'OR';
+}
 export type MobileViewType = 'cards' | 'table';
 export type ResponsiveShow = 'always' | 'md' | 'lg';
 
@@ -64,6 +98,7 @@ export interface FilterConfig {
 export interface FilterState {
 	global?: string;
 	columns: Record<string, any>;
+	advanced?: AdvancedFilterState;
 }
 
 // Column definition

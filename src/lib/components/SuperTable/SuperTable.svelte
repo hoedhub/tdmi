@@ -17,7 +17,8 @@
 	import PaginationControls from './subcomponents/PaginationControls.svelte';
 	import FilterInput from './subcomponents/FilterInput.svelte';
 	import SortModal from './subcomponents/SortModal.svelte';
-	import { XCircle, Trash2, Columns, Funnel, ArrowUpDown } from 'lucide-svelte';
+	import FilterModal from './subcomponents/FilterModal.svelte';
+	import { XCircle, Trash2, Columns, Funnel, ArrowUpDown, ListFilter } from 'lucide-svelte';
 
 	// Define props with event handlers at the top to ensure they are initialized before use
 	let {
@@ -83,6 +84,7 @@
 	let filteredData: T[] = $state([]);
 	let isFilterDrawerOpen = $state(false);
 	let isSortModalOpen = $state(false);
+	let isFilterModalOpen = $state(false);
 	let filterTimeout: NodeJS.Timeout;
 	const FILTER_DEBOUNCE_MS = 300;
 	let isMobile = $state(false);
@@ -346,6 +348,11 @@
 		onsort?.(newSortState.length > 0 ? newSortState : null);
 	}
 
+	function handleFilterSave(advancedFilter: import('./types').AdvancedFilterState) {
+		$filterState = { ...$filterState, advanced: advancedFilter };
+		debouncedDispatchFilter($filterState);
+	}
+
 </script>
 
 <SortModal
@@ -354,6 +361,14 @@
 	currentSort={sort ?? []}
 	onclose={() => (isSortModalOpen = false)}
 	onsave={handleSortSave}
+/>
+
+<FilterModal
+	isOpen={isFilterModalOpen}
+	columns={internalColumns}
+	currentFilter={$filterState.advanced ?? { conditions: [], logic: 'AND' }}
+	onclose={() => (isFilterModalOpen = false)}
+	onsave={handleFilterSave}
 />
 
 <div
@@ -420,6 +435,20 @@
 					<div class="tooltip tooltip-bottom z-50" data-tip="Manage sort">
 						<button class="btn btn-circle btn-ghost btn-sm" onclick={() => (isSortModalOpen = true)}>
 							<ArrowUpDown class="h-4 w-4" />
+						</button>
+					</div>
+
+					<!-- Filter Modal Button -->
+					<div class="tooltip tooltip-bottom z-50" data-tip="Manage filter">
+						<button
+							class="btn btn-circle btn-ghost btn-sm relative {($filterState.advanced?.conditions?.length ?? 0) > 0 ? 'text-primary' : ''}"
+							onclick={() => (isFilterModalOpen = true)}
+							id="manage-filter-btn"
+						>
+							<ListFilter class="h-4 w-4" />
+							{#if ($filterState.advanced?.conditions?.length ?? 0) > 0}
+								<span class="badge badge-primary badge-xs absolute right-0 top-0 font-bold">{$filterState.advanced?.conditions?.length ?? 0}</span>
+							{/if}
 						</button>
 					</div>
 

@@ -10,8 +10,9 @@ import {
 	usersTable
 } from '$lib/drizzle/schema';
 import { userHasPermission } from '$lib/server/accessControl';
-import { count, eq, like, sql, asc, desc, aliasedTable, and } from 'drizzle-orm';
+import { count, eq, like, sql, asc, desc, aliasedTable, and, or } from 'drizzle-orm';
 import { getUserRoles } from '$lib/server/accessControlDB'; // Import getUserRoles
+import { buildAdvancedFilter, type ColumnMapping } from '$lib/server/superTableFilters';
 
 const mursyid = aliasedTable(muridTable, 'mursyid');
 const baiat = aliasedTable(muridTable, 'baiat');
@@ -116,6 +117,46 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 							conditions.push(like((muridTable as any)[key], `%${value}%`));
 						}
 					}
+				}
+			}
+
+			// Apply advanced filters if present
+			if (filters.advanced) {
+				const columnMapping: ColumnMapping = {
+					nama: muridTable.nama,
+					namaArab: muridTable.namaArab,
+					gender: {
+						column: muridTable.gender,
+						transform: (v: string) => v === 'Pria' || v === 'true'
+					},
+					marhalah: {
+						column: muridTable.marhalah,
+						transform: (v: string) => parseInt(v)
+					},
+					mursyidName: mursyid.nama,
+					baiatName: baiat.nama,
+					wiridName: wirid.nama,
+					nomorTelepon: muridTable.nomorTelepon,
+					alamat: [muridTable.alamat, deskelTable.deskel, kecamatanTable.kecamatan, kokabTable.kokab, propTable.propinsi],
+					aktif: {
+						column: muridTable.aktif,
+						transform: (v: string) => v === 'Aktif' || v === 'Ya' || v === 'true'
+					},
+					partisipasi: {
+						column: muridTable.partisipasi,
+						transform: (v: string) => v === 'Ya' || v === 'true'
+					},
+					qari: {
+						column: muridTable.qari,
+						transform: (v: string) => v === 'Ya' || v === 'true'
+					},
+					updatedAt: muridTable.updatedAt,
+					tglLahir: muridTable.tglLahir
+				};
+
+				const advancedFilter = buildAdvancedFilter(filters.advanced, columnMapping);
+				if (advancedFilter) {
+					conditions.push(advancedFilter);
 				}
 			}
 		}

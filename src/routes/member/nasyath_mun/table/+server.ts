@@ -4,6 +4,7 @@ import { db } from '$lib/drizzle';
 import { nasyathTable, usersTable, muridTable } from '$lib/drizzle/schema';
 import { count, eq, and, like, or, sql, asc, desc, gte, lte, getTableColumns } from 'drizzle-orm';
 import { userHasPermission } from '$lib/server/accessControl';
+import { buildAdvancedFilter, type ColumnMapping } from '$lib/server/superTableFilters';
 
 export const POST: RequestHandler = async ({ request, locals }) => {
 	if (!locals.user) {
@@ -55,6 +56,22 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 							allConditions.push(like((nasyathTable as any)[key], `%${value}%`));
 						}
 					}
+				}
+			}
+
+			// Apply advanced filters if present
+			if (filters.advanced) {
+				const columnMapping: ColumnMapping = {
+					kegiatan: nasyathTable.kegiatan,
+					tempat: nasyathTable.tempat,
+					tanggalMulai: nasyathTable.tanggalMulai,
+					keterangan: nasyathTable.keterangan,
+					'murid.nama': muridTable.namaArab
+				};
+
+				const advancedFilter = buildAdvancedFilter(filters.advanced, columnMapping);
+				if (advancedFilter) {
+					allConditions.push(advancedFilter);
 				}
 			}
 		}

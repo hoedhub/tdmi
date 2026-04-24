@@ -107,8 +107,7 @@
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ 
 					sort, 
-					filters: filters?.columns,
-					global: filters?.global,
+					filters,
 					page, 
 					pageSize: limit 
 				})
