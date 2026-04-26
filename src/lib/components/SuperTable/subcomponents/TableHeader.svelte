@@ -53,7 +53,7 @@
 	<tr class="bg-base-200">
 		<!-- Selection column header -->
 		{#if isSelectable}
-			<th class="w-1 py-2">
+			<th class="w-1 pt-3 pb-1">
 				<input
 					type="checkbox"
 					class="checkbox checkbox-xs"
@@ -69,7 +69,7 @@
 			{@const sortConfig = getSortForColumn(String(column.key))}
 			{@const sortIndex = getSortIndex(String(column.key))}
 			<th
-				class="py-2 hover:bg-base-200 {column.headerClass || ''} {column.sortable
+				class="pt-3 pb-1 hover:bg-base-200 {column.headerClass || ''} {column.sortable
 					? 'cursor-pointer select-none'
 					: ''} {sortConfig ? 'text-primary' : ''}"
 				onclick={(e) => handleSort(column, e)}
@@ -108,7 +108,7 @@
 	</tr>
 
 	<!-- Filter row -->
-	<tr class="border-t border-base-300 bg-base-200">
+	<tr class="bg-base-200">
 		{#if isSelectable}
 			<th class="w-1"></th>
 		{/if}
@@ -116,7 +116,7 @@
 		{#each columns.filter((col) => !col.hidden) as column}
 			<th class={column.headerClass || ''}>
 				{#if column.filterable}
-					<div class="mt-1">
+					<div class="mb-1">
 						{#if column.filterOptions}
 							<select
 								class="select select-bordered select-xs w-full max-w-xs"
@@ -149,7 +149,7 @@
 		{/each}
 
 		<!-- Actions column filter space -->
-		<th class="w-auto px-2 align-bottom">
+		<th class="w-auto px-2 align-bottom pt-0">
 			<!-- Tombol Reset hanya muncul jika ada filter aktif -->
 			{#if Object.values(filterValues).some((v) => v && v !== 'All')}
 				<button class="btn btn-ghost btn-xs -mb-1 text-error" onclick={() => onreset?.()}>
@@ -173,8 +173,8 @@
 	}
 
 	thead tr:last-child th {
-		border-top: 1px solid hsl(var(--b3));
-		padding-top: 0.25rem;
-		padding-bottom: 0.5rem;
+		border-top: none;
+		padding-top: 0;
+		padding-bottom: 0.375rem;
 	}
 </style>
