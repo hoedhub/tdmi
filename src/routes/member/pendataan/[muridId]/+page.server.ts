@@ -38,7 +38,11 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 				muhrimMarhalah: muhrim.marhalah,
 				mursyidMarhalah: mursyid.marhalah,
 				baiatMarhalah: baiat.marhalah,
-				wiridMarhalah: wirid.marhalah
+				wiridMarhalah: wirid.marhalah,
+				muhrimQari: muhrim.qari,
+				mursyidQari: mursyid.qari,
+				baiatQari: baiat.qari,
+				wiridQari: wirid.qari
 			})
 			.from(muridTable)
 			.leftJoin(deskelTable, eq(muridTable.deskelId, deskelTable.id))

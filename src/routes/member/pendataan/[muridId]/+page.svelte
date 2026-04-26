@@ -60,16 +60,20 @@
 	}
 </script>
 
-{#snippet marhalahWarning(name: string | null, marhalah: number | null, colorClass: string = 'text-primary')}
+{#snippet marhalahWarning(name: string | null, marhalah: number | null, qari: boolean | null, colorClass: string = 'text-primary')}
 	<div class="flex items-center gap-2">
 		<User class="h-4 w-4 {colorClass}" />
 		<span class="font-medium text-lg">{name || '-'}</span>
-		{#if name && marhalah !== null && marhalah < 3}
-			<div class="tooltip tooltip-warning" data-tip="Peringatan: Belum mencapai Marhalah 3">
-				<span class="text-warning font-medium">
-					<TriangleAlert size={18} />
-				</span>
-			</div>
+		{#if name}
+			{@const isLowMarhalah = marhalah !== null && marhalah < 3}
+			{@const isGhoiruQari = qari === false}
+			{#if isLowMarhalah || isGhoiruQari}
+				<div class="tooltip tooltip-warning" data-tip={"Peringatan:" + (isLowMarhalah ? " Belum Marhalah 3." : "") + (isGhoiruQari ? " Ghoiru Qari." : "")}>
+					<span class="text-warning font-medium">
+						<TriangleAlert size={18} />
+					</span>
+				</div>
+			{/if}
 		{/if}
 	</div>
 {/snippet}
@@ -202,19 +206,19 @@
 					<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 						<div class="bg-base-200/50 p-4 rounded-lg border border-base-200">
 							<span class="text-base-content/60 block text-xs uppercase tracking-wider font-semibold mb-1">Mursyid</span>
-							{@render marhalahWarning(detail.mursyidName, detail.mursyidMarhalah, 'text-primary')}
+							{@render marhalahWarning(detail.mursyidName, detail.mursyidMarhalah, detail.mursyidQari, 'text-primary')}
 						</div>
 						<div class="bg-base-200/50 p-4 rounded-lg border border-base-200">
 							<span class="text-base-content/60 block text-xs uppercase tracking-wider font-semibold mb-1">Muhrim</span>
-							{@render marhalahWarning(detail.muhrimName, detail.muhrimMarhalah, 'text-secondary')}
+							{@render marhalahWarning(detail.muhrimName, detail.muhrimMarhalah, detail.muhrimQari, 'text-secondary')}
 						</div>
 						<div class="bg-base-200/50 p-4 rounded-lg border border-base-200">
 							<span class="text-base-content/60 block text-xs uppercase tracking-wider font-semibold mb-1">Baiat</span>
-							{@render marhalahWarning(detail.baiatName, detail.baiatMarhalah, 'text-accent')}
+							{@render marhalahWarning(detail.baiatName, detail.baiatMarhalah, detail.baiatQari, 'text-accent')}
 						</div>
 						<div class="bg-base-200/50 p-4 rounded-lg border border-base-200">
 							<span class="text-base-content/60 block text-xs uppercase tracking-wider font-semibold mb-1">Wirid</span>
-							{@render marhalahWarning(detail.wiridName, detail.wiridMarhalah, 'text-info')}
+							{@render marhalahWarning(detail.wiridName, detail.wiridMarhalah, detail.wiridQari, 'text-info')}
 						</div>
 					</div>
 				</div>

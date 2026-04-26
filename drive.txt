@@ -17,7 +17,6 @@ https://docs.google.com/spreadsheets/d/1OJwAnCaYnAPZv79WVPswhokudSm0f9cy43P9Oy_7
 Pendataan Sayyidaat Nasional
 
 Loading ondoubleclick
-Back to jaringan
-toggle atas bawah
-pisah overlaped lines
-default pause/tampilan web kacau/tampilan silsilah jadi web
+Klik Pilih murid terkait
+Tanggal lahir dd/mm/yyyy
+Nama Lengkap Title Case

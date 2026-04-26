@@ -231,6 +231,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			mursyidMarhalah: number | null;
 			baiatMarhalah: number | null;
 			wiridMarhalah: number | null;
+			mursyidQari: boolean | null;
+			baiatQari: boolean | null;
+			wiridQari: boolean | null;
 		};
 
 		const murid: MuridRow[] = await db
@@ -245,7 +248,10 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 				wiridName: wirid.nama,
 				mursyidMarhalah: mursyid.marhalah,
 				baiatMarhalah: baiat.marhalah,
-				wiridMarhalah: wirid.marhalah
+				wiridMarhalah: wirid.marhalah,
+				mursyidQari: mursyid.qari,
+				baiatQari: baiat.qari,
+				wiridQari: wirid.qari
 			})
 			.from(muridTable)
 			.leftJoin(deskelTable, eq(muridTable.deskelId, deskelTable.id))
@@ -276,7 +282,10 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			wiridName: m.wiridName || null,
 			mursyidMarhalah: m.mursyidMarhalah || null,
 			baiatMarhalah: m.baiatMarhalah || null,
-			wiridMarhalah: m.wiridMarhalah || null
+			wiridMarhalah: m.wiridMarhalah || null,
+			mursyidQari: m.mursyidQari ?? null,
+			baiatQari: m.baiatQari ?? null,
+			wiridQari: m.wiridQari ?? null
 		}));
 
 		return json({

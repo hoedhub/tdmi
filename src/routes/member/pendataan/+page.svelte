@@ -7,7 +7,7 @@
 	import { SuperTable } from '$lib/components/SuperTable';
 	import type { ColumnDef, SortConfig, FilterState } from '$lib/components/SuperTable';
 	import { goto } from '$app/navigation';
-	import { Pen, Trash, PlusCircle } from 'lucide-svelte';
+	import { Pen, Trash, PlusCircle, Clock, RefreshCw, ChevronRight } from 'lucide-svelte';
 	import { onMount } from 'svelte';
 	import type { DatabaseUserAttributes } from '$lib/server/auth';
 	import { api } from '$lib/utils/api';
@@ -53,6 +53,9 @@
 		mursyidMarhalah: number | null;
 		baiatMarhalah: number | null;
 		wiridMarhalah: number | null;
+		mursyidQari: boolean | null;
+		baiatQari: boolean | null;
+		wiridQari: boolean | null;
 	}
 
 	interface Props {
@@ -87,11 +90,18 @@
 		return age;
 	}
 	
-	function renderReferencedMurid(name: string | null, marhalah: number | null) {
+	function renderReferencedMurid(name: string | null, marhalah: number | null, qari: boolean | null) {
 		if (!name) return '-';
-		if (marhalah !== null && marhalah < 3) {
+		const isLowMarhalah = marhalah !== null && marhalah < 3;
+		const isGhoiruQari = qari === false;
+		
+		if (isLowMarhalah || isGhoiruQari) {
+			let tip = "Peringatan:";
+			if (isLowMarhalah) tip += " Belum Marhalah 3.";
+			if (isGhoiruQari) tip += " Ghoiru Qari.";
+			
 			return `
-				<div class="tooltip tooltip-warning" data-tip="Peringatan: Belum mencapai Marhalah 3">
+				<div class="tooltip tooltip-warning" data-tip="${tip}">
 					<span class="inline-flex items-center gap-1 text-warning font-medium">
 						<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
 						${name}
@@ -135,21 +145,21 @@
 			label: 'Mursyid',
 			sortable: true,
 			filterable: 'text',
-			formatter: (v, row) => renderReferencedMurid(v, row.mursyidMarhalah)
+			formatter: (v, row) => renderReferencedMurid(v, row.mursyidMarhalah, row.mursyidQari)
 		},
 		{
 			key: 'baiatName',
 			label: 'Baiat',
 			sortable: true,
 			filterable: 'text',
-			formatter: (v, row) => renderReferencedMurid(v, row.baiatMarhalah)
+			formatter: (v, row) => renderReferencedMurid(v, row.baiatMarhalah, row.baiatQari)
 		},
 		{
 			key: 'wiridName',
 			label: 'Wirid',
 			sortable: true,
 			filterable: 'text',
-			formatter: (v, row) => renderReferencedMurid(v, row.wiridMarhalah)
+			formatter: (v, row) => renderReferencedMurid(v, row.wiridMarhalah, row.wiridQari)
 		},
 		{ key: 'nomorTelepon', label: 'Telepon', sortable: true, filterable: 'text' },
 		{
@@ -318,6 +328,8 @@
 	{/if}
 </div>
 
+
+
 <SuperTable
 		data={muridData}
 		{columns}
@@ -373,3 +385,48 @@
 			{/if}
 		{/snippet}
 	</SuperTable>
+
+{#if canReadMurid && !data.dbError}
+	<div class="mb-6 mt-8 grid grid-cols-1 gap-4 md:grid-cols-2">
+		<div class="card border border-base-200 bg-base-100 shadow-sm transition-shadow hover:shadow-md">
+			<div class="card-body p-4">
+				<h3 class="card-title flex items-center gap-2 text-xs font-bold uppercase tracking-widest opacity-60">
+					<Clock class="h-3.5 w-3.5" /> Murid Baru
+				</h3>
+				<div class="mt-2 flex flex-col divide-y divide-base-200">
+					{#each data.recentlyAdded || [] as m}
+						<a
+							href="/member/pendataan/{m.id}"
+							class="flex items-center justify-between py-2 transition-colors hover:text-primary"
+						>
+							<span class="truncate text-sm font-semibold">{m.nama}</span>
+							<ChevronRight class="h-4 w-4 opacity-20" />
+						</a>
+					{/each}
+				</div>
+			</div>
+		</div>
+
+		<div class="card border border-base-200 bg-base-100 shadow-sm transition-shadow hover:shadow-md">
+			<div class="card-body p-4">
+				<h3 class="card-title flex items-center gap-2 text-xs font-bold uppercase tracking-widest opacity-60">
+					<RefreshCw class="h-3.5 w-3.5" /> Baru Diperbarui
+				</h3>
+				<div class="mt-2 flex flex-col divide-y divide-base-200">
+					{#each data.recentlyUpdated || [] as m}
+						<a
+							href="/member/pendataan/{m.id}"
+							class="flex items-center justify-between py-2 transition-colors hover:text-primary"
+						>
+							<div class="flex min-w-0 flex-col">
+								<span class="truncate text-sm font-semibold">{m.nama}</span>
+								<span class="text-[10px] opacity-50">{formatDateShort(m.updatedAt)}</span>
+							</div>
+							<ChevronRight class="h-4 w-4 opacity-20" />
+						</a>
+					{/each}
+				</div>
+			</div>
+		</div>
+	</div>
+{/if}

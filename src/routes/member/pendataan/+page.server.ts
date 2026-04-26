@@ -1,6 +1,9 @@
 import { error, redirect } from '@sveltejs/kit';
 import { userHasPermission } from '$lib/server/accessControl';
 import type { PageServerLoad } from './$types';
+import { db } from '$lib/drizzle';
+import { muridTable } from '$lib/drizzle/schema';
+import { desc, sql, notInArray } from 'drizzle-orm';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	if (!locals.user) {
@@ -22,10 +25,31 @@ export const load: PageServerLoad = async ({ locals }) => {
 			throw error(403, 'Akses Ditolak. Anda tidak memiliki izin untuk melihat data murid.');
 		}
 
+		// Fetch recently added (by ID)
+		const recentlyAdded = await db
+			.select({ id: muridTable.id, nama: muridTable.nama })
+			.from(muridTable)
+			.orderBy(desc(muridTable.id))
+			.limit(3)
+			.all();
+
+		const addedIds = recentlyAdded.map((m) => m.id);
+
+		// Fetch recently updated, excluding those already in recentlyAdded
+		const recentlyUpdated = await db
+			.select({ id: muridTable.id, nama: muridTable.nama, updatedAt: muridTable.updatedAt })
+			.from(muridTable)
+			.where(notInArray(muridTable.id, addedIds.length > 0 ? addedIds : [0]))
+			.orderBy(desc(muridTable.updatedAt))
+			.limit(3)
+			.all();
+
 		return {
 			user: locals.user,
 			canReadMurid,
 			canWriteMurid,
+			recentlyAdded,
+			recentlyUpdated,
 			totalItems: 0,
 			dbError: false
 		};

@@ -169,6 +169,10 @@
 					formData.nama = toTitleCase(e.currentTarget.value);
 					handleInput();
 				}}
+				onblur={() => {
+					formData.nama = formData.nama.trim();
+					handleInput();
+				}}
 				class="input input-bordered w-full {hoveredName ? 'text-transparent' : ''}"
 				required
 			/>
@@ -205,6 +209,12 @@
 			oninput={(event) => {
 				handleArabicInput(event);
 				handleInput();
+			}}
+			onblur={() => {
+				if (formData.namaArab) {
+					formData.namaArab = formData.namaArab.trim();
+					handleInput();
+				}
 			}}
 			class="input input-bordered w-full"
 			dir="rtl"
