@@ -13,7 +13,8 @@
 		Trash,
 		ArrowLeft,
 		Network,
-		TriangleAlert
+		TriangleAlert,
+		Clock
 	} from 'lucide-svelte';
 	import { formatDateShort } from '$lib/utils/date';
 	interface Props {
@@ -105,9 +106,13 @@
 	<div class="card bg-base-100 shadow-xl border border-base-200">
 		<div class="card-body">
 			<div class="flex flex-col md:flex-row gap-6 items-start">
-				<div class="avatar placeholder">
-					<div class="bg-neutral text-neutral-content rounded-full w-24 h-24 ring ring-primary ring-offset-base-100 ring-offset-2">
-						<span class="text-3xl">{murid.nama.substring(0, 2).toUpperCase()}</span>
+				<div class="avatar {data.detail.fotoUrl ? '' : 'placeholder'}">
+					<div class="bg-neutral text-neutral-content rounded-full w-24 h-24 ring ring-primary ring-offset-base-100 ring-offset-2 overflow-hidden">
+						{#if data.detail.fotoUrl}
+							<img src={data.detail.fotoUrl} alt={murid.nama} class="object-cover w-full h-full" />
+						{:else}
+							<span class="text-3xl">{murid.nama.substring(0, 2).toUpperCase()}</span>
+						{/if}
 					</div>
 				</div>
 				<div class="flex-1 space-y-2">
@@ -136,6 +141,12 @@
 						<div class="badge badge-primary badge-outline">Marhalah {murid.marhalah}</div>
 					</div>
 				</div>
+			</div>
+		</div>
+		<div class="bg-base-200/30 px-6 py-2 border-t border-base-200 flex justify-end">
+			<div class="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-base-content/50 font-bold">
+				<Clock class="h-3 w-3" />
+				Terakhir diperbarui: {formatDate(murid.updatedAt)}
 			</div>
 		</div>
 	</div>

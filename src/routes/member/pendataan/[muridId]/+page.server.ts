@@ -4,6 +4,7 @@ import { db } from '$lib/drizzle';
 import { muridTable, deskelTable, kecamatanTable, kokabTable, propTable, nasyathTable } from '$lib/drizzle/schema';
 import { eq, desc, asc, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/sqlite-core';
+import { getPublicFileUrl } from '$lib/server/cloudinary';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
 	// Verify user is logged in
@@ -92,8 +93,16 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		// The parent layout usually provides this, but we can pass it down if needed.
 		// For simplicity, we assume if they can reach here, they have read access.
 
+		let fotoUrl: string | null = null;
+		if (results[0].murid.fotoPublicId) {
+			fotoUrl = getPublicFileUrl(results[0].murid.fotoPublicId);
+		}
+
 		return {
-			detail: results[0],
+			detail: {
+				...results[0],
+				fotoUrl
+			},
 			recentNasyath: nasyathResults,
 			mustarsyadList
 		};

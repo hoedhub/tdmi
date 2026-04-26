@@ -394,108 +394,109 @@
 <div
 	class="flex {containerHeight} flex-col gap-0 overflow-hidden rounded-xl border border-base-300 bg-base-100 shadow-xl"
 >
-	<!-- Unified Scroll Container - Handles both horizontal and vertical scrolling correctly -->
-	<div class="flex-1 overflow-auto bg-base-100" id="super-table-scroll-root">
-		<!-- Section 1: Global filter and general actions -->
-		<div class="z-40 w-full border-b border-base-200 bg-base-100 p-4">
-			<div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-				<!-- Global Filter Area -->
-				<div class="min-w-0 flex-1">
-					{#if globalFilter}
-						{@render globalFilter({
-							searchTerm: $filterState.global,
-							updateSearchTerm: handleGlobalFilter
-						})}
-					{:else}
-						<FilterInput value={$filterState.global || ''} oninput={(val) => handleGlobalFilter(val)} />
-					{/if}
-					{#if customFilters}
-						{@render customFilters()}
-					{/if}
+	<!-- Section 1: Global filter and general actions - Now OUTSIDE the scroll container -->
+	<div class="z-40 w-full border-b border-base-200 bg-base-100 p-4">
+		<div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+			<!-- Global Filter Area -->
+			<div class="min-w-0 flex-1">
+				{#if globalFilter}
+					{@render globalFilter({
+						searchTerm: $filterState.global,
+						updateSearchTerm: handleGlobalFilter
+					})}
+				{:else}
+					<FilterInput value={$filterState.global || ''} oninput={(val) => handleGlobalFilter(val)} />
+				{/if}
+				{#if customFilters}
+					{@render customFilters()}
+				{/if}
+			</div>
+
+			<!-- Toolbar -->
+			<div class="flex flex-wrap items-center gap-x-4 gap-y-2 lg:flex-nowrap">
+				<!-- Column Visibility -->
+				<div class="dropdown">
+					<div tabindex="0" role="button" class="btn btn-ghost btn-sm border border-base-300">
+						<Columns class="h-4 w-4" />
+						Columns
+						<svg
+							width="12px"
+							height="12px"
+							class="inline-block h-2 w-2 fill-current opacity-60"
+							xmlns="http://www.w3.org/2000/svg"
+							viewBox="0 0 2048 2048"
+							><path d="M1799 349l-839 839-839-839-128 128 967 967 967-967z" /></svg
+						>
+					</div>
+					<ul
+						role="menu"
+						tabindex="0"
+						class="menu dropdown-content z-[40] w-52 rounded-box bg-base-100 p-2 shadow-2xl"
+					>
+						{#each internalColumns as column (column.key)}
+							<li>
+								<label class="label cursor-pointer">
+									<span class="label-text">{column.label}</span>
+									<input
+										type="checkbox"
+										class="checkbox checkbox-sm checkbox-primary"
+										checked={!column.hidden}
+										onchange={() => toggleColumnVisibility(String(column.key))}
+									/>
+								</label>
+							</li>
+						{/each}
+					</ul>
 				</div>
 
-				<!-- Toolbar -->
-				<div class="flex flex-wrap items-center gap-x-4 gap-y-2 lg:flex-nowrap">
-					<!-- Column Visibility -->
-					<div class="dropdown">
-						<div tabindex="0" role="button" class="btn btn-ghost btn-sm border border-base-300">
-							<Columns class="h-4 w-4" />
-							Columns
-							<svg
-								width="12px"
-								height="12px"
-								class="inline-block h-2 w-2 fill-current opacity-60"
-								xmlns="http://www.w3.org/2000/svg"
-								viewBox="0 0 2048 2048"
-								><path d="M1799 349l-839 839-839-839-128 128 967 967 967-967z" /></svg
-							>
-						</div>
-						<ul
-							role="menu"
-							tabindex="0"
-							class="menu dropdown-content z-[40] w-52 rounded-box bg-base-100 p-2 shadow-2xl"
-						>
-							{#each internalColumns as column (column.key)}
-								<li>
-									<label class="label cursor-pointer">
-										<span class="label-text">{column.label}</span>
-										<input
-											type="checkbox"
-											class="checkbox checkbox-sm checkbox-primary"
-											checked={!column.hidden}
-											onchange={() => toggleColumnVisibility(String(column.key))}
-										/>
-									</label>
-								</li>
-							{/each}
-						</ul>
-					</div>
-
-					<!-- Sort Modal Button -->
-					<div class="tooltip tooltip-bottom z-50" data-tip="Manage sort">
-						<button class="btn btn-circle btn-ghost btn-sm" onclick={() => (isSortModalOpen = true)}>
-							<ArrowUpDown class="h-4 w-4" />
-						</button>
-					</div>
-
-					<!-- Filter Modal Button -->
-					<div class="tooltip tooltip-bottom z-50" data-tip="Manage filter">
-						<button
-							class="btn btn-circle btn-ghost btn-sm relative {($filterState.advanced?.conditions?.length ?? 0) > 0 ? 'text-primary' : ''}"
-							onclick={() => (isFilterModalOpen = true)}
-							id="manage-filter-btn"
-						>
-							<ListFilter class="h-4 w-4" />
-							{#if ($filterState.advanced?.conditions?.length ?? 0) > 0}
-								<span class="badge badge-primary badge-xs absolute right-0 top-0 font-bold">{$filterState.advanced?.conditions?.length ?? 0}</span>
-							{/if}
-						</button>
-					</div>
-
-					<!-- Mobile Filter Drawer Button -->
-					{#if isMobile && mobileView === 'cards'}
-						<button
-							class="btn btn-outline btn-sm relative"
-							onclick={() => (isFilterDrawerOpen = !isFilterDrawerOpen)}
-						>
-							<Funnel class="h-4 w-4" />
-							Filters
-							{#if Object.values($filterState.columns).some((v) => v && v !== 'All')}
-								<div class="badge badge-primary badge-xs absolute right-1 top-1 scale-75"></div>
-							{/if}
-						</button>
-						<FilterDrawer
-							isOpen={isFilterDrawerOpen}
-							columns={internalColumns}
-							filterValues={$filterState.columns}
-							onclose={() => (isFilterDrawerOpen = false)}
-							onapplyFilters={handleApplyDrawerFilters}
-							onreset={resetColumnFilters}
-						/>
-					{/if}
+				<!-- Sort Modal Button -->
+				<div class="tooltip tooltip-bottom z-50" data-tip="Manage sort">
+					<button class="btn btn-circle btn-ghost btn-sm" onclick={() => (isSortModalOpen = true)}>
+						<ArrowUpDown class="h-4 w-4" />
+					</button>
 				</div>
+
+				<!-- Filter Modal Button -->
+				<div class="tooltip tooltip-bottom z-50" data-tip="Manage filter">
+					<button
+						class="btn btn-circle btn-ghost btn-sm relative {($filterState.advanced?.conditions?.length ?? 0) > 0 ? 'text-primary' : ''}"
+						onclick={() => (isFilterModalOpen = true)}
+						id="manage-filter-btn"
+					>
+						<ListFilter class="h-4 w-4" />
+						{#if ($filterState.advanced?.conditions?.length ?? 0) > 0}
+							<span class="badge badge-primary badge-xs absolute right-0 top-0 font-bold">{$filterState.advanced?.conditions?.length ?? 0}</span>
+						{/if}
+					</button>
+				</div>
+
+				<!-- Mobile Filter Drawer Button -->
+				{#if isMobile && mobileView === 'cards'}
+					<button
+						class="btn btn-outline btn-sm relative"
+						onclick={() => (isFilterDrawerOpen = !isFilterDrawerOpen)}
+					>
+						<Funnel class="h-4 w-4" />
+						Filters
+						{#if Object.values($filterState.columns).some((v) => v && v !== 'All')}
+							<div class="badge badge-primary badge-xs absolute right-1 top-1 scale-75"></div>
+						{/if}
+					</button>
+					<FilterDrawer
+						isOpen={isFilterDrawerOpen}
+						columns={internalColumns}
+						filterValues={$filterState.columns}
+						onclose={() => (isFilterDrawerOpen = false)}
+						onapplyFilters={handleApplyDrawerFilters}
+						onreset={resetColumnFilters}
+					/>
+				{/if}
 			</div>
 		</div>
+	</div>
+
+	<!-- Unified Scroll Container - Handles both horizontal and vertical scrolling correctly -->
+	<div class="flex-1 overflow-auto bg-base-100" id="super-table-scroll-root">
 
 		<!-- Main table section - Horizontal scroll handled by parent #super-table-scroll-root -->
 		<div class="p-0 min-w-full inline-block align-top">
@@ -614,50 +615,50 @@
 		</div>
 	</div>
 
-	<!-- Floating Bulk Actions Bar -->
-	{#if selectionMode === 'multiple' && $selectedIds.size > 0}
-		<div 
-			transition:fly={{ y: 20, duration: 300 }}
-			class="absolute bottom-20 left-1/2 -translate-x-1/2 z-50"
-		>
-			<div class="flex items-center gap-4 bg-neutral text-neutral-content px-6 py-3 rounded-full shadow-2xl">
-				<div class="flex items-center gap-2 border-r border-neutral-content/20 pr-4">
-					<span class="badge badge-primary font-bold">{$selectedIds.size}</span>
-					<span class="text-sm font-medium">terpilih</span>
-				</div>
-				
-				<div class="flex items-center gap-2">
-					{#if bulkActions}
-						{@render bulkActions({ selectedIds: Array.from($selectedIds) })}
-					{/if}
-					<button class="btn btn-error btn-sm rounded-full" onclick={handleDeleteSelected}>
-						<Trash2 class="h-4 w-4" />
-						Hapus
-					</button>
-				</div>
-
-				<div class="border-l border-neutral-content/20 pl-4 ml-2">
-					<button class="btn btn-ghost btn-sm btn-circle text-neutral-content/70 hover:text-white" onclick={clearSelection} title="Batal Pilih Semua">
-						<XCircle class="h-5 w-5" />
-					</button>
+	<!-- Footer section (Sticky at bottom) -->
+	<div
+		class="flex-none sticky bottom-0 z-30 w-full border-t border-base-300 bg-base-100/95 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] backdrop-blur-sm"
+	>
+		<!-- Bulk Actions Toolbar (Now sticky above pagination) -->
+		{#if selectionMode === 'multiple' && $selectedIds.size > 0}
+			<div 
+				transition:fly={{ y: 20, duration: 300 }}
+				class="w-full border-b border-base-200 bg-neutral/5 px-4 py-2"
+			>
+				<div class="flex items-center justify-between gap-4">
+					<div class="flex items-center gap-2">
+						<span class="badge badge-primary font-bold">{$selectedIds.size}</span>
+						<span class="text-sm font-medium opacity-70">terpilih</span>
+						<button class="btn btn-ghost btn-xs btn-circle ml-1" onclick={clearSelection} title="Batal Pilih Semua">
+							<XCircle class="h-4 w-4" />
+						</button>
+					</div>
+					
+					<div class="flex items-center gap-2">
+						{#if bulkActions}
+							{@render bulkActions({ selectedIds: Array.from($selectedIds) })}
+						{/if}
+						<button class="btn btn-error btn-xs" onclick={handleDeleteSelected}>
+							<Trash2 class="h-4 w-4" />
+							Hapus
+						</button>
+					</div>
 				</div>
 			</div>
-		</div>
-	{/if}
-
-	<!-- Sticky Pagination at the very bottom of the component -->
-	<div
-		class="flex-none sticky bottom-0 z-30 w-full border-t border-base-300 bg-base-100/95 p-2 px-4 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] backdrop-blur-sm"
-	>
-		{#if !$isLoading && totalItems > 0}
-			<PaginationControls
-				currentPage={$currentPage}
-				totalPages={totalPageCount}
-				itemsPerPage={$itemsPerPage}
-				{totalItems}
-				onpageChange={handlePageChange}
-				onitemsPerPageChange={handleItemsPerPageChange}
-			/>
 		{/if}
+
+		<!-- Pagination section -->
+		<div class="p-2 px-4">
+			{#if !$isLoading && totalItems > 0}
+				<PaginationControls
+					currentPage={$currentPage}
+					totalPages={totalPageCount}
+					itemsPerPage={$itemsPerPage}
+					{totalItems}
+					onpageChange={handlePageChange}
+					onitemsPerPageChange={handleItemsPerPageChange}
+				/>
+			{/if}
+		</div>
 	</div>
 </div>

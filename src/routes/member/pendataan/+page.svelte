@@ -67,6 +67,8 @@
 
 	let muridData: Murid[] = $state([]);
 	let totalItems = $state(data.totalItems);
+	let isNavigating = $state(false);
+
 	let loading = $state(false);
 	let pageSize = $state(10);
 	let currentPage = $state(1);
@@ -114,7 +116,7 @@
 
 	let columns: ColumnDef<Murid>[] = [
 		{ key: 'nama', label: 'Nama', sortable: true, filterable: 'text' },
-		{ key: 'namaArab', label: 'Nama Arab', sortable: true, filterable: 'text' },
+		{ key: 'namaArab', label: 'Nama Arab', sortable: true, filterable: 'text', hidden: true },
 		{
 			key: 'gender',
 			label: 'Gender',
@@ -152,14 +154,16 @@
 			label: 'Baiat',
 			sortable: true,
 			filterable: 'text',
-			formatter: (v, row) => renderReferencedMurid(v, row.baiatMarhalah, row.baiatQari)
+			formatter: (v, row) => renderReferencedMurid(v, row.baiatMarhalah, row.baiatQari),
+			hidden: true
 		},
 		{
 			key: 'wiridName',
 			label: 'Wirid',
 			sortable: true,
 			filterable: 'text',
-			formatter: (v, row) => renderReferencedMurid(v, row.wiridMarhalah, row.wiridQari)
+			formatter: (v, row) => renderReferencedMurid(v, row.wiridMarhalah, row.wiridQari),
+			hidden: true
 		},
 		{ key: 'nomorTelepon', label: 'Telepon', sortable: true, filterable: 'text' },
 		{
@@ -204,7 +208,8 @@
 			key: 'updatedAt',
 			label: 'Terakhir Diperbarui',
 			sortable: true,
-			formatter: (value: string) => formatDateShort(value)
+			formatter: (value: string) => formatDateShort(value),
+			hidden: true
 		}
 	];
 
@@ -345,8 +350,12 @@
 		onfilter={handleFilter}
 		onpageChange={handlePageChange}
 		onitemsPerPageChange={handleItemsPerPageChange}
-		onrowClick={(row) => goto(`/member/pendataan/${row.id}`)}
+		onrowClick={(row) => {
+			isNavigating = true;
+			goto(`/member/pendataan/${row.id}`);
+		}}
 		onselectionChange={handleSelectionChange}
+		class={isNavigating ? 'blur-sm grayscale opacity-50 pointer-events-none transition-all duration-300' : 'transition-all duration-300'}
 	>
 		{#snippet bulkActions({ selectedIds })}
 			{#if canWriteMurid && selectedIds.length === 1}
@@ -385,6 +394,15 @@
 			{/if}
 		{/snippet}
 	</SuperTable>
+
+	{#if isNavigating}
+		<div class="fixed inset-0 z-[100] flex items-center justify-center bg-base-100/10 backdrop-blur-[2px]">
+			<div class="flex flex-col items-center gap-4 p-8 bg-base-100 rounded-2xl shadow-2xl border border-base-200">
+				<span class="loading loading-spinner loading-lg text-primary"></span>
+				<p class="text-lg font-bold animate-pulse">Memuat detail murid...</p>
+			</div>
+		</div>
+	{/if}
 
 {#if canReadMurid && !data.dbError}
 	<div class="mb-6 mt-8 grid grid-cols-1 gap-4 md:grid-cols-2">
