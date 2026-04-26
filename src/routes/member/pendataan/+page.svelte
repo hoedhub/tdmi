@@ -12,6 +12,7 @@
 	import type { DatabaseUserAttributes } from '$lib/server/auth';
 	import { api } from '$lib/utils/api';
 	import { error as toastError, success as toastSuccess } from '$lib/components/toast';
+	import { formatDateShort } from '$lib/utils/date';
 
 	// --- Type Definitions ---
 	// Use a type intersection (&) to extend PageData, which is the correct approach.
@@ -96,11 +97,12 @@
 		},
 		{
 			key: 'tglLahir',
-			label: 'Umur',
+			label: 'Tgl Lahir (Umur)',
 			sortable: true,
 			formatter: (value) => {
 				const age = calculateAge(value);
-				return age !== null ? `${age} tahun` : '-';
+				const date = formatDateShort(value);
+				return age !== null ? `${date} (${age} thn)` : date;
 			}
 		},
 		{
@@ -157,7 +159,7 @@
 			key: 'updatedAt',
 			label: 'Terakhir Diperbarui',
 			sortable: true,
-			formatter: (value: string) => new Date(value).toLocaleDateString()
+			formatter: (value: string) => formatDateShort(value)
 		}
 	];
 

@@ -159,6 +159,7 @@
 					onpageChange={handlePageChange}
 					onitemsPerPageChange={handleItemsPerPageChange}
 					onselectionChange={handleSelect}
+					onrowClick={(row) => handleSelect([row.id])}
 					dbError={$muridModalStore.hasDbError}
 					disabledRowKeys={editedMuridId ? [editedMuridId] : []}
 					containerHeight="h-[calc(100vh-320px)]"

@@ -9,6 +9,7 @@
 	import { onMount, tick } from 'svelte';
 	import { api } from '$lib/utils/api'; // <-- Use centralized API helper
 	import { success as toastSuccess, error as toastError, warning as toastWarning } from '$lib/components/toast'; // <-- Use centralized toast
+	import { formatDateShort } from '$lib/utils/date';
 
 	// --- Type Definitions ---
 	interface Role {
@@ -88,7 +89,7 @@
 					key: 'createdAt',
 					label: 'Created At',
 					sortable: true,
-					formatter: (value: string) => new Date(value).toLocaleDateString()
+					formatter: (value: string) => formatDateShort(value)
 				}
 			];
 		}

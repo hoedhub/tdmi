@@ -14,6 +14,7 @@
 		ArrowLeft,
 		Network
 	} from 'lucide-svelte';
+	import { formatDateShort } from '$lib/utils/date';
 	interface Props {
 		data: PageData;
 	}
@@ -41,16 +42,7 @@
 	}
 
 	function formatDate(dateString: string | null): string {
-		if (!dateString) return '-';
-		try {
-			return new Intl.DateTimeFormat('id-ID', {
-				day: '2-digit',
-				month: 'long',
-				year: 'numeric'
-			}).format(new Date(dateString));
-		} catch (e) {
-			return dateString;
-		}
+		return formatDateShort(dateString);
 	}
 
 	let fullAddress = $derived(
