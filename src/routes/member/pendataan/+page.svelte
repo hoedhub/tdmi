@@ -50,6 +50,9 @@
 		mursyidName: string | null;
 		baiatName: string | null;
 		wiridName: string | null;
+		mursyidMarhalah: number | null;
+		baiatMarhalah: number | null;
+		wiridMarhalah: number | null;
 	}
 
 	interface Props {
@@ -83,6 +86,21 @@
 		}
 		return age;
 	}
+	
+	function renderReferencedMurid(name: string | null, marhalah: number | null) {
+		if (!name) return '-';
+		if (marhalah !== null && marhalah < 3) {
+			return `
+				<div class="tooltip tooltip-warning" data-tip="Peringatan: Belum mencapai Marhalah 3">
+					<span class="inline-flex items-center gap-1 text-warning font-medium">
+						<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+						${name}
+					</span>
+				</div>
+			`.trim();
+		}
+		return name;
+	}
 
 	let columns: ColumnDef<Murid>[] = [
 		{ key: 'nama', label: 'Nama', sortable: true, filterable: 'text' },
@@ -112,9 +130,27 @@
 			filterOptions: ['1', '2', '3'],
 			formatter: (value: 1 | 2 | 3) => value.toString()
 		},
-		{ key: 'mursyidName', label: 'Mursyid', sortable: true, filterable: 'text' },
-		{ key: 'baiatName', label: 'Baiat', sortable: true, filterable: 'text' },
-		{ key: 'wiridName', label: 'Wirid', sortable: true, filterable: 'text' },
+		{
+			key: 'mursyidName',
+			label: 'Mursyid',
+			sortable: true,
+			filterable: 'text',
+			formatter: (v, row) => renderReferencedMurid(v, row.mursyidMarhalah)
+		},
+		{
+			key: 'baiatName',
+			label: 'Baiat',
+			sortable: true,
+			filterable: 'text',
+			formatter: (v, row) => renderReferencedMurid(v, row.baiatMarhalah)
+		},
+		{
+			key: 'wiridName',
+			label: 'Wirid',
+			sortable: true,
+			filterable: 'text',
+			formatter: (v, row) => renderReferencedMurid(v, row.wiridMarhalah)
+		},
 		{ key: 'nomorTelepon', label: 'Telepon', sortable: true, filterable: 'text' },
 		{
 			key: 'alamat',

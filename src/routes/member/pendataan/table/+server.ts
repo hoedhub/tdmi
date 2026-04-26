@@ -228,6 +228,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			mursyidName: string | null;
 			baiatName: string | null;
 			wiridName: string | null;
+			mursyidMarhalah: number | null;
+			baiatMarhalah: number | null;
+			wiridMarhalah: number | null;
 		};
 
 		const murid: MuridRow[] = await db
@@ -239,7 +242,10 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 				prop: propTable,
 				mursyidName: mursyid.nama,
 				baiatName: baiat.nama,
-				wiridName: wirid.nama
+				wiridName: wirid.nama,
+				mursyidMarhalah: mursyid.marhalah,
+				baiatMarhalah: baiat.marhalah,
+				wiridMarhalah: wirid.marhalah
 			})
 			.from(muridTable)
 			.leftJoin(deskelTable, eq(muridTable.deskelId, deskelTable.id))
@@ -267,7 +273,10 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			propinsiName: m.prop?.propinsi || null,
 			mursyidName: m.mursyidName || null,
 			baiatName: m.baiatName || null,
-			wiridName: m.wiridName || null
+			wiridName: m.wiridName || null,
+			mursyidMarhalah: m.mursyidMarhalah || null,
+			baiatMarhalah: m.baiatMarhalah || null,
+			wiridMarhalah: m.wiridMarhalah || null
 		}));
 
 		return json({

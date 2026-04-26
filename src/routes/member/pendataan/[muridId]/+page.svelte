@@ -12,7 +12,8 @@
 		Pen,
 		Trash,
 		ArrowLeft,
-		Network
+		Network,
+		TriangleAlert
 	} from 'lucide-svelte';
 	import { formatDateShort } from '$lib/utils/date';
 	interface Props {
@@ -58,6 +59,20 @@
 		return gender ? 'Murid' : 'Muridah';
 	}
 </script>
+
+{#snippet marhalahWarning(name: string | null, marhalah: number | null, colorClass: string = 'text-primary')}
+	<div class="flex items-center gap-2">
+		<User class="h-4 w-4 {colorClass}" />
+		<span class="font-medium text-lg">{name || '-'}</span>
+		{#if name && marhalah !== null && marhalah < 3}
+			<div class="tooltip tooltip-warning" data-tip="Peringatan: Belum mencapai Marhalah 3">
+				<span class="text-warning font-medium">
+					<TriangleAlert size={18} />
+				</span>
+			</div>
+		{/if}
+	</div>
+{/snippet}
 
 <svelte:head>
 	<title>Detail Murid: {murid.nama} - TDMI</title>
@@ -187,31 +202,19 @@
 					<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 						<div class="bg-base-200/50 p-4 rounded-lg border border-base-200">
 							<span class="text-base-content/60 block text-xs uppercase tracking-wider font-semibold mb-1">Mursyid</span>
-							<div class="flex items-center gap-2">
-								<User class="h-4 w-4 text-primary" />
-								<span class="font-medium text-lg">{detail.mursyidName || '-'}</span>
-							</div>
+							{@render marhalahWarning(detail.mursyidName, detail.mursyidMarhalah, 'text-primary')}
 						</div>
 						<div class="bg-base-200/50 p-4 rounded-lg border border-base-200">
 							<span class="text-base-content/60 block text-xs uppercase tracking-wider font-semibold mb-1">Muhrim</span>
-							<div class="flex items-center gap-2">
-								<User class="h-4 w-4 text-secondary" />
-								<span class="font-medium text-lg">{detail.muhrimName || '-'}</span>
-							</div>
+							{@render marhalahWarning(detail.muhrimName, detail.muhrimMarhalah, 'text-secondary')}
 						</div>
 						<div class="bg-base-200/50 p-4 rounded-lg border border-base-200">
 							<span class="text-base-content/60 block text-xs uppercase tracking-wider font-semibold mb-1">Baiat</span>
-							<div class="flex items-center gap-2">
-								<User class="h-4 w-4 text-accent" />
-								<span class="font-medium text-lg">{detail.baiatName || '-'}</span>
-							</div>
+							{@render marhalahWarning(detail.baiatName, detail.baiatMarhalah, 'text-accent')}
 						</div>
 						<div class="bg-base-200/50 p-4 rounded-lg border border-base-200">
 							<span class="text-base-content/60 block text-xs uppercase tracking-wider font-semibold mb-1">Wirid</span>
-							<div class="flex items-center gap-2">
-								<User class="h-4 w-4 text-info" />
-								<span class="font-medium text-lg">{detail.wiridName || '-'}</span>
-							</div>
+							{@render marhalahWarning(detail.wiridName, detail.wiridMarhalah, 'text-info')}
 						</div>
 					</div>
 				</div>
