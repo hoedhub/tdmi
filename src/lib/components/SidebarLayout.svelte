@@ -258,15 +258,13 @@
 	<!-- Toggle Button (Desktop Only) -->
 	<button
 		onclick={toggleSidebar}
-		class="btn btn-circle btn-ghost btn-sm absolute z-40 hidden -translate-y-1/2 transition-all duration-300 md:flex sidebar-toggle-btn"
-		class:top-9={!isSidebarCollapsed}
-		class:top-[2.25rem]={isSidebarCollapsed}
+		class="fixed z-40 hidden top-1/2 -translate-y-1/2 transition-all duration-300 md:flex items-center justify-center bg-neutral text-neutral-content hover:brightness-110 rounded-r-md shadow-lg sidebar-toggle-btn w-5 h-12"
 		class:left-14={isSidebarCollapsed}
 		class:left-72={!isSidebarCollapsed}
 		aria-label="Toggle sidebar"
 	>
 		<ChevronsLeft
-			size={20}
+			size={16}
 			class="transform transition-transform duration-300 {isSidebarCollapsed ? 'rotate-180' : ''}"
 		/>
 	</button>
@@ -335,7 +333,7 @@
 			justify-content: center !important;
 		}
 		:global(html.sidebar-collapsed) .sidebar-toggle-btn {
-			top: 2.25rem !important;
+			top: 50% !important;
 			left: 3.5rem !important; /* left-14 */
 		}
 		:global(html.sidebar-collapsed) .sidebar-toggle-btn svg {
