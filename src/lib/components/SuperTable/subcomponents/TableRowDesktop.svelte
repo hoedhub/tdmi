@@ -12,7 +12,8 @@
 	import { createEventDispatcher } from 'svelte';
 	import { swipe } from '../actions/swipeAction';
 	import { longPress } from '../actions/longPressAction';
-	import { selectedIds } from '../stores';
+	import { getContext } from 'svelte';
+	import { TABLE_CONTEXT_KEY, type TableStores } from '../stores';
 
 	interface Props {
 		row: T;
@@ -39,6 +40,9 @@
 		onswipe,
 		onclick
 	}: Props = $props();
+
+	const stores = getContext<TableStores>(TABLE_CONTEXT_KEY);
+	const selectedIds = stores.selectedIds;
 
 	let isSelected = $derived($selectedIds.has(row[rowKey as keyof T]));
 

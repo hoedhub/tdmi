@@ -2,7 +2,8 @@
 	import type { ColumnDef, SortConfig, FilterState, SuperTableProps } from './types';
 	import { onMount } from 'svelte';
 	import { fly } from 'svelte/transition';
-	import { filterState, selectedIds, currentPage, itemsPerPage, isLoading } from './stores';
+	import { setContext } from 'svelte';
+	import { createTableStores, TABLE_CONTEXT_KEY } from './stores';
 	import { sortData } from './features/sorting';
 	import { filterData } from './features/filtering';
 	import { paginateData, calculateTotalPages } from './features/pagination';
@@ -80,6 +81,11 @@
 
 
 	// --- State Management ---
+	const stores = createTableStores();
+	setContext(TABLE_CONTEXT_KEY, stores);
+
+	const { filterState, selectedIds, currentPage, itemsPerPage, isLoading, dbError: dbErrorStore } = stores;
+
 	let internalColumns: ColumnDef<T>[] = $state([]);
 	let filteredData: T[] = $state([]);
 	let isFilterDrawerOpen = $state(false);
@@ -141,7 +147,9 @@
 
 	// Sync stores with props using effects
 	$effect(() => {
-		$isLoading = Boolean(isLoadingProp);
+		if (isLoadingProp !== undefined) {
+			$isLoading = Boolean(isLoadingProp);
+		}
 	});
 	$effect(() => {
 		if (currentPageProp !== undefined && currentPageProp !== $currentPage) {
@@ -151,6 +159,16 @@
 	$effect(() => {
 		if (itemsPerPageProp !== undefined && itemsPerPageProp !== $itemsPerPage) {
 			$itemsPerPage = itemsPerPageProp;
+		}
+	});
+	$effect(() => {
+		if (dbError !== undefined) {
+			$dbErrorStore = dbError;
+		}
+	});
+	$effect(() => {
+		if (filterStateProp !== undefined && JSON.stringify(filterStateProp) !== JSON.stringify($filterState)) {
+			$filterState = filterStateProp;
 		}
 	});
 
@@ -345,7 +363,9 @@
 	}
 
 	function handleSortSave(newSortState: SortConfig[]) {
-		onsort?.(newSortState.length > 0 ? newSortState : null);
+		const finalSort = newSortState.length > 0 ? newSortState : null;
+		sort = finalSort || [];
+		onsort?.(finalSort);
 	}
 
 	function handleFilterSave(advancedFilter: import('./types').AdvancedFilterState) {

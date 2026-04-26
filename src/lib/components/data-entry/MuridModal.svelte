@@ -147,6 +147,8 @@
 					data={$muridModalStore.muridData}
 					rowKey={"id" as keyof Murid}
 					itemsPerPageProp={pageSize}
+					currentPageProp={currentPage}
+					filterStateProp={currentFilters}
 					totalItemsProp={$muridModalStore.totalItems}
 					isLoadingProp={$muridModalStore.loading}
 					sort={currentSort}
@@ -160,6 +162,7 @@
 					dbError={$muridModalStore.hasDbError}
 					disabledRowKeys={editedMuridId ? [editedMuridId] : []}
 					containerHeight="h-[calc(100vh-320px)]"
+					persistenceId="murid-modal-table"
 				>
 					{#snippet errorState()}
 						<div class="p-8 text-center text-error">
