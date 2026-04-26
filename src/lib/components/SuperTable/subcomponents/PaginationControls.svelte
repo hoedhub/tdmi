@@ -51,7 +51,7 @@
 >
 	<div class="text-sm text-base-content/70" aria-live="polite">
 		Showing {#if totalItems >= 1}<b>{startItem}-{endItem}</b> of
-		{/if}<b>{totalItems}</b> items
+		{/if}<b>&nbsp;{totalItems}</b> items
 	</div>
 
 	<div class="flex w-full flex-wrap items-center justify-center gap-4 sm:w-auto sm:justify-end">

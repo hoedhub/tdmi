@@ -97,12 +97,11 @@
 		},
 		{
 			key: 'tglLahir',
-			label: 'Tgl Lahir (Umur)',
+			label: 'Umur',
 			sortable: true,
 			formatter: (value) => {
 				const age = calculateAge(value);
-				const date = formatDateShort(value);
-				return age !== null ? `${date} (${age} thn)` : date;
+				return age !== null ? `${age} tahun` : '-';
 			}
 		},
 		{
