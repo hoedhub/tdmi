@@ -58,6 +58,11 @@ const rolesData = [
 		id: 'role-piket-manager',
 		name: "Manajer Ruasa'",
 		description: "Peran untuk mengelola jadwal ruasa'"
+	},
+	{
+		id: 'role-lajnah-ilqo',
+		name: "Lajnah Ilqo' Ad Durus",
+		description: "Lajnah yang mengelola pertanyaan Ayyu Su'aal kepada Maulana Syeikh"
 	}
 ];
 
@@ -130,6 +135,12 @@ const permissionsData = [
 		id: 'perm-backup-create',
 		name: 'Buat Backup',
 		description: 'Bisa membuat dan mengunduh backup database'
+	},
+	// --- IZIN UNTUK AYYU SU'AAL ---
+	{
+		id: 'perm-ayyu-sual-access',
+		name: "Akses Ayyu Su'aal",
+		description: "Bisa mengakses dan mengelola halaman pertanyaan Ayyu Su'aal"
 	}
 ];
 
@@ -148,7 +159,9 @@ const roleHierarchyData = [
 	{ parent: 'role-maaliyah', child: 'role-maaliyah-propinsi' },
 	{ parent: 'role-nasyath', child: 'role-nasyath-propinsi' },
 	{ parent: 'role-pendataan', child: 'role-pendataan-propinsi' },
-	{ parent: 'role-admin', child: 'role-piket-admin' }
+	{ parent: 'role-admin', child: 'role-piket-admin' },
+	{ parent: 'role-admin', child: 'role-lajnah-ilqo' },
+	{ parent: 'role-naib', child: 'role-lajnah-ilqo' }
 ];
 
 // =================================================================
@@ -224,7 +237,12 @@ export async function seedRbacData() {
 			{ roleId: 'role-admin', permissionId: 'perm-piket-read' },
 			{ roleId: 'role-admin', permissionId: 'perm-piket-write' },
 			// --- PENETAPAN IZIN BARU UNTUK BACKUP ---
-			{ roleId: 'role-admin', permissionId: 'perm-backup-create' }
+			{ roleId: 'role-admin', permissionId: 'perm-backup-create' },
+			// --- PENETAPAN IZIN UNTUK AYYU SU'AAL ---
+			{ roleId: 'role-lajnah-ilqo', permissionId: 'perm-ayyu-sual-access' },
+			{ roleId: 'role-admin', permissionId: 'perm-ayyu-sual-access' },
+			{ roleId: 'role-naib', permissionId: 'perm-ayyu-sual-access' },
+			{ roleId: 'role-wakil-naib', permissionId: 'perm-ayyu-sual-access' }
 		];
 		await db.insert(rolePermissionsTable).values(rolePermissions).onConflictDoNothing();
 		console.log('Role permissions seeded.');

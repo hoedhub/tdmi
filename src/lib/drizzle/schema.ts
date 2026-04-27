@@ -256,7 +256,37 @@ export const piketScheduleTable = sqliteTable(
 );
 
 // ==================================================================
-// BAGIAN 6: RELATIONS (DEFINISIKAN SEMUA DI AKHIR)
+// BAGIAN 6: TABEL PERTANYAAN (PUBLIC FORM)
+// ==================================================================
+export type PertanyaanStatus = 'hijau' | 'kuning' | 'merah';
+
+export const pertanyaanAhbabTable = sqliteTable(
+	'pertanyaan_ahbab',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		nama: text('nama').notNull(),
+		alamat: text('alamat').notNull(),
+		email: text('email').notNull(),
+		namaMursyid: text('nama_mursyid').notNull(),
+		pertanyaan: text('pertanyaan').notNull(),
+		createdAt: text('created_at')
+			.default(sql`CURRENT_TIMESTAMP`)
+			.notNull(),
+		// Kolom untuk sistem labeling Ayyu Su'aal
+		status: text('status').$type<PertanyaanStatus>(),
+		statusCatatan: text('status_catatan'),
+		statusUpdatedAt: text('status_updated_at'),
+		statusUpdatedBy: text('status_updated_by')
+			.references(() => usersTable.id, { onDelete: 'set null' })
+	},
+	(table) => [
+		index('pertanyaan_nama_idx').on(table.nama),
+		index('pertanyaan_created_at_idx').on(table.createdAt)
+	]
+);
+
+// ==================================================================
+// BAGIAN 7: RELATIONS (DEFINISIKAN SEMUA DI AKHIR)
 // ==================================================================
 
 // 6.1 Relasi untuk Tabel PENGHUBUNG (One-to-Many)

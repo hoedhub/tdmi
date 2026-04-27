@@ -5,7 +5,7 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
-	import { ChartNoAxesGantt, User, ChevronsLeft } from 'lucide-svelte';
+	import { ChartNoAxesGantt, User, ChevronsLeft, BookOpen } from 'lucide-svelte';
 	import logo from '$lib/assets/TDMI-Logo-0002.jpg';
 	import { absoluteDropdownStore } from '$lib/stores/absoluteDropdown';
 	import { tooltipStore } from '$lib/stores/tooltipStore';
@@ -37,8 +37,7 @@
 	const menuItems = [
 		{ href: '/member', label: 'Dashboard', icon: Home },
 		{ href: '/member/pendataan', label: 'Pendataan', icon: Users },
-		{ href: '/member/nasyath_mun', label: 'Nasyath MUN', icon: CalendarRange },
-		{ href: '/settings', label: 'Settings', icon: Settings }
+		{ href: '/member/nasyath_mun', label: 'Nasyath MUN', icon: CalendarRange }
 	];
 
 	function handleUserMenuClick() {
@@ -161,7 +160,7 @@
 
 				<!-- Main Navigation Menu -->
 				<ul
-					class="menu sidebar-menu flex-grow flex-col space-y-1 px-0"
+					class="menu sidebar-menu flex-grow flex-col flex-nowrap space-y-1 px-0"
 					class:overflow-y-auto={!isSidebarCollapsed}
 					class:overflow-visible={isSidebarCollapsed}
 				>
@@ -174,7 +173,7 @@
 								class:active={item.href === '/member'
 									? $page.url.pathname === '/member'
 									: item.href === '/'
-										? $page.url.pathname === '/' || $page.url.pathname === ''
+										? $page.url.pathname === '/'
 										: $page.url.pathname.startsWith(item.href)}
 								onclick={() => (isSidebarOpen = false)}
 								onmouseenter={(e) => showTooltip(e, item.label)}
@@ -185,6 +184,39 @@
 							</a>
 						</li>
 					{/each}
+
+					{#if $page.data.canAccessAyyuSual}
+						<li>
+							<a
+								href={'/member/ayyu-sual'}
+								class="flex"
+								class:md:justify-center={isSidebarCollapsed}
+								class:active={$page.url.pathname.startsWith('/member/ayyu-sual')}
+								onclick={() => (isSidebarOpen = false)}
+								onmouseenter={(e) => showTooltip(e, "Ayyu Su'aal")}
+								onmouseleave={hideTooltip}
+							>
+								<BookOpen size={20} class="opacity-75" />
+								<span class:md:hidden={isSidebarCollapsed} class="sidebar-label">Ayyu Su'aal</span>
+							</a>
+						</li>
+					{/if}
+
+					<!-- Settings Link -->
+					<li>
+						<a
+							href={'/settings'}
+							class="flex"
+							class:md:justify-center={isSidebarCollapsed}
+							class:active={$page.url.pathname.startsWith('/settings')}
+							onclick={() => (isSidebarOpen = false)}
+							onmouseenter={(e) => showTooltip(e, 'Settings')}
+							onmouseleave={hideTooltip}
+						>
+							<Settings size={20} class="opacity-75" />
+							<span class:md:hidden={isSidebarCollapsed} class="sidebar-label">Settings</span>
+						</a>
+					</li>
 
 					<!-- Admin Link -->
 					{#if $page.data.canAccessAdmin}
@@ -271,6 +303,12 @@
 </div>
 
 <style>
+	/* Force single-column layout regardless of screen size */
+	.menu {
+		flex-wrap: nowrap !important;
+		flex-direction: column !important;
+	}
+
 	.menu li > a {
 		padding-left: 1.5rem;
 		border-radius: 0 8px 8px 0;
