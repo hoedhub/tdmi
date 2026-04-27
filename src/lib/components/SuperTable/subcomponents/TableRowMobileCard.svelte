@@ -97,6 +97,8 @@
 </script>
 
 <div
+	role="button"
+	tabindex="0"
 	class="card {cardClass} {className} {isSelected ? 'ring-2 ring-primary' : ''} {disabled
 		? 'disabled cursor-not-allowed opacity-50'
 		: ''} {onclick && !disabled ? 'cursor-pointer active:scale-[0.99] transition-transform' : ''}"
@@ -108,6 +110,12 @@
 		const target = e.target as HTMLElement;
 		if (target.closest('input, button, a')) return;
 		if (!disabled) onclick?.(row);
+	}}
+	onkeydown={(e) => {
+		if (e.key === 'Enter' || e.key === ' ') {
+			e.preventDefault();
+			if (!disabled) onclick?.(row);
+		}
 	}}
 >
 	<!-- on:swipe={handleSwipe} -->

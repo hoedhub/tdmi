@@ -12,6 +12,8 @@ interface Murid {
 	kokabName: string | null;
 	propinsiName: string | null;
 	aktif: boolean;
+	marhalah: number;
+	qari: boolean;
 }
 
 interface MuridModalState {

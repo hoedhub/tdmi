@@ -355,7 +355,7 @@
 			goto(`/member/pendataan/${row.id}`);
 		}}
 		onselectionChange={handleSelectionChange}
-		class={isNavigating ? 'blur-sm grayscale opacity-50 pointer-events-none transition-all duration-300' : 'transition-all duration-300'}
+		tableClass={isNavigating ? 'blur-sm grayscale opacity-50 pointer-events-none transition-all duration-300' : 'transition-all duration-300'}
 	>
 		{#snippet bulkActions({ selectedIds })}
 			{#if canWriteMurid && selectedIds.length === 1}

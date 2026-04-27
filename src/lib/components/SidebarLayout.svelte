@@ -161,7 +161,7 @@
 
 				<!-- Main Navigation Menu -->
 				<ul
-					class="menu flex-grow flex-col space-y-1 px-0"
+					class="menu sidebar-menu flex-grow flex-col space-y-1 px-0"
 					class:overflow-y-auto={!isSidebarCollapsed}
 					class:overflow-visible={isSidebarCollapsed}
 				>
@@ -312,31 +312,31 @@
 		}
 
 		/* SSR/Hydration Flash Fix: Apply collapsed styles when html has .sidebar-collapsed */
-		:global(html.sidebar-collapsed) .sidebar-inner-container {
+		:global(html.sidebar-collapsed .sidebar-inner-container) {
 			width: 3.5rem !important; /* md:w-14 */
 		}
-		:global(html.sidebar-collapsed) .sidebar-logo {
+		:global(html.sidebar-collapsed .sidebar-logo) {
 			height: 2.5rem !important; /* md:h-10 */
 			width: 2.5rem !important; /* md:w-10 */
 		}
-		:global(html.sidebar-collapsed) .sidebar-label {
+		:global(html.sidebar-collapsed .sidebar-label) {
 			display: none !important;
 		}
-		:global(html.sidebar-collapsed) .sidebar-menu {
+		:global(html.sidebar-collapsed .sidebar-menu) {
 			padding-inline: 0.5rem !important;
 		}
-		:global(html.sidebar-collapsed) .sidebar-menu li a {
+		:global(html.sidebar-collapsed .sidebar-menu li a) {
 			width: 2.5rem !important;
 			height: 2.5rem !important;
 			padding: 0 !important;
 			align-items: center !important;
 			justify-content: center !important;
 		}
-		:global(html.sidebar-collapsed) .sidebar-toggle-btn {
+		:global(html.sidebar-collapsed .sidebar-toggle-btn) {
 			top: 50% !important;
 			left: 3.5rem !important; /* left-14 */
 		}
-		:global(html.sidebar-collapsed) .sidebar-toggle-btn svg {
+		:global(html.sidebar-collapsed .sidebar-toggle-btn svg) {
 			transform: rotate(180deg) !important;
 		}
 	}
