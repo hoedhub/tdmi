@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { goto } from '$app/navigation';
+	import { goto, invalidateAll } from '$app/navigation';
 	import { page } from '$app/stores';
 	import {
 		BookOpen,
@@ -17,7 +17,11 @@
 		MapPin,
 		Users,
 		X,
-		Tag
+		Tag,
+		RefreshCw,
+		XCircle,
+		AlertCircle,
+		CircleDashed
 	} from 'lucide-svelte';
 	import type { PageData, ActionData } from './$types';
 	import type { PertanyaanStatus } from '$lib/drizzle/schema';
@@ -31,6 +35,13 @@
 	let selectedStatus = $state<PertanyaanStatus | ''>('');
 	let catatanValue = $state('');
 	let isSubmitting = $state(false);
+	let isRefreshing = $state(false);
+
+	async function refreshData() {
+		isRefreshing = true;
+		await invalidateAll();
+		isRefreshing = false;
+	}
 
 	function openModal(p: (typeof data.pertanyaan)[0]) {
 		selectedPertanyaan = p;
@@ -64,9 +75,9 @@
 
 	// Status config
 	const statusConfig = {
-		hijau:  { label: 'Dihaturkan kepada Syekh',           badge: 'badge-success',   bg: 'bg-success/10 border-success/30',   icon: '🟢' },
-		kuning: { label: 'Diperbaiki, lalu diajukan',         badge: 'badge-warning',   bg: 'bg-warning/10 border-warning/30',   icon: '🟡' },
-		merah:  { label: 'Dikembalikan kepada Mursyid',       badge: 'badge-error',     bg: 'bg-error/10 border-error/30',       icon: '🔴' }
+		hijau:  { label: 'Dihaturkan kepada Syekh',           badge: 'badge-success',   bg: 'bg-success/10 border-success/30',   icon: CheckCircle2 },
+		kuning: { label: 'Diperbaiki, lalu diajukan',         badge: 'badge-warning',   bg: 'bg-warning/10 border-warning/30',   icon: AlertCircle },
+		merah:  { label: 'Dikembalikan kepada Mursyid',       badge: 'badge-error',     bg: 'bg-error/10 border-error/30',       icon: XCircle }
 	} as const;
 
 	function fmtTicket(id: number) {
@@ -116,25 +127,32 @@
 			</div>
 		</div>
 
-		<!-- Deadline Badge -->
-		{#if data.isCurrentMonth && data.daysUntilDeadline !== null}
-			<div class="flex items-center gap-2 px-4 py-2 rounded-xl border
-				{deadlineUrgency === 'overdue'  ? 'bg-error/10 border-error/40 text-error' :
-				 deadlineUrgency === 'critical' ? 'bg-error/10 border-error/40 text-error' :
-				 deadlineUrgency === 'warning'  ? 'bg-warning/10 border-warning/40 text-warning' :
-				 'bg-base-200 border-base-300 text-base-content/70'}">
-				<AlertTriangle size={16} />
-				<span class="text-sm font-medium">
-					{#if deadlineUrgency === 'overdue'}
-						Deadline tgl 28 sudah lewat!
-					{:else if data.daysUntilDeadline === 0}
-						Deadline HARI INI (tgl 28)!
-					{:else}
-						Deadline tgl 28 — {data.daysUntilDeadline} hari lagi
-					{/if}
-				</span>
-			</div>
-		{/if}
+		<div class="flex flex-wrap items-center gap-3">
+			<a href="/tanya" class="btn btn-primary" target="_blank">
+				<MessageSquare size={18} />
+				Ke Form Publik
+			</a>
+
+			<!-- Deadline Badge -->
+			{#if data.isCurrentMonth && data.daysUntilDeadline !== null}
+				<div class="flex items-center gap-2 px-4 py-2 rounded-xl border
+					{deadlineUrgency === 'overdue'  ? 'bg-error/10 border-error/40 text-error' :
+					 deadlineUrgency === 'critical' ? 'bg-error/10 border-error/40 text-error' :
+					 deadlineUrgency === 'warning'  ? 'bg-warning/10 border-warning/40 text-warning' :
+					 'bg-base-200 border-base-300 text-base-content/70'}">
+					<AlertTriangle size={16} />
+					<span class="text-sm font-medium">
+						{#if deadlineUrgency === 'overdue'}
+							Deadline tgl 28 sudah lewat!
+						{:else if data.daysUntilDeadline === 0}
+							Deadline HARI INI (tgl 28)!
+						{:else}
+							Deadline tgl 28 — {data.daysUntilDeadline} hari lagi
+						{/if}
+					</span>
+				</div>
+			{/if}
+		</div>
 	</div>
 
 	<!-- Stats Cards -->
@@ -190,19 +208,37 @@
 			<div class="flex items-center gap-2 flex-wrap">
 				<Filter size={14} class="text-base-content/50" />
 				{#each [
-					{ val: 'semua', label: 'Semua' },
-					{ val: 'belum', label: '⬜ Belum' },
-					{ val: 'hijau', label: '🟢 Dihaturkan' },
-					{ val: 'kuning', label: '🟡 Diperbaiki' },
-					{ val: 'merah', label: '🔴 Dikembalikan' }
+					{ val: 'semua', label: 'Semua', icon: null },
+					{ val: 'belum', label: 'Belum', icon: CircleDashed },
+					{ val: 'hijau', label: 'Dihaturkan', icon: CheckCircle2 },
+					{ val: 'kuning', label: 'Diperbaiki', icon: AlertCircle },
+					{ val: 'merah', label: 'Dikembalikan', icon: XCircle }
 				] as f}
 					<button
 						onclick={() => setStatus(f.val)}
-						class="btn btn-xs {data.filterStatus === f.val ? 'btn-primary' : 'btn-ghost'}"
+						class="btn btn-xs {data.filterStatus === f.val ? 'btn-primary' : 'btn-ghost'} gap-1"
 					>
+						{#if f.icon}
+							{@const Icon = f.icon}
+							<Icon size={12} />
+						{/if}
 						{f.label}
 					</button>
 				{/each}
+			</div>
+
+			<!-- Refresh Button -->
+			<div class="flex-1 hidden md:block"></div>
+			<div class="tooltip tooltip-left w-full sm:w-auto text-right" data-tip="Muat ulang data">
+				<button 
+					onclick={refreshData}
+					class="btn btn-ghost btn-sm sm:btn-circle w-full sm:w-auto"
+					aria-label="Refresh Data"
+					disabled={isRefreshing}
+				>
+					<RefreshCw size={16} class={isRefreshing ? 'animate-spin' : ''} />
+					<span class="sm:hidden">Refresh Data</span>
+				</button>
 			</div>
 		</div>
 	</div>
@@ -241,7 +277,9 @@
 								<td class="text-xs text-base-content/60">{fmtDate(p.createdAt)}</td>
 								<td>
 									<div class="font-medium text-sm">{p.nama}</div>
-									<div class="text-xs text-base-content/50 truncate max-w-36">{p.alamat}</div>
+									<div class="tooltip tooltip-bottom before:text-xs before:max-w-[200px] before:whitespace-normal" data-tip={p.alamat}>
+										<div class="text-xs text-base-content/50 truncate max-w-36 text-left cursor-help hover:text-base-content/80 transition-colors">{p.alamat}</div>
+									</div>
 								</td>
 								<td class="text-sm">{p.namaMursyid}</td>
 								<td>
@@ -265,11 +303,14 @@
 								</td>
 								<td>
 									{#if p.status}
+										{@const Icon = statusConfig[p.status].icon}
 										<span class="badge badge-sm {statusConfig[p.status].badge} gap-1">
-											{statusConfig[p.status].icon} {p.status === 'hijau' ? 'Dihaturkan' : p.status === 'kuning' ? 'Diperbaiki' : 'Dikembalikan'}
+											<Icon size={12} /> {p.status === 'hijau' ? 'Dihaturkan' : p.status === 'kuning' ? 'Diperbaiki' : 'Dikembalikan'}
 										</span>
 									{:else}
-										<span class="badge badge-sm badge-ghost">⬜ Belum</span>
+										<span class="badge badge-sm badge-ghost gap-1">
+											<CircleDashed size={12} /> Belum
+										</span>
 									{/if}
 								</td>
 								<td>
@@ -297,11 +338,14 @@
 								<span class="text-xs text-base-content/50 ml-2">{fmtDate(p.createdAt)}</span>
 							</div>
 							{#if p.status}
+								{@const Icon = statusConfig[p.status].icon}
 								<span class="badge badge-sm {statusConfig[p.status].badge}">
-									{statusConfig[p.status].icon}
+									<Icon size={12} />
 								</span>
 							{:else}
-								<span class="badge badge-sm badge-ghost">⬜</span>
+								<span class="badge badge-sm badge-ghost">
+									<CircleDashed size={12} />
+								</span>
 							{/if}
 						</div>
 						<div class="grid grid-cols-2 gap-2 text-sm">
@@ -312,6 +356,10 @@
 							<div>
 								<p class="text-xs text-base-content/50 flex items-center gap-1"><Users size={10}/> Mursyid</p>
 								<p class="font-medium">{p.namaMursyid}</p>
+							</div>
+							<div class="col-span-2">
+								<p class="text-xs text-base-content/50 flex items-center gap-1"><MapPin size={10}/> Alamat</p>
+								<p class="font-medium leading-tight">{p.alamat}</p>
 							</div>
 						</div>
 						<div>
@@ -349,8 +397,8 @@
 		aria-modal="true"
 		aria-label="Beri label pertanyaan"
 	>
-		<div class="card bg-base-100 w-full max-w-lg shadow-2xl">
-			<div class="card-body gap-4">
+		<div class="card bg-base-100 w-full max-w-lg shadow-2xl max-h-full">
+			<div class="card-body gap-4 overflow-y-auto">
 				<!-- Modal Header -->
 				<div class="flex items-center justify-between">
 					<div>
@@ -408,7 +456,7 @@
 								/>
 								<div class="flex items-center gap-3 p-3 rounded-xl border-2 transition-all
 									{selectedStatus === '' ? 'border-base-content/40 bg-base-200' : 'border-base-200 hover:border-base-300'}">
-									<span class="text-xl">⬜</span>
+									<CircleDashed size={24} class="text-base-content/40" />
 									<div>
 										<p class="font-medium text-sm">Belum Diproses</p>
 										<p class="text-xs text-base-content/50">Hapus label / tandai belum diproses</p>
@@ -427,7 +475,7 @@
 								/>
 								<div class="flex items-center gap-3 p-3 rounded-xl border-2 transition-all
 									{selectedStatus === 'hijau' ? 'border-success bg-success/10' : 'border-base-200 hover:border-success/40'}">
-									<span class="text-xl">🟢</span>
+									<CheckCircle2 size={24} class="text-success" />
 									<div>
 										<p class="font-medium text-sm">Dihaturkan kepada Syekh</p>
 										<p class="text-xs text-base-content/50">Pertanyaan layak disampaikan langsung</p>
@@ -446,7 +494,7 @@
 								/>
 								<div class="flex items-center gap-3 p-3 rounded-xl border-2 transition-all
 									{selectedStatus === 'kuning' ? 'border-warning bg-warning/10' : 'border-base-200 hover:border-warning/40'}">
-									<span class="text-xl">🟡</span>
+									<AlertCircle size={24} class="text-warning" />
 									<div>
 										<p class="font-medium text-sm">Diperbaiki Redaksinya</p>
 										<p class="text-xs text-base-content/50">Perlu penyesuaian, lalu diajukan</p>
@@ -465,7 +513,7 @@
 								/>
 								<div class="flex items-center gap-3 p-3 rounded-xl border-2 transition-all
 									{selectedStatus === 'merah' ? 'border-error bg-error/10' : 'border-base-200 hover:border-error/40'}">
-									<span class="text-xl">🔴</span>
+									<XCircle size={24} class="text-error" />
 									<div>
 										<p class="font-medium text-sm">Dikembalikan kepada Mursyid</p>
 										<p class="text-xs text-base-content/50">Pertanyaan dikembalikan untuk ditangani mursyid</p>

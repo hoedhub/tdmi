@@ -76,7 +76,7 @@
 		{:else}
 			<div class="card bg-base-100 shadow-2xl border border-base-300/50">
 				<div class="card-body p-8">
-					<form action="?/default" method="post" use:enhance={handleSubmit} class="space-y-6">
+					<form method="post" use:enhance={handleSubmit} class="space-y-6">
 						<!-- Honeypot -->
 						<div class="hidden">
 							<label for="website">Website</label>
