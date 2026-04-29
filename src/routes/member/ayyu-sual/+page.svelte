@@ -176,68 +176,68 @@
 	</div>
 
 	<!-- Filter Bar -->
-	<div class="card bg-base-100 shadow-sm">
-		<div class="card-body p-4 flex flex-wrap items-center gap-4">
-			<!-- Month Navigator -->
-			<div class="flex items-center gap-2">
-				<button
-					onclick={() => navigateMonth(-1)}
-					class="btn btn-ghost btn-sm btn-circle"
-					aria-label="Bulan sebelumnya"
-				>
-					<ChevronLeft size={16} />
-				</button>
-				<div class="flex items-center gap-2 min-w-36 justify-center">
-					<Calendar size={16} class="text-primary" />
-					<span class="font-semibold text-sm">
-						{MONTHS[data.filterMonth - 1]} {data.filterYear}
-					</span>
-				</div>
-				<button
-					onclick={() => navigateMonth(1)}
-					class="btn btn-ghost btn-sm btn-circle"
-					aria-label="Bulan berikutnya"
-				>
-					<ChevronRight size={16} />
-				</button>
+	<div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-2 md:p-3 flex flex-col xl:flex-row items-center justify-between gap-3">
+		<!-- Month Navigator -->
+		<div class="flex items-center gap-1 xl:gap-2 justify-center w-full xl:w-auto">
+			<button
+				onclick={() => navigateMonth(-1)}
+				class="btn btn-ghost btn-sm btn-circle"
+				aria-label="Bulan sebelumnya"
+			>
+				<ChevronLeft size={16} />
+			</button>
+			<div class="flex items-center gap-2 min-w-32 justify-center px-2">
+				<Calendar size={16} class="text-primary" />
+				<span class="font-semibold text-sm whitespace-nowrap">
+					{MONTHS[data.filterMonth - 1]} {data.filterYear}
+				</span>
 			</div>
+			<button
+				onclick={() => navigateMonth(1)}
+				class="btn btn-ghost btn-sm btn-circle"
+				aria-label="Bulan berikutnya"
+			>
+				<ChevronRight size={16} />
+			</button>
+		</div>
 
-			<div class="divider divider-horizontal mx-0 hidden sm:flex"></div>
+		<div class="hidden xl:block w-px h-6 bg-base-300"></div>
 
-			<!-- Status Filter -->
-			<div class="flex items-center gap-2 flex-wrap">
-				<Filter size={14} class="text-base-content/50" />
-				{#each [
-					{ val: 'semua', label: 'Semua', icon: null },
-					{ val: 'belum', label: 'Belum', icon: CircleDashed },
-					{ val: 'hijau', label: 'Dihaturkan', icon: CheckCircle2 },
-					{ val: 'kuning', label: 'Diperbaiki', icon: AlertCircle },
-					{ val: 'merah', label: 'Dikembalikan', icon: XCircle }
-				] as f}
-					<button
-						onclick={() => setStatus(f.val)}
-						class="btn btn-xs {data.filterStatus === f.val ? 'btn-primary' : 'btn-ghost'} gap-1"
-					>
-						{#if f.icon}
-							{@const Icon = f.icon}
-							<Icon size={12} />
-						{/if}
-						{f.label}
-					</button>
-				{/each}
+		<!-- Status Filter & Refresh -->
+		<div class="flex items-center justify-between w-full xl:w-auto gap-3">
+			<div class="flex items-center gap-1 overflow-x-auto hide-scrollbar pb-1 md:pb-0 w-full xl:w-auto justify-center xl:justify-start">
+				<Filter size={14} class="text-base-content/50 shrink-0 mx-1 hidden sm:block" />
+				<div class="flex items-center gap-1">
+					{#each [
+						{ val: 'semua', label: 'Semua', icon: null },
+						{ val: 'belum', label: 'Belum', icon: CircleDashed },
+						{ val: 'hijau', label: 'Dihaturkan', icon: CheckCircle2 },
+						{ val: 'kuning', label: 'Diperbaiki', icon: AlertCircle },
+						{ val: 'merah', label: 'Dikembalikan', icon: XCircle }
+					] as f}
+						<button
+							onclick={() => setStatus(f.val)}
+							class="btn btn-xs shrink-0 {data.filterStatus === f.val ? 'btn-primary shadow-sm' : 'btn-ghost hover:bg-base-200'} gap-1 font-medium rounded-lg"
+						>
+							{#if f.icon}
+								{@const Icon = f.icon}
+								<Icon size={12} />
+							{/if}
+							{f.label}
+						</button>
+					{/each}
+				</div>
 			</div>
 
 			<!-- Refresh Button -->
-			<div class="flex-1 hidden md:block"></div>
-			<div class="tooltip tooltip-left w-full sm:w-auto text-right" data-tip="Muat ulang data">
+			<div class="tooltip tooltip-left shrink-0" data-tip="Muat ulang data">
 				<button 
 					onclick={refreshData}
-					class="btn btn-ghost btn-sm sm:btn-circle w-full sm:w-auto"
+					class="btn btn-ghost btn-sm btn-circle"
 					aria-label="Refresh Data"
 					disabled={isRefreshing}
 				>
-					<RefreshCw size={16} class={isRefreshing ? 'animate-spin' : ''} />
-					<span class="sm:hidden">Refresh Data</span>
+					<RefreshCw size={16} class={isRefreshing ? 'animate-spin text-primary' : 'text-base-content/70 hover:text-base-content'} />
 				</button>
 			</div>
 		</div>
@@ -256,9 +256,9 @@
 		</div>
 	{:else}
 		<!-- Desktop Table -->
-		<div class="card bg-base-100 shadow-sm overflow-hidden hidden md:block">
-			<div class="overflow-x-auto">
-				<table class="table table-sm">
+		<div class="card bg-base-100 shadow-sm overflow-hidden hidden md:block border border-base-200">
+			<div class="overflow-x-auto overflow-y-auto max-h-[calc(100vh-240px)]">
+				<table class="table table-sm table-pin-rows">
 					<thead class="bg-base-200">
 						<tr>
 							<th class="w-24">No. Tiket</th>
