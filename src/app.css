@@ -8,6 +8,13 @@
 
 /* Tambahkan gaya kustom ke layer 'base' Tailwind */
 @layer base {
+	html.ui-scale-90 {
+		font-size: 90%;
+	}
+	html.ui-scale-80 {
+		font-size: 80%;
+	}
+
 	@font-face {
 		font-family: 'Noto Naskh Arabic';
 		font-style: normal;

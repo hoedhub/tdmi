@@ -11,6 +11,7 @@
 					const defaultTheme = 'slack-pro-light';
 					let theme = defaultTheme;
 					let isCollapsed = false;
+					let uiScale = '90'; // Default is middle level (90%)
 
 					// Get the last active user ID to find their preferences
 					const lastActiveUser = localStorage.getItem('lastActiveUser');
@@ -28,12 +29,23 @@
 						if (savedSidebarState) {
 							isCollapsed = JSON.parse(savedSidebarState);
 						}
+
+						// --- UI SCALE LOGIC ---
+						const savedUiScale = localStorage.getItem(`${lastActiveUser}-ui-scale`);
+						if (savedUiScale) {
+							uiScale = JSON.parse(savedUiScale);
+						}
 					}
 
 					// Apply the determined settings
 					document.documentElement.setAttribute('data-theme', theme);
 					if (isCollapsed) {
 						document.documentElement.classList.add('sidebar-collapsed');
+					}
+					if (uiScale === '90') {
+						document.documentElement.classList.add('ui-scale-90');
+					} else if (uiScale === '80') {
+						document.documentElement.classList.add('ui-scale-80');
 					}
 				} catch (e) {
 					// Ignore errors in case localStorage is disabled or data is corrupt.

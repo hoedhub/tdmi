@@ -23,12 +23,19 @@
 		Menu as MenuIcon,
 		UserCircle,
 		Palette,
-		CalendarRange
+		CalendarRange,
+		Type
 	} from 'lucide-svelte';
 
 	// Initialize state from the class set by the inline script to prevent flash
 	let isSidebarCollapsed = $state(
 		typeof document !== 'undefined' && document.documentElement.classList.contains('sidebar-collapsed')
+	);
+	let uiScale = $state(
+		typeof document !== 'undefined' 
+			? (document.documentElement.classList.contains('ui-scale-80') ? '80' : 
+			   document.documentElement.classList.contains('ui-scale-90') ? '90' : '100')
+			: '90'
 	);
 	let isSidebarOpen = $state(false); // For mobile drawer state
 	let userButtonEl: HTMLButtonElement | undefined = $state();
@@ -59,6 +66,18 @@
 		setPreference($page.data.user, 'sidebar-collapsed', isSidebarCollapsed);
 	}
 
+	function toggleUiScale() {
+		if (uiScale === '100') uiScale = '90';
+		else if (uiScale === '90') uiScale = '80';
+		else uiScale = '100';
+
+		document.documentElement.classList.remove('ui-scale-90', 'ui-scale-80');
+		if (uiScale === '90') document.documentElement.classList.add('ui-scale-90');
+		else if (uiScale === '80') document.documentElement.classList.add('ui-scale-80');
+		
+		setPreference($page.data.user, 'ui-scale', uiScale);
+	}
+
 	function showTooltip(event: MouseEvent, content: string) {
 		if (isSidebarCollapsed) {
 			const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
@@ -74,6 +93,9 @@
 		// Ensure the component's reactive state is correct on mount, reading from the DOM
 		// which was set by the early script.
 		isSidebarCollapsed = document.documentElement.classList.contains('sidebar-collapsed');
+		if (document.documentElement.classList.contains('ui-scale-80')) uiScale = '80';
+		else if (document.documentElement.classList.contains('ui-scale-90')) uiScale = '90';
+		else uiScale = '100';
 	});
 
 	// When the store changes, update the data-theme attribute
@@ -245,6 +267,22 @@
 					class="mt-auto flex flex-col space-y-2 p-4 pt-4"
 					class:md:items-center={isSidebarCollapsed}
 				>
+					<!-- UI Scale Toggle -->
+					<button
+						onclick={toggleUiScale}
+						class="btn btn-ghost"
+						class:w-full={!isSidebarCollapsed}
+						class:justify-start={!isSidebarCollapsed}
+						class:md:justify-center={isSidebarCollapsed}
+						class:md:px-0={isSidebarCollapsed}
+						class:md:btn-circle={isSidebarCollapsed}
+						onmouseenter={(e) => showTooltip(e, 'Kecilkan UI')}
+						onmouseleave={hideTooltip}
+					>
+						<Type size={24} />
+						<span class:md:hidden={isSidebarCollapsed} class="truncate sidebar-label">Ukuran UI: {uiScale}%</span>
+					</button>
+
 					<!-- Theme Picker -->
 					<button
 						bind:this={themeButtonEl}

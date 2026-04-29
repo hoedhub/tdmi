@@ -177,3 +177,18 @@ _Keeping the project healthy._
    - Continuously monitor/optimize based on usage patterns.
 
 ---
+
+# Database Safety Protocol - TDMI
+
+ATURAN KRITIKAL: Backup sebelum Eksekusi.
+
+Setiap kali melakukan operasi yang memodifikasi skema atau data (Seeding, Migrations, Manual Updates):
+
+1. **Identifikasi Tabel Terkait:** Cek tabel mana yang akan terkena dampak.
+2. **Lakukan Backup:**
+   - Gunakan perintah `.dump` sqlite atau script export JSON.
+   - Simpan di folder `src/lib/drizzle/backups/`.
+3. **Verifikasi Relasi:** Periksa apakah ada `ON DELETE CASCADE` yang bisa menyebabkan data di tabel lain terhapus secara tidak sengaja (seperti kasus `user_roles`).
+4. **Eksekusi & Validasi:** Jalankan perubahan dan segera cek aksesitas user utama.
+
+*Protokol ini dibuat atas instruksi User untuk mencegah kehilangan data akses Admin.*
