@@ -17,12 +17,6 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const paramMonth = parseInt(url.searchParams.get('month') ?? String(now.getMonth() + 1));
 	const paramStatus = url.searchParams.get('status') ?? 'semua';
 
-	// Rentang tanggal bulan yang dipilih
-	const startDate = `${paramYear}-${String(paramMonth).padStart(2, '0')}-01`;
-	const nextMonth = paramMonth === 12 ? 1 : paramMonth + 1;
-	const nextYear = paramMonth === 12 ? paramYear + 1 : paramYear;
-	const endDate = `${nextYear}-${String(nextMonth).padStart(2, '0')}-01`;
-
 	// Query pertanyaan dengan filter
 	let query = db
 		.select({
@@ -33,6 +27,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			namaMursyid: pertanyaanAhbabTable.namaMursyid,
 			pertanyaan: pertanyaanAhbabTable.pertanyaan,
 			createdAt: pertanyaanAhbabTable.createdAt,
+			periodeMonth: pertanyaanAhbabTable.periodeMonth,
+			periodeYear: pertanyaanAhbabTable.periodeYear,
 			status: pertanyaanAhbabTable.status,
 			statusCatatan: pertanyaanAhbabTable.statusCatatan,
 			statusUpdatedAt: pertanyaanAhbabTable.statusUpdatedAt,
@@ -41,8 +37,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		.from(pertanyaanAhbabTable)
 		.where(
 			and(
-				gte(pertanyaanAhbabTable.createdAt, startDate),
-				lt(pertanyaanAhbabTable.createdAt, endDate),
+				eq(pertanyaanAhbabTable.periodeMonth, paramMonth),
+				eq(pertanyaanAhbabTable.periodeYear, paramYear),
 				paramStatus !== 'semua'
 					? paramStatus === 'belum'
 						? sql`${pertanyaanAhbabTable.status} IS NULL`
@@ -73,6 +69,34 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 };
 
 export const actions: Actions = {
+	movePeriod: async ({ request, locals }) => {
+		if (!locals.user) throw redirect(302, '/login');
+
+		const canAccess = await userHasPermission(locals.user.id, 'perm-ayyu-sual-access');
+		if (!canAccess) return fail(403, { msg: 'Akses ditolak.' });
+
+		const formData = await request.formData();
+		const id = parseInt(formData.get('id') as string);
+		const targetMonth = parseInt(formData.get('targetMonth') as string);
+		const targetYear = parseInt(formData.get('targetYear') as string);
+
+		if (!id || isNaN(id) || !targetMonth || !targetYear || isNaN(targetMonth) || isNaN(targetYear)) {
+			return fail(400, { msg: 'Input tidak valid.' });
+		}
+
+		await db
+			.update(pertanyaanAhbabTable)
+			.set({
+				periodeMonth: targetMonth,
+				periodeYear: targetYear,
+				statusUpdatedAt: new Date().toISOString(),
+				statusUpdatedBy: locals.user.id
+			})
+			.where(eq(pertanyaanAhbabTable.id, id));
+
+		return { success: true };
+	},
+
 	updateStatus: async ({ request, locals }) => {
 		if (!locals.user) throw redirect(302, '/login');
 

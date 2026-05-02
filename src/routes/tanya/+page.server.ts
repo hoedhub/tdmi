@@ -26,9 +26,30 @@ export const actions: Actions = {
 		}
 
 		try {
+			const now = new Date();
+			let pMonth = now.getMonth() + 1;
+			let pYear = now.getFullYear();
+
+			// Jika melebihi tanggal 28, masuk ke periode bulan selanjutnya
+			if (now.getDate() > 28) {
+				pMonth++;
+				if (pMonth > 12) {
+					pMonth = 1;
+					pYear++;
+				}
+			}
+
 			const result = await db
 				.insert(pertanyaanAhbabTable)
-				.values({ nama, alamat, email, namaMursyid, pertanyaan })
+				.values({ 
+					nama, 
+					alamat, 
+					email, 
+					namaMursyid, 
+					pertanyaan,
+					periodeMonth: pMonth,
+					periodeYear: pYear 
+				})
 				.returning({ id: pertanyaanAhbabTable.id, createdAt: pertanyaanAhbabTable.createdAt });
 
 			const inserted = result[0];

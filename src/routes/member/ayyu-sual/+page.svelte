@@ -21,7 +21,9 @@
 		RefreshCw,
 		XCircle,
 		AlertCircle,
-		CircleDashed
+		CircleDashed,
+		ArrowRightLeft,
+		Mail
 	} from 'lucide-svelte';
 	import type { PageData, ActionData } from './$types';
 	import type { PertanyaanStatus } from '$lib/drizzle/schema';
@@ -30,10 +32,13 @@
 
 	// Modal state
 	let modalOpen = $state(false);
+	let moveModalOpen = $state(false);
 	let expandedId = $state<number | null>(null);
 	let selectedPertanyaan = $state<(typeof data.pertanyaan)[0] | null>(null);
 	let selectedStatus = $state<PertanyaanStatus | ''>('');
 	let catatanValue = $state('');
+	let targetMonth = $state<number>(1);
+	let targetYear = $state<number>(new Date().getFullYear());
 	let isSubmitting = $state(false);
 	let isRefreshing = $state(false);
 
@@ -52,6 +57,18 @@
 
 	function closeModal() {
 		modalOpen = false;
+		selectedPertanyaan = null;
+	}
+
+	function openMoveModal(p: (typeof data.pertanyaan)[0]) {
+		selectedPertanyaan = p;
+		targetMonth = p.periodeMonth ?? data.filterMonth;
+		targetYear = p.periodeYear ?? data.filterYear;
+		moveModalOpen = true;
+	}
+
+	function closeMoveModal() {
+		moveModalOpen = false;
 		selectedPertanyaan = null;
 	}
 
@@ -277,6 +294,9 @@
 								<td class="text-xs text-base-content/60">{fmtDate(p.createdAt)}</td>
 								<td>
 									<div class="font-medium text-sm">{p.nama}</div>
+									<a href="mailto:{p.email}" class="text-xs text-primary/70 hover:underline flex items-center gap-1 mb-1" title="Kirim Email">
+										<Mail size={10} /> {p.email}
+									</a>
 									<div class="tooltip tooltip-bottom before:text-xs before:max-w-[200px] before:whitespace-normal" data-tip={p.alamat}>
 										<div class="text-xs text-base-content/50 truncate max-w-36 text-left cursor-help hover:text-base-content/80 transition-colors">{p.alamat}</div>
 									</div>
@@ -314,10 +334,19 @@
 									{/if}
 								</td>
 								<td>
-									<button
-										onclick={() => openModal(p)}
-										class="btn btn-xs btn-primary btn-outline"
-									>Label</button>
+									<div class="flex items-center gap-1">
+										<button
+											onclick={() => openModal(p)}
+											class="btn btn-xs btn-primary btn-outline"
+										>Label</button>
+										<button
+											onclick={() => openMoveModal(p)}
+											class="btn btn-xs btn-ghost btn-square tooltip tooltip-left"
+											data-tip="Pindah Periode"
+										>
+											<ArrowRightLeft size={14} class="text-base-content/60" />
+										</button>
+									</div>
 								</td>
 							</tr>
 						{/each}
@@ -352,6 +381,9 @@
 							<div>
 								<p class="text-xs text-base-content/50 flex items-center gap-1"><User size={10}/> Nama</p>
 								<p class="font-medium">{p.nama}</p>
+								<a href="mailto:{p.email}" class="text-xs text-primary/70 hover:underline flex items-center gap-1 mt-0.5">
+									<Mail size={10} /> {p.email}
+								</a>
 							</div>
 							<div>
 								<p class="text-xs text-base-content/50 flex items-center gap-1"><Users size={10}/> Mursyid</p>
@@ -379,9 +411,14 @@
 								📝 {p.statusCatatan}
 							</div>
 						{/if}
-						<button onclick={() => openModal(p)} class="btn btn-sm btn-primary btn-outline w-full">
-							<Tag size={14} /> Beri Label
-						</button>
+						<div class="flex gap-2 w-full mt-2">
+							<button onclick={() => openModal(p)} class="btn btn-sm btn-primary btn-outline flex-1">
+								<Tag size={14} /> Beri Label
+							</button>
+							<button onclick={() => openMoveModal(p)} class="btn btn-sm btn-ghost btn-square border border-base-200">
+								<ArrowRightLeft size={14} class="text-base-content/60" />
+							</button>
+						</div>
 					</div>
 				</div>
 			{/each}
@@ -416,6 +453,9 @@
 						<div>
 							<span class="text-xs text-base-content/50">Nama:</span>
 							<p class="font-medium">{selectedPertanyaan.nama}</p>
+							<a href="mailto:{selectedPertanyaan.email}" class="text-xs text-primary/70 hover:underline flex items-center gap-1 mt-0.5">
+								<Mail size={10} /> {selectedPertanyaan.email}
+							</a>
 						</div>
 						<div>
 							<span class="text-xs text-base-content/50">Mursyid:</span>
@@ -545,6 +585,72 @@
 								<span class="loading loading-spinner loading-sm"></span>
 							{/if}
 							Simpan Label
+						</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+{/if}
+
+<!-- Move Period Modal -->
+{#if moveModalOpen && selectedPertanyaan}
+	<div
+		class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+		role="dialog"
+		aria-modal="true"
+	>
+		<div class="card bg-base-100 w-full max-w-sm shadow-2xl max-h-full">
+			<div class="card-body gap-4 overflow-y-auto">
+				<div class="flex items-center justify-between">
+					<div>
+						<h3 class="text-lg font-bold">Pindah Periode</h3>
+						<p class="text-sm text-base-content/60 font-mono">{fmtTicket(selectedPertanyaan.id)}</p>
+					</div>
+					<button onclick={closeMoveModal} class="btn btn-ghost btn-sm btn-circle">
+						<X size={18} />
+					</button>
+				</div>
+
+				<p class="text-sm">Pindahkan pertanyaan dari <strong>{selectedPertanyaan.nama}</strong> ke periode lain.</p>
+
+				<form
+					method="POST"
+					action="?/movePeriod"
+					use:enhance={() => {
+						isSubmitting = true;
+						return async ({ result, update }) => {
+							isSubmitting = false;
+							await update();
+							if (result.type === 'success') closeMoveModal();
+						};
+					}}
+					class="space-y-4"
+				>
+					<input type="hidden" name="id" value={selectedPertanyaan.id} />
+
+					<div class="grid grid-cols-2 gap-3">
+						<div class="form-control">
+							<label class="label"><span class="label-text">Bulan</span></label>
+							<select name="targetMonth" bind:value={targetMonth} class="select select-bordered w-full">
+								{#each MONTHS as m, i}
+									<option value={i + 1}>{m}</option>
+								{/each}
+							</select>
+						</div>
+						<div class="form-control">
+							<label class="label"><span class="label-text">Tahun</span></label>
+							<input type="number" name="targetYear" bind:value={targetYear} class="input input-bordered w-full" min="2000" max="2100" />
+						</div>
+					</div>
+
+					<div class="flex gap-2 pt-2">
+						<button type="button" onclick={closeMoveModal} class="btn btn-ghost flex-1">Batal</button>
+						<button type="submit" class="btn btn-primary flex-1" disabled={isSubmitting}>
+							{#if isSubmitting}
+								<span class="loading loading-spinner loading-sm"></span>
+							{/if}
+							Pindahkan
 						</button>
 					</div>
 				</form>

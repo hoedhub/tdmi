@@ -272,6 +272,8 @@ export const pertanyaanAhbabTable = sqliteTable(
 		createdAt: text('created_at')
 			.default(sql`CURRENT_TIMESTAMP`)
 			.notNull(),
+		periodeMonth: integer('periode_month'),
+		periodeYear: integer('periode_year'),
 		// Kolom untuk sistem labeling Ayyu Su'aal
 		status: text('status').$type<PertanyaanStatus>(),
 		statusCatatan: text('status_catatan'),
