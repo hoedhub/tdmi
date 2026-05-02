@@ -1,13 +1,19 @@
-import { Resend } from 'resend';
-import { RESEND_API_KEY } from '$env/static/private';
+import nodemailer from 'nodemailer';
+import { SMTP_EMAIL, SMTP_PASSWORD } from '$env/static/private';
 
-let resend: Resend | null = null;
+let transporter: nodemailer.Transporter | null = null;
 
-function getResend(): Resend {
-	if (!resend) {
-		resend = new Resend(RESEND_API_KEY);
+function getTransporter() {
+	if (!transporter) {
+		transporter = nodemailer.createTransport({
+			service: 'gmail',
+			auth: {
+				user: SMTP_EMAIL,
+				pass: SMTP_PASSWORD
+			}
+		});
 	}
-	return resend;
+	return transporter;
 }
 
 export interface TicketEmailData {
@@ -29,8 +35,8 @@ export async function sendTicketConfirmationEmail(data: TicketEmailData): Promis
 				? data.pertanyaan.substring(0, 80) + '...'
 				: data.pertanyaan;
 
-		const { error } = await getResend().emails.send({
-			from: 'TDMI <noreply@tdmi.id>',
+		await getTransporter().sendMail({
+			from: `"TDMI" <${SMTP_EMAIL}>`,
 			to: data.to,
 			subject: `[TDMI] Konfirmasi Pertanyaan ${ticketCode}`,
 			html: `
@@ -50,7 +56,7 @@ export async function sendTicketConfirmationEmail(data: TicketEmailData): Promis
           <tr>
             <td style="background:linear-gradient(135deg,#1d4ed8,#7c3aed);padding:32px 40px;text-align:center;">
               <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:700;letter-spacing:1px;">TDMI</h1>
-              <p style="margin:6px 0 0;color:rgba(255,255,255,0.8);font-size:14px;">Thariqah Qadiriyah Naqsyabandiyah</p>
+              <p style="margin:6px 0 0;color:rgba(255,255,255,0.8);font-size:14px;">Thariqah Dusuqiyah Muhammadiyah Indonesia</p>
             </td>
           </tr>
           <!-- Body -->
@@ -110,11 +116,6 @@ export async function sendTicketConfirmationEmail(data: TicketEmailData): Promis
 </html>
       `
 		});
-
-		if (error) {
-			console.error('Resend error:', error);
-			return false;
-		}
 
 		return true;
 	} catch (err) {
