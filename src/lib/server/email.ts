@@ -54,7 +54,7 @@ export async function sendTicketConfirmationEmail(data: TicketEmailData): Promis
         <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
           <!-- Header -->
           <tr>
-            <td style="background:linear-gradient(135deg,#1d4ed8,#7c3aed);padding:32px 40px;text-align:center;">
+            <td style="background:linear-gradient(135deg,#15803d,#16a34a);padding:32px 40px;text-align:center;">
               <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:700;letter-spacing:1px;">TDMI</h1>
               <p style="margin:6px 0 0;color:rgba(255,255,255,0.8);font-size:14px;">Thariqah Dusuqiyah Muhammadiyah Indonesia</p>
             </td>
@@ -71,9 +71,9 @@ export async function sendTicketConfirmationEmail(data: TicketEmailData): Promis
               <!-- Ticket Box -->
               <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
                 <tr>
-                  <td style="background:#eff6ff;border:2px solid #bfdbfe;border-radius:10px;padding:24px;text-align:center;">
-                    <p style="margin:0 0 6px;color:#3b82f6;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:1px;">Nomor Tiket Anda</p>
-                    <p style="margin:0;color:#1d4ed8;font-size:32px;font-weight:800;font-family:monospace;letter-spacing:4px;">${ticketCode}</p>
+                  <td style="background:#f0fdf4;border:2px solid #bbf7d0;border-radius:10px;padding:24px;text-align:center;">
+                    <p style="margin:0 0 6px;color:#22c55e;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:1px;">Nomor Tiket Anda</p>
+                    <p style="margin:0;color:#15803d;font-size:32px;font-weight:800;font-family:monospace;letter-spacing:4px;">${ticketCode}</p>
                     <p style="margin:8px 0 0;color:#6b7280;font-size:12px;">Simpan nomor ini untuk melacak pertanyaan Anda</p>
                   </td>
                 </tr>
@@ -82,7 +82,7 @@ export async function sendTicketConfirmationEmail(data: TicketEmailData): Promis
               <!-- Question Summary -->
               <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
                 <tr>
-                  <td style="background:#f9fafb;border-radius:8px;border-left:4px solid #6366f1;padding:16px 20px;">
+                  <td style="background:#f9fafb;border-radius:8px;border-left:4px solid #16a34a;padding:16px 20px;">
                     <p style="margin:0 0 6px;color:#6b7280;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Pertanyaan Anda</p>
                     <p style="margin:0;color:#374151;font-size:14px;line-height:1.6;font-style:italic;">"${pertanyaanRingkas}"</p>
                   </td>
