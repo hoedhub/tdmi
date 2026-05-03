@@ -429,7 +429,7 @@
 <!-- Label Modal -->
 {#if modalOpen && selectedPertanyaan}
 	<div
-		class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+		class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
 		role="dialog"
 		aria-modal="true"
 		aria-label="Beri label pertanyaan"
@@ -596,7 +596,7 @@
 <!-- Move Period Modal -->
 {#if moveModalOpen && selectedPertanyaan}
 	<div
-		class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+		class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
 		role="dialog"
 		aria-modal="true"
 	>

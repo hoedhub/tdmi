@@ -27,7 +27,7 @@
 {#if $absoluteDropdownStore.isOpen && $absoluteDropdownStore.component}
 	<!-- svelte-ignore a11y_click_events_have_key_events -->
 	<div
-		class="fixed inset-0 z-40"
+		class="fixed inset-0 z-[80]"
 		aria-hidden="true"
 		onclick={self(absoluteDropdownStore.close)}
 	></div>
@@ -35,7 +35,7 @@
 	<div
 		bind:this={menuElement}
 		style={menuStyle}
-		class="fixed z-50 rounded-box bg-base-300 shadow-lg"
+		class="fixed z-[90] rounded-box bg-base-300 shadow-lg"
 	>
 		<SvelteComponent {...$absoluteDropdownStore.data} />
 	</div>

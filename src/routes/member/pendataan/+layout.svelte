@@ -30,7 +30,7 @@
 {@render children()}
 
 <!-- Floating Sync Button -->
-<div class="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-2 pointer-events-none">
+<div class="fixed bottom-6 right-6 z-[80] flex flex-col items-end gap-2 pointer-events-none">
 	<div class="pointer-events-auto">
 		<div class="tooltip tooltip-left lg:tooltip-top" data-tip="Perbarui Cache Murid">
 			<button

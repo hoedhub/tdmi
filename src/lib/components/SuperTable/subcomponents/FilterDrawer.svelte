@@ -52,7 +52,7 @@
 </script>
 
 {#if isOpen}
-	<div class="relative z-50" aria-labelledby="drawer-title" role="dialog" aria-modal="true">
+	<div class="relative z-[100]" aria-labelledby="drawer-title" role="dialog" aria-modal="true">
 		<!-- 1. Backdrop / Overlay -->
 		<button
 			class="fixed inset-0 bg-gray-500/75"

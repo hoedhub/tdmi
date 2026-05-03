@@ -119,7 +119,7 @@
 	<!-- Page Content -->
 	<div class="drawer-content flex flex-col bg-base-100">
 		<!-- Navbar for Mobile -->
-		<div class="navbar sticky top-0 z-30 bg-base-200 shadow md:hidden">
+		<div class="navbar sticky top-0 z-40 bg-base-200 shadow md:hidden">
 			<div class="flex-none">
 				<label
 					for="sidebar-drawer-toggle"
@@ -149,7 +149,7 @@
 
 	<!-- Sidebar -->
 	<aside
-		class="drawer-side z-30 transition-all duration-300 shadow-sidebar"
+		class="drawer-side z-[60] transition-all duration-300 shadow-sidebar"
 		class:collapsed={isSidebarCollapsed}
 	>
 		<label for="sidebar-drawer-toggle" aria-label="close sidebar" class="drawer-overlay"></label>
@@ -328,7 +328,7 @@
 	<!-- Toggle Button (Desktop Only) -->
 	<button
 		onclick={toggleSidebar}
-		class="fixed z-40 hidden top-1/2 -translate-y-1/2 transition-all duration-300 md:flex items-center justify-center bg-neutral text-neutral-content hover:brightness-110 rounded-r-md shadow-lg sidebar-toggle-btn w-5 h-12"
+		class="fixed z-[70] hidden top-1/2 -translate-y-1/2 transition-all duration-300 md:flex items-center justify-center bg-neutral text-neutral-content hover:brightness-110 rounded-r-md shadow-lg sidebar-toggle-btn w-5 h-12"
 		class:left-14={isSidebarCollapsed}
 		class:left-72={!isSidebarCollapsed}
 		aria-label="Toggle sidebar"
