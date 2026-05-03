@@ -351,14 +351,14 @@
 	<StatusForm bind:formData={internalFormData} {handleInput} />
 
 	<div
-		class="sticky bottom-0 flex w-full space-x-2 bg-white/20 p-2 backdrop-blur-xl backdrop-saturate-150 dark:bg-gray-800/20 dark:backdrop-brightness-125"
+		class="sticky bottom-0 flex flex-wrap sm:flex-nowrap w-full gap-2 bg-white/20 p-2 backdrop-blur-xl backdrop-saturate-150 dark:bg-gray-800/20 dark:backdrop-brightness-125"
 	>
 		{#if isFormModified}
 			<button
 				transition:scale={{ duration: 300 }}
 				type="button"
 				onclick={() => resetForm()}
-				class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:hover:border-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-700"
+				class="rounded-lg border border-gray-300 w-full sm:w-auto bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:hover:border-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-700"
 			>
 				Reset
 			</button>
@@ -367,7 +367,7 @@
 			type="button"
 			disabled={isSubmitting}
 			onclick={handleBatal}
-			class="btn btn-warning grow rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
+			class="btn btn-warning grow w-full sm:w-auto rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
 		>
 			Batal
 		</button>
@@ -376,7 +376,7 @@
 			name="action"
 			value="save-and-close"
 			disabled={isSubmitting}
-			class="btn btn-primary grow rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
+			class="btn btn-primary grow w-full sm:w-auto rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
 		>
 			{isSubmitting && submittingAction === 'save-and-close' ? 'Menyimpan...' : (formData ? 'Simpan' : 'Simpan & Tutup')}
 		</button>
@@ -386,7 +386,7 @@
 				name="action"
 				value="save-and-add"
 				disabled={isSubmitting}
-				class="btn btn-secondary grow rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
+				class="btn btn-secondary grow w-full sm:w-auto rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
 			>
 				{isSubmitting && submittingAction === 'save-and-add' ? 'Menyimpan...' : 'Simpan & Tambah Lagi'}
 			</button>

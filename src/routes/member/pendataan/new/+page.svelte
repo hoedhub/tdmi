@@ -51,7 +51,7 @@
 </script>
 
 <div class="card bg-base-100 shadow-xl">
-	<div class="card-body">
+	<div class="card-body p-4 sm:p-8">
 		<h1 class="card-title text-2xl">Tambah Murid Baru</h1>
 
 		<AddMuridForm propinsiList={data.propinsiList} />

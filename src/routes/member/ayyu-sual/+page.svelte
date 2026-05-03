@@ -221,10 +221,10 @@
 		<div class="hidden xl:block w-px h-6 bg-base-300"></div>
 
 		<!-- Status Filter & Refresh -->
-		<div class="flex items-center justify-between w-full xl:w-auto gap-3">
-			<div class="flex items-center gap-1 overflow-x-auto hide-scrollbar pb-1 md:pb-0 w-full xl:w-auto justify-center xl:justify-start">
+		<div class="flex items-center justify-between w-full xl:w-auto gap-2 min-w-0">
+			<div class="flex items-center gap-1 w-full min-w-0">
 				<Filter size={14} class="text-base-content/50 shrink-0 mx-1 hidden sm:block" />
-				<div class="flex items-center gap-1">
+				<div class="flex items-center gap-1 overflow-x-auto hide-scrollbar pb-1 md:pb-0 justify-start w-full pr-2">
 					{#each [
 						{ val: 'semua', label: 'Semua', icon: null },
 						{ val: 'belum', label: 'Belum', icon: CircleDashed },
