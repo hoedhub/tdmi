@@ -29,22 +29,13 @@ export const load: PageServerLoad = async ({ locals }) => {
 			throw error(403, 'Akses Ditolak. Anda tidak memiliki izin untuk membuat data murid baru.');
 		}
 
-		console.log('Mengambil daftar provinsi dari database...');
-		const propinsiList = await db.select().from(propTable).all();
-		console.log(`Berhasil mengambil ${propinsiList.length} provinsi.`);
-
-		return {
-			propinsiList
-		};
+		return {};
 	} catch (e: any) {
-		// Log error yang lebih detail ke konsol Vercel
 		console.error('Terjadi error kritis di fungsi load:', e);
-
-		// Tampilkan halaman error 500 yang lebih informatif (hanya jika dalam mode debug)
-		// Di production, Anda mungkin hanya ingin melempar error umum.
+		if (e.status) throw e;
 		throw error(
 			500,
-			`Terjadi kesalahan internal di server. Silakan periksa log Vercel. Pesan Error: ${e.message}`
+			`Terjadi kesalahan internal di server. Silakan periksa log. Pesan Error: ${e.message}`
 		);
 	}
 };

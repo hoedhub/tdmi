@@ -7,12 +7,32 @@
 	import { page } from '$app/stores';
 	import { themeStore } from '$lib/stores/themeStore';
 	import { tablePersistence } from '$lib/stores/tablePersistence.svelte';
+	import { db, CACHE_VERSION, clearWilayahCache } from '$lib/utils/db';
 
 	interface Props {
 		children?: import('svelte').Snippet;
 	}
 
 	let { children }: Props = $props();
+
+	// Check for wilayah cache version and clear if necessary
+	$effect(() => {
+		if (browser) {
+			const checkCacheVersion = async () => {
+				try {
+					const meta = await db.metadata.get('wilayah_version');
+					if (!meta || meta.value !== CACHE_VERSION) {
+						console.log('Cache wilayah kadaluarsa, membersihkan...');
+						await clearWilayahCache();
+						await db.metadata.put({ id: 'wilayah_version', value: CACHE_VERSION });
+					}
+				} catch (e) {
+					console.error('Gagal memeriksa versi cache wilayah:', e);
+				}
+			};
+			checkCacheVersion();
+		}
+	});
 
 	// This reactive statement will re-run whenever the user logs in or out.
 	$effect(() => {

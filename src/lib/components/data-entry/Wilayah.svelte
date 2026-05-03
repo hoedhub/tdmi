@@ -4,6 +4,7 @@
 	import { createEventDispatcher } from 'svelte';
 	import type { propTable, kokabTable, kecamatanTable, deskelTable } from '$lib/drizzle/schema';
 	import { type InferSelectModel } from 'drizzle-orm';
+	import { getWilayahCache, setWilayahCache } from '$lib/utils/db';
 
 	// --- TYPES ---
 	type Propinsi = InferSelectModel<typeof propTable>;
@@ -69,11 +70,21 @@
 		loadingPropinsi = true;
 		propinsiError = false;
 		try {
+			const cacheKey = 'tdmi_wilayah_propinsi';
+			const cached = await getWilayahCache(cacheKey);
+			if (cached) {
+				propinsiList = cached;
+				loadingPropinsi = false;
+				return;
+			}
+
 			const response = await fetch('/api/propinsi');
 			if (!response.ok) {
 				throw new Error(`HTTP error! status: ${response.status}`);
 			}
-			propinsiList = await response.json();
+			const data = await response.json();
+			propinsiList = data;
+			await setWilayahCache(cacheKey, data);
 		} catch (error) {
 			console.error('Error loading propinsi:', error);
 			propinsiError = true;
@@ -86,11 +97,20 @@
 	async function loadWilayahByDeskel(id: number) {
 		initialLoading = true;
 		try {
-			const response = await fetch(`/api/wilayah-by-deskel?deskelId=${id}`);
-			if (!response.ok) {
-				throw new Error(`Gagal memuat data wilayah: ${response.statusText}`);
+			const cacheKey = `tdmi_wilayah_by_deskel_${id}`;
+			const cached = await getWilayahCache(cacheKey);
+			let data;
+
+			if (cached) {
+				data = cached;
+			} else {
+				const response = await fetch(`/api/wilayah-by-deskel?deskelId=${id}`);
+				if (!response.ok) {
+					throw new Error(`Gagal memuat data wilayah: ${response.statusText}`);
+				}
+				data = await response.json();
+				await setWilayahCache(cacheKey, data);
 			}
-			const data = await response.json();
 
 			// Populate all the state variables from the API response
 			selectedPropinsi = data.selectedPropinsi;
@@ -129,11 +149,21 @@
 		kokabError = false; // Reset error state on new attempt
 		kokabList = []; // Clear previous list
 		try {
+			const cacheKey = `tdmi_wilayah_kokab_${selectedPropinsi.id}`;
+			const cached = await getWilayahCache(cacheKey);
+			if (cached) {
+				kokabList = cached;
+				loadingKokab = false;
+				return;
+			}
+
 			const response = await fetch(`/api/kokab?propinsiId=${selectedPropinsi.id}`);
 			if (!response.ok) {
 				throw new Error(`HTTP error! status: ${response.status}`);
 			}
-			kokabList = await response.json();
+			const data = await response.json();
+			kokabList = data;
+			await setWilayahCache(cacheKey, data);
 		} catch (error) {
 			console.error('Error loading kokab:', error);
 			kokabList = []; // Ensure list is an empty array on error
@@ -149,12 +179,22 @@
 		kecamatanError = false; // Reset
 		kecamatanList = []; // Clear previous list
 		try {
+			const cacheKey = `tdmi_wilayah_kecamatan_${selectedKokab.id}`;
+			const cached = await getWilayahCache(cacheKey);
+			if (cached) {
+				kecamatanList = cached;
+				loadingKecamatan = false;
+				return;
+			}
+
 			const response = await fetch(`/api/kecamatan?kokabId=${selectedKokab.id}`);
 			if (!response.ok) {
 				// Check response status
 				throw new Error(`HTTP error! status: ${response.status}`);
 			}
-			kecamatanList = await response.json();
+			const data = await response.json();
+			kecamatanList = data;
+			await setWilayahCache(cacheKey, data);
 		} catch (error) {
 			console.error('Error loading kecamatan:', error);
 			kecamatanError = true; // Set error
@@ -170,12 +210,22 @@
 		deskelError = false; // Reset
 		deskelList = []; // Clear previous list
 		try {
+			const cacheKey = `tdmi_wilayah_deskel_${selectedKecamatan.id}`;
+			const cached = await getWilayahCache(cacheKey);
+			if (cached) {
+				deskelList = cached;
+				loadingDeskel = false;
+				return;
+			}
+
 			const response = await fetch(`/api/deskel?kecamatanId=${selectedKecamatan.id}`);
 			if (!response.ok) {
 				// Check response status
 				throw new Error(`HTTP error! status: ${response.status}`);
 			}
-			deskelList = await response.json();
+			const data = await response.json();
+			deskelList = data;
+			await setWilayahCache(cacheKey, data);
 		} catch (error) {
 			console.error('Error loading deskel:', error);
 			deskelError = true; // Set error
