@@ -55,7 +55,7 @@
 	}
 </script>
 
-<ul class="menu h-96 w-52 overflow-y-auto p-2">
+<ul class="menu flex-nowrap h-96 w-56 overflow-y-auto p-2">
 	{#each themes as theme}
 		<li>
 			<button
