@@ -2,42 +2,23 @@ import { error, redirect, fail } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 import { userHasPermission } from '$lib/server/accessControl';
 import { db } from '$lib/drizzle';
-import { muridTable, propTable } from '$lib/drizzle/schema';
+import { muridTable } from '$lib/drizzle/schema';
 import { uploadFile } from '$lib/server/cloudinary';
 import { type InferInsertModel, eq } from 'drizzle-orm';
 
 export const load: PageServerLoad = async ({ locals }) => {
-	console.log('Memasuki fungsi load untuk /member/pendataan/new');
-	try {
-		if (!locals.user) {
-			console.log('Pengguna tidak login, mengalihkan ke /login');
-			throw redirect(302, '/login');
-		}
-		console.log(`Pengguna terautentikasi: ${locals.user.id}`);
-
-		console.log('Memeriksa izin akses...');
-		const [canAccessPendataan, canWriteMurid] = await Promise.all([
-			userHasPermission(locals.user.id, 'perm-pendataan-access'),
-			userHasPermission(locals.user.id, 'perm-pendataan-write')
-		]);
-		console.log(
-			`Izin akses: canAccessPendataan=${canAccessPendataan}, canWriteMurid=${canWriteMurid}`
-		);
-
-		if (!canAccessPendataan || !canWriteMurid) {
-			console.log('Akses ditolak karena izin tidak memadai.');
-			throw error(403, 'Akses Ditolak. Anda tidak memiliki izin untuk membuat data murid baru.');
-		}
-
-		return {};
-	} catch (e: any) {
-		console.error('Terjadi error kritis di fungsi load:', e);
-		if (e.status) throw e;
-		throw error(
-			500,
-			`Terjadi kesalahan internal di server. Silakan periksa log. Pesan Error: ${e.message}`
-		);
+	if (!locals.user) {
+		throw redirect(302, '/login');
 	}
+
+	// Hanya cek izin akses dasar untuk memuat halaman.
+	// Izin menulis akan dicek saat form disubmit.
+	const canAccess = await userHasPermission(locals.user.id, 'perm-pendataan-access');
+	if (!canAccess) {
+		throw error(403, 'Akses Ditolak. Anda tidak memiliki izin untuk mengakses halaman Pendataan.');
+	}
+
+	return {};
 };
 
 export const actions: Actions = {
@@ -72,6 +53,7 @@ export const actions: Actions = {
 			return fail(400, { message: 'Nama dan Desa/Kelurahan wajib diisi.', nama, deskelId });
 		}
 
+		// Cek izin menulis dengan batasan wilayah (territory scope)
 		const canWriteMurid = await userHasPermission(locals.user.id, 'perm-pendataan-write', {
 			deskelId: deskelId
 		});
@@ -83,7 +65,6 @@ export const actions: Actions = {
 		}
 
 		try {
-			// 1. Create the murid record WITHOUT the photo ID first.
 			const newMuridData: InferInsertModel<typeof muridTable> = {
 				updaterId: locals.user.id,
 				nama,
@@ -106,32 +87,27 @@ export const actions: Actions = {
 
 			const [murid] = await db.insert(muridTable).values(newMuridData).returning();
 
-			// 2. If there is a photo, upload it now using the new murid's ID.
 			if (fotoFile && fotoFile.size > 0) {
 				const buffer = Buffer.from(await fotoFile.arrayBuffer());
 				const fileId = await uploadFile(buffer, murid.id);
 
-				// 3. Update the record with the new photo ID.
 				await db
 					.update(muridTable)
 					.set({ fotoPublicId: fileId })
 					.where(eq(muridTable.id, murid.id));
-				murid.fotoPublicId = fileId; // Update the object for the return value
 			}
 
 			if (action === 'save-and-add') {
 				return {
 					success: true,
 					message: 'Murid baru berhasil ditambahkan.',
-					action: 'add-again',
-					murid
+					action: 'add-again'
 				};
 			} else {
 				return {
 					success: true,
 					message: 'Data murid berhasil disimpan.',
-					redirect: '/member/pendataan',
-					murid
+					redirect: '/member/pendataan'
 				};
 			}
 		} catch (e: any) {

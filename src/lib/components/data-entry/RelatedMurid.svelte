@@ -3,12 +3,12 @@
 
 	import { createEventDispatcher } from 'svelte';
 	import MuridModal from './MuridModal.svelte';
+	import MuridAutocomplete from './MuridAutocomplete.svelte';
 
-	// Types for the data received from the modal
-	interface ModalMurid {
+	// Types for the data received from the modal/autocomplete
+	interface CompactMurid {
 		id: number;
 		nama: string;
-		// Add other properties from the modal's Murid type if needed
 	}
 
 	// Props
@@ -22,7 +22,7 @@
 
 	let {
 		className = '',
-		placeholder = 'Pilih murid',
+		placeholder = 'Ketik nama murid...',
 		disabled = false,
 		initialData = null,
 		editedMuridId = undefined
@@ -37,8 +37,7 @@
 		clear: undefined;
 	}>();
 
-	function handleSelect(event: CustomEvent<ModalMurid>) {
-		const murid = event.detail;
+	function handleSelect(murid: CompactMurid) {
 		selectedMurid = { id: murid.id, nama: murid.nama };
 		dispatch('change', { selectedId: murid.id, selectedName: murid.nama });
 		showModal = false;
@@ -54,51 +53,51 @@
 	});
 </script>
 
-<div class="flex items-center gap-2 {className}">
-	<div class="w-full">
-		<button
-			type="button"
-			class="btn btn-outline w-full justify-start"
-			onclick={() => (showModal = true)}
-			{disabled}
-		>
-			{#if selectedMurid}
-				<span class="truncate">{selectedMurid.nama}</span>
-			{:else}
-				{placeholder}
-			{/if}
-		</button>
-	</div>
-
-	<!-- Clear button -->
+<div class="flex flex-col gap-2 {className}">
 	{#if selectedMurid}
-		<button
-			type="button"
-			class="btn btn-circle btn-ghost btn-sm text-error hover:bg-error hover:text-error-content"
-			onclick={handleClear}
-		>
-			<svg
-				xmlns="http://www.w3.org/2000/svg"
-				width="14"
-				height="14"
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="3"
-				stroke-linecap="round"
-				stroke-linejoin="round"
-			>
-				<line x1="18" y1="6" x2="6" y2="18" />
-				<line x1="6" y1="6" x2="18" y2="18" />
-			</svg>
-			<span class="sr-only">Clear selection</span>
-		</button>
+		<div class="flex items-center gap-2">
+			<div class="flex-1 rounded-lg border border-primary/20 bg-primary/5 px-4 py-2 flex justify-between items-center">
+				<div class="flex flex-col">
+					<span class="font-bold text-primary">{selectedMurid.nama}</span>
+					<span class="text-[10px] opacity-60 font-mono">ID: {selectedMurid.id}</span>
+				</div>
+				<button
+					type="button"
+					class="btn btn-circle btn-ghost btn-xs text-error"
+					onclick={handleClear}
+					{disabled}
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+				</button>
+			</div>
+		</div>
+	{:else}
+		<div class="flex items-center gap-2">
+			<div class="flex-1">
+				<MuridAutocomplete 
+					{placeholder} 
+					{disabled} 
+					excludeId={editedMuridId} 
+					onselect={handleSelect} 
+				/>
+			</div>
+			<div class="tooltip tooltip-left" data-tip="Pencarian Lanjut">
+				<button
+					type="button"
+					class="btn btn-square btn-outline"
+					onclick={() => (showModal = true)}
+					{disabled}
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+				</button>
+			</div>
+		</div>
 	{/if}
 </div>
 
 <MuridModal
 	{showModal}
 	{editedMuridId}
-	on:select={handleSelect}
+	on:select={(e) => handleSelect(e.detail)}
 	on:close={() => (showModal = false)}
 />

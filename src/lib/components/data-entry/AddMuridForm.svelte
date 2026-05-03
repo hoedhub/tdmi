@@ -10,6 +10,7 @@
 	import type { propTable, kokabTable, kecamatanTable } from '$lib/drizzle/schema';
 	import { type InferSelectModel } from 'drizzle-orm';
 	import { success, error } from '$lib/components/toast';
+	import { searchMuridCompact } from '$lib/utils/db';
 
 	// Form Components
 	import PersonalInfoForm from '../forms/PersonalInfoForm.svelte';
@@ -114,26 +115,18 @@
 
 		// Hanya cari jika nama lebih dari 3 karakter dan dalam mode tambah baru
 		if (!formData && nama.trim().length >= 3) {
-			console.log(`[Form] Scheduling search for: "${nama}"`);
+			console.log(`[Form] Searching local cache for similar: "${nama}"`);
 			searchTimeout = setTimeout(async () => {
-				console.log(`[Form] Executing search for: "${nama}"`);
 				try {
-					const response = await fetch(
-						`/api/murid/similar?nama=${encodeURIComponent(nama.trim())}`
-					);
-					if (response.ok) {
-						const data = await response.json();
-						console.log('[Form] Received data from API:', data);
-						similarMurids = data;
-					} else {
-						console.error('[Form] API request failed:', response.statusText);
-						similarMurids = [];
-					}
+					// Gunakan search dari IndexedDB (lebih cepat & offline)
+					const data = await searchMuridCompact(nama.trim());
+					console.log('[Form] Similar murids found in cache:', data.length);
+					similarMurids = data;
 				} catch (e) {
-					console.error('[Form] Failed to fetch similar murids:', e);
+					console.error('[Form] Failed to search local cache:', e);
 					similarMurids = [];
 				}
-			}, 500); // debounce 500ms
+			}, 300); // Debounce lebih cepat (300ms) karena pencarian lokal sangat cepat
 		} else {
 			// Kosongkan jika nama pendek atau dalam mode edit
 			if (similarMurids.length > 0) {

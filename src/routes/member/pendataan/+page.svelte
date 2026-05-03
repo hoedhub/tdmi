@@ -326,11 +326,13 @@
 
 <div class="mb-6 flex flex-wrap items-center justify-between space-y-2">
 	<h1 class="card-title text-2xl">Manajemen Data Murid</h1>
-	{#if canWriteMurid}
-		<a href="/member/pendataan/new" class="btn btn-primary btn-sm">
-			<PlusCircle class="h-4 w-4" /> Tambah Murid Baru
-		</a>
-	{/if}
+	<div class="flex items-center gap-2">
+		{#if canWriteMurid}
+			<a href="/member/pendataan/new" class="btn btn-primary btn-sm">
+				<PlusCircle class="h-4 w-4" /> Tambah Murid Baru
+			</a>
+		{/if}
+	</div>
 </div>
 
 
