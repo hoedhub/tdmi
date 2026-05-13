@@ -7,6 +7,8 @@
 	import { setPreference } from '$lib/stores/preferenceService';
 
 	const themes = [
+		'tdmi-aurora',
+		'tdmi-night-glow',
 		'slack-pro-light',
 		'slack-pro-dark',
 		'light',

@@ -36,88 +36,82 @@
 
 <div class="space-y-8 pb-10">
 	<!-- Welcome Header -->
-	<div class="flex flex-col md:flex-row md:items-center justify-between gap-4" in:fade={{ duration: 500 }}>
+	<div class="flex flex-col md:flex-row md:items-center justify-between gap-6" in:fade={{ duration: 500 }}>
 		<div>
-			<h1 class="text-3xl font-extrabold tracking-tight">Selamat Datang, {data.user.username}!</h1>
-			<p class="text-base-content/60 flex items-center gap-2 mt-1">
-				<Calendar class="h-4 w-4" />
+			<h1 class="text-4xl md:text-5xl font-black tracking-tight mb-2">
+				Selamat Datang, <span class="text-gradient">{data.user.username}</span>!
+			</h1>
+			<p class="text-base-content/60 flex items-center gap-2 mt-1 font-medium">
+				<Calendar class="h-5 w-5 text-primary" />
 				{new Intl.DateTimeFormat('id-ID', { dateStyle: 'full' }).format(new Date())}
 			</p>
 		</div>
-		<div class="flex gap-2">
-			<a href="/member/pendataan/new" class="btn btn-primary shadow-lg shadow-primary/20">
-				<PlusCircle class="h-4 w-4" /> Tambah Murid
+		<div class="flex gap-3">
+			<a href="/member/pendataan/new" class="btn btn-primary btn-lg shadow-xl shadow-primary/30 group px-8">
+				<PlusCircle class="h-5 w-5 transition-transform group-hover:rotate-90" /> Tambah Murid
 			</a>
 		</div>
 	</div>
 
 	<!-- Stats Overview -->
 	<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" in:fly={{ y: 20, duration: 600, delay: 100 }}>
-		<div class="card bg-base-100 shadow-xl border border-base-200 overflow-hidden group hover:border-primary/30 transition-all">
-			<div class="card-body p-5">
-				<div class="flex justify-between items-start">
-					<div>
-						<p class="text-xs font-bold uppercase tracking-widest text-base-content/50">Total Murid</p>
-						<h2 class="text-3xl font-black mt-1">{data.stats.totalMurid}</h2>
-					</div>
-					<div class="p-3 rounded-2xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-content transition-colors">
-						<Users class="h-6 w-6" />
-					</div>
+		<div class="tdmi-card group hover:border-primary/30 transition-all border border-base-200">
+			<div class="flex justify-between items-start">
+				<div>
+					<p class="text-xs font-bold uppercase tracking-widest text-base-content/50">Total Murid</p>
+					<h2 class="text-3xl font-black mt-1">{data.stats.totalMurid}</h2>
 				</div>
-				<div class="mt-4 flex items-center text-xs text-success font-medium">
-					<TrendingUp class="h-3 w-3 mr-1" /> Terus Berkembang
+				<div class="p-3 rounded-2xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-content transition-colors">
+					<Users class="h-6 w-6" />
 				</div>
+			</div>
+			<div class="mt-4 flex items-center text-xs text-success font-medium">
+				<TrendingUp class="h-3 w-3 mr-1" /> Terus Berkembang
 			</div>
 		</div>
 
-		<div class="card bg-base-100 shadow-xl border border-base-200 overflow-hidden group hover:border-info/30 transition-all">
-			<div class="card-body p-5">
-				<div class="flex justify-between items-start">
-					<div>
-						<p class="text-xs font-bold uppercase tracking-widest text-base-content/50">Marhalah 1</p>
-						<h2 class="text-3xl font-black mt-1">{getMarhalahCount(1)}</h2>
-					</div>
-					<div class="p-3 rounded-2xl bg-info/10 text-info group-hover:bg-info group-hover:text-info-content transition-colors">
-						<GraduationCap class="h-6 w-6" />
-					</div>
+		<div class="tdmi-card group hover:border-info/30 transition-all border border-base-200">
+			<div class="flex justify-between items-start">
+				<div>
+					<p class="text-xs font-bold uppercase tracking-widest text-base-content/50">Marhalah 1</p>
+					<h2 class="text-3xl font-black mt-1">{getMarhalahCount(1)}</h2>
 				</div>
-				<div class="mt-4 w-full bg-base-200 rounded-full h-1.5 overflow-hidden">
-					<div class="bg-info h-full transition-all" style="width: {(getMarhalahCount(1) / (data.stats.totalMurid || 1)) * 100}%"></div>
+				<div class="p-3 rounded-2xl bg-info/10 text-info group-hover:bg-info group-hover:text-info-content transition-colors">
+					<GraduationCap class="h-6 w-6" />
 				</div>
+			</div>
+			<div class="mt-4 w-full bg-base-200 rounded-full h-1.5 overflow-hidden">
+				<div class="bg-info h-full transition-all" style="width: {(getMarhalahCount(1) / (data.stats.totalMurid || 1)) * 100}%"></div>
 			</div>
 		</div>
 
-		<div class="card bg-base-100 shadow-xl border border-base-200 overflow-hidden group hover:border-warning/30 transition-all">
-			<div class="card-body p-5">
-				<div class="flex justify-between items-start">
-					<div>
-						<p class="text-xs font-bold uppercase tracking-widest text-base-content/50">Marhalah 2</p>
-						<h2 class="text-3xl font-black mt-1">{getMarhalahCount(2)}</h2>
-					</div>
-					<div class="p-3 rounded-2xl bg-warning/10 text-warning group-hover:bg-warning group-hover:text-warning-content transition-colors">
-						<ShieldCheck class="h-6 w-6" />
-					</div>
+		<div class="tdmi-card group hover:border-warning/30 transition-all border border-base-200">
+			<div class="flex justify-between items-start">
+				<div>
+					<p class="text-xs font-bold uppercase tracking-widest text-base-content/50">Marhalah 2</p>
+					<h2 class="text-3xl font-black mt-1">{getMarhalahCount(2)}</h2>
 				</div>
-				<div class="mt-4 w-full bg-base-200 rounded-full h-1.5 overflow-hidden">
-					<div class="bg-warning h-full transition-all" style="width: {(getMarhalahCount(2) / (data.stats.totalMurid || 1)) * 100}%"></div>
+				<div class="p-3 rounded-2xl bg-warning/10 text-warning group-hover:bg-warning group-hover:text-warning-content transition-colors">
+					<ShieldCheck class="h-6 w-6" />
 				</div>
+			</div>
+			<div class="mt-4 w-full bg-base-200 rounded-full h-1.5 overflow-hidden">
+				<div class="bg-warning h-full transition-all" style="width: {(getMarhalahCount(2) / (data.stats.totalMurid || 1)) * 100}%"></div>
 			</div>
 		</div>
 
-		<div class="card bg-base-100 shadow-xl border border-base-200 overflow-hidden group hover:border-secondary/30 transition-all">
-			<div class="card-body p-5">
-				<div class="flex justify-between items-start">
-					<div>
-						<p class="text-xs font-bold uppercase tracking-widest text-base-content/50">Marhalah 3</p>
-						<h2 class="text-3xl font-black mt-1">{getMarhalahCount(3)}</h2>
-					</div>
-					<div class="p-3 rounded-2xl bg-secondary/10 text-secondary group-hover:bg-secondary group-hover:text-secondary-content transition-colors">
-						<Award class="h-6 w-6" />
-					</div>
+		<div class="tdmi-card group hover:border-secondary/30 transition-all border border-base-200">
+			<div class="flex justify-between items-start">
+				<div>
+					<p class="text-xs font-bold uppercase tracking-widest text-base-content/50">Marhalah 3</p>
+					<h2 class="text-3xl font-black mt-1">{getMarhalahCount(3)}</h2>
 				</div>
-				<div class="mt-4 w-full bg-base-200 rounded-full h-1.5 overflow-hidden">
-					<div class="bg-secondary h-full transition-all" style="width: {(getMarhalahCount(3) / (data.stats.totalMurid || 1)) * 100}%"></div>
+				<div class="p-3 rounded-2xl bg-secondary/10 text-secondary group-hover:bg-secondary group-hover:text-secondary-content transition-colors">
+					<Award class="h-6 w-6" />
 				</div>
+			</div>
+			<div class="mt-4 w-full bg-base-200 rounded-full h-1.5 overflow-hidden">
+				<div class="bg-secondary h-full transition-all" style="width: {(getMarhalahCount(3) / (data.stats.totalMurid || 1)) * 100}%"></div>
 			</div>
 		</div>
 	</div>
