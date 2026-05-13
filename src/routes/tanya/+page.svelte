@@ -12,6 +12,8 @@
 		AlertCircle 
 	} from 'lucide-svelte';
 	import { error as toastError, success as toastSuccess } from '$lib/components/toast';
+	import { Turnstile } from 'svelte-turnstile';
+	import { PUBLIC_TURNSTILE_SITE_KEY } from '$env/static/public';
 
 	let { form } = $props<{ form: ActionData }>();
 
@@ -187,6 +189,10 @@
 								<span>{form.msg}</span>
 							</div>
 						{/if}
+
+						<div class="flex justify-center pt-2">
+							<Turnstile siteKey={PUBLIC_TURNSTILE_SITE_KEY} theme="light" />
+						</div>
 
 						<div class="pt-4">
 							<button 

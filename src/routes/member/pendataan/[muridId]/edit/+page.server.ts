@@ -8,7 +8,7 @@ import {
 	kokabTable,
 	propTable
 } from '$lib/drizzle/schema';
-import { eq, sql } from 'drizzle-orm';
+import { eq, sql, asc } from 'drizzle-orm';
 import { userHasPermission } from '$lib/server/accessControl';
 import { getPublicFileUrl, uploadFile, deleteFile } from '$lib/server/cloudinary';
 
@@ -88,10 +88,13 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 	const baiatData = await getMuridCompact(muridData.baiatId);
 	const wiridData = await getMuridCompact(muridData.wiridId);
 
+	const propinsiList = await db.select().from(propTable).orderBy(asc(propTable.propinsi)).all();
+
 	return {
 		user: locals.user,
 		murid: { ...muridData, fotoUrl, muhrimData, mursyidData, baiatData, wiridData },
-		canWriteMurid
+		canWriteMurid,
+		propinsiList
 	};
 };
 

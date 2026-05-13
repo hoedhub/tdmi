@@ -2,9 +2,9 @@ import { error, redirect, fail } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 import { userHasPermission } from '$lib/server/accessControl';
 import { db } from '$lib/drizzle';
-import { muridTable } from '$lib/drizzle/schema';
+import { muridTable, propTable } from '$lib/drizzle/schema';
 import { uploadFile } from '$lib/server/cloudinary';
-import { type InferInsertModel, eq } from 'drizzle-orm';
+import { type InferInsertModel, eq, asc } from 'drizzle-orm';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	if (!locals.user) {
@@ -18,7 +18,11 @@ export const load: PageServerLoad = async ({ locals }) => {
 		throw error(403, 'Akses Ditolak. Anda tidak memiliki izin untuk mengakses halaman Pendataan.');
 	}
 
-	return {};
+	const propinsiList = await db.select().from(propTable).orderBy(asc(propTable.propinsi)).all();
+
+	return {
+		propinsiList
+	};
 };
 
 export const actions: Actions = {

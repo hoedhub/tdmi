@@ -4,9 +4,9 @@ import { defineConfig } from 'vite';
 export default defineConfig({
 	plugins: [sveltekit()],
 	optimizeDeps: {
-		include: ['svelte-chartjs']
+		include: ['svelte-chartjs', 'svelte-turnstile']
 	},
 	ssr: {
-		noExternal: ['svelte-chartjs']
+		noExternal: ['svelte-chartjs', 'svelte-turnstile']
 	}
 });
