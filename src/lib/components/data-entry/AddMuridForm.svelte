@@ -112,25 +112,26 @@
 	// --- Fungsi untuk cek nama serupa (dengan debounce) ---
 	function checkSimilarNames(nama: string) {
 		clearTimeout(searchTimeout);
-
+		
 		// Hanya cari jika nama lebih dari 3 karakter dan dalam mode tambah baru
 		if (!formData && nama.trim().length >= 3) {
-			console.log(`[Form] Searching local cache for similar: "${nama}"`);
+			console.log(`[Form] Searching server for similar: "${nama}"`);
 			searchTimeout = setTimeout(async () => {
 				try {
-					// Gunakan search dari IndexedDB (lebih cepat & offline)
-					const data = await searchMuridCompact(nama.trim());
-					console.log('[Form] Similar murids found in cache:', data.length);
+					// Gunakan search dari server (live)
+					const response = await fetch(`/api/murid/similar?nama=${encodeURIComponent(nama.trim())}`);
+					if (!response.ok) throw new Error('Search failed');
+					const data = await response.json();
+					console.log('[Form] Similar murids found:', data.length);
 					similarMurids = data;
 				} catch (e) {
-					console.error('[Form] Failed to search local cache:', e);
+					console.error('[Form] Failed to fetch similar names:', e);
 					similarMurids = [];
 				}
-			}, 300); // Debounce lebih cepat (300ms) karena pencarian lokal sangat cepat
+			}, 500); // Debounce sedikit lebih lama (500ms) untuk pencarian server
 		} else {
 			// Kosongkan jika nama pendek atau dalam mode edit
 			if (similarMurids.length > 0) {
-				console.log('[Form] Clearing similar murids.');
 				similarMurids = [];
 			}
 		}

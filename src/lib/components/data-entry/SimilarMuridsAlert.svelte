@@ -2,12 +2,14 @@
 	import { slide } from 'svelte/transition';
 	import { goto } from '$app/navigation';
 	import { createEventDispatcher } from 'svelte';
+	import { MapPin } from 'lucide-svelte';
 
 	interface SimilarMurid {
 		id: number;
 		nama: string;
 		rating: number;
-		alamatLengkap: string | null;
+		alamatLengkap?: string | null;
+		alamat?: string | null;
 	}
 
 	interface Props {
@@ -97,9 +99,9 @@
 										>
 											{murid.nama}
 										</button>
-										{#if murid.alamatLengkap}
-											<p class="mt-0.5 text-xs text-base-content/70">
-												📍 {murid.alamatLengkap}
+										{#if murid.alamatLengkap || murid.alamat}
+											<p class="mt-0.5 text-xs text-base-content/70 flex items-center gap-1">
+												<MapPin size={12} class="inline" /> {murid.alamatLengkap || murid.alamat}
 											</p>
 										{/if}
 									</div>
