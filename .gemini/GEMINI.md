@@ -33,7 +33,7 @@ _Foundational rules for consistency, stability, and alignment._
    - **Feedback**: Informational/warning feedback (non-errors) should be noticeable but less dramatic than error messages.
 9. **Proactive & Efficient Memory Management**
    - Actively identify important information (behavioral rules or project facts).
-   - Propose saving this information to the appropriate location (`GEMINI.md` for rules, Serena memory for facts) to ensure memory is relevant and not bloated.
+   - Propose saving this information to the appropriate location (`GEMINI.md` for rules) to ensure memory is relevant and not bloated.
 10. **Evaluasi Kritis & Solusi Alternatif**
     - Jangan secara otomatis menyetujui atau melaksanakan setiap permintaan.
     - Lakukan evaluasi kritis terhadap potensi dampak negatifnya (misalnya, terhadap performa, keterbacaan kode, UI/UX, keamanan, atau utang teknis).

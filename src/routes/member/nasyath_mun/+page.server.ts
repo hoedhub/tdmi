@@ -47,10 +47,17 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
 		// --- KPI Queries ---
 		const totalInRangeResult = await db
-			.select({ count: count() })
+			.select({ 
+				count: count(),
+				totalJarak: sql<number>`SUM(CAST(${nasyathTable.jarak} AS REAL))`,
+				avgDurasi: sql<number>`AVG(CAST(${nasyathTable.durasi} AS REAL))`
+			})
 			.from(nasyathTable)
 			.where(and(...allConditions));
+		
 		const totalInRange = totalInRangeResult[0].count;
+		const totalJarak = totalInRangeResult[0].totalJarak || 0;
+		const avgDurasi = totalInRangeResult[0].avgDurasi || 0;
 
 		const currentYear = new Date().getFullYear();
 		const startOfYear = new Date(currentYear, 0, 1);
@@ -77,24 +84,40 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		const mostFrequentActivity = mostFrequentResult[0]?.kegiatan || 'N/A';
 
 		// --- Chart Data Queries ---
-		const chartDateConditions = startDateParam
-			? dateConditions
-			: [
-					gte(
-						nasyathTable.tanggalMulai,
-						new Date(new Date().setMonth(new Date().getMonth() - 6)).toISOString()
-					)
-				];
-
+		
+		// 1. Activities per Month (Trend)
 		const activitiesPerMonthResult = await db
 			.select({
 				month: sql<string>`strftime('%Y-%m', ${nasyathTable.tanggalMulai})`,
 				count: count()
 			})
 			.from(nasyathTable)
-			.where(and(...baseConditions, ...chartDateConditions))
+			.where(and(...baseConditions, gte(nasyathTable.tanggalMulai, new Date(new Date().setFullYear(new Date().getFullYear() - 1)).toISOString())))
 			.groupBy(sql`strftime('%Y-%m', ${nasyathTable.tanggalMulai})`)
 			.orderBy(sql`strftime('%Y-%m', ${nasyathTable.tanggalMulai})`);
+
+		// 2. Activities per Day of Week
+		const activitiesByDayResult = await db
+			.select({
+				dayOfWeek: sql<number>`strftime('%w', ${nasyathTable.tanggalMulai})`,
+				count: count()
+			})
+			.from(nasyathTable)
+			.where(and(...allConditions))
+			.groupBy(sql`strftime('%w', ${nasyathTable.tanggalMulai})`)
+			.orderBy(sql`strftime('%w', ${nasyathTable.tanggalMulai})`);
+
+		// 3. Top Places
+		const topPlacesResult = await db
+			.select({
+				tempat: nasyathTable.tempat,
+				count: count()
+			})
+			.from(nasyathTable)
+			.where(and(...allConditions, sql`${nasyathTable.tempat} IS NOT NULL AND ${nasyathTable.tempat} != ''`))
+			.groupBy(nasyathTable.tempat)
+			.orderBy(desc(count()))
+			.limit(10);
 
 		let mostActiveMembers: { murid: { nama: string | null } | null; activityCount: number }[] = [];
 		if (canReadAll) {
@@ -115,6 +138,13 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 				activityCount: Number(result.activityCount)
 			}));
 		}
+
+		// 4. Unique Murid Involved
+		const uniqueMuridResult = await db
+			.select({ count: sql`count(distinct ${nasyathTable.muridId})` })
+			.from(nasyathTable)
+			.where(and(...allConditions));
+		const uniqueMuridCount = Number(uniqueMuridResult[0].count);
 
 		const recentActivities = await db
 			.select({
@@ -137,11 +167,16 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 				totalThisMonth: totalInRange,
 				totalThisYear,
 				mostFrequentActivity,
-				kpiTitle
+				kpiTitle,
+				totalJarak: Math.round(totalJarak * 10) / 10,
+				avgDurasi: Math.round(avgDurasi * 10) / 10,
+				uniqueMuridCount
 			},
 			charts: {
 				activitiesPerMonth: activitiesPerMonthResult,
-				mostActiveMembers: mostActiveMembers
+				mostActiveMembers: mostActiveMembers,
+				activitiesByDay: activitiesByDayResult,
+				topPlaces: topPlacesResult
 			},
 			recentActivities,
 			isFiltered: !!(startDateParam && endDateParam)

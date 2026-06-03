@@ -2,17 +2,6 @@
 	// 1. IMPORTS
 	import { onMount, tick } from 'svelte';
 	import { page } from '$app/stores';
-	// import { Bar, Pie } from 'svelte-chartjs';
-	import {
-		Chart as ChartJS,
-		Title,
-		Tooltip,
-		Legend,
-		BarElement,
-		CategoryScale,
-		LinearScale,
-		ArcElement
-	} from 'chart.js';
 	import {
 		Calendar,
 		TrendingUp,
@@ -24,7 +13,11 @@
 		LayoutDashboard,
 		Table,
 		ChevronLeft,
-		ChevronRight
+		ChevronRight,
+		MapPin,
+		Clock,
+		Route,
+		UserCheck
 	} from 'lucide-svelte';
 	import { toHindi } from '$lib/utils/toHindi';
 	import type { PageData } from './$types';
@@ -36,17 +29,30 @@
 	import type { ActionResult } from '@sveltejs/kit';
 	import { api } from '$lib/utils/api';
 	import MonthPickerDropdown from '$lib/components/MonthPickerDropdown.svelte';
+	import BaseChart from '$lib/components/charts/BaseChart.svelte';
+
+	interface Props {
+		data: PageDataExtended;
+	}
+
+	let { data }: Props = $props();
 
 	// 2. PROPS
 	interface ChartData {
 		activitiesPerMonth: { month: string; count: number }[];
 		mostActiveMembers: MemberActivity[];
+		activitiesByDay: { dayOfWeek: number; count: number }[];
+		topPlaces: { tempat: string; count: number }[];
 	}
 
 	interface KPIData {
 		totalThisMonth: number;
 		totalThisYear: number;
 		mostFrequentActivity: string;
+		kpiTitle: string;
+		totalJarak: number;
+		avgDurasi: number;
+		uniqueMuridCount: number;
 	}
 
 	type PageDataExtended = PageData & {
@@ -66,7 +72,7 @@
 
 
 	// 3. STATE MANAGEMENT FOR VIEW TOGGLE
-	let currentView: 'dashboard' | 'table' = $state('table'); // Default view
+	let currentView: 'dashboard' | 'table' = $state('dashboard'); // Changed default to dashboard
 
 	function setView(view: 'dashboard' | 'table') {
 		currentView = view;
@@ -78,7 +84,6 @@
 	onMount(async () => {
 		if (data.dbError) {
 			error(data.message || 'Gagal memuat data dashboard.');
-			// Still allow view switching, but table will show error.
 		}
 
 		// Initialize view from localStorage
@@ -95,78 +100,46 @@
 		const endStr = searchParams.get('end');
 
 		if (startStr && endStr) {
-			// Add T00:00:00 to avoid timezone issues when creating Date objects
 			const startDate = new Date(startStr + 'T00:00:00');
 			const endDate = new Date(endStr + 'T00:00:00');
 
 			const firstDayOfMonth = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
 			const lastDayOfMonth = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0);
 
-			// Check if the provided date range perfectly matches a single calendar month
 			if (
 				startDate.getTime() === firstDayOfMonth.getTime() &&
 				endDate.getTime() === lastDayOfMonth.getTime()
 			) {
 				periodType = 'bulan';
-				selectedDate = startDate; // Set the month picker to the correct month
+				selectedDate = startDate;
 			} else {
 				periodType = 'rentang';
 				dateFilter.start = startStr;
 				dateFilter.end = endStr;
 			}
 		} else {
-			// Default state when no params are present
 			periodType = 'bulan';
 			selectedDate = new Date();
 		}
 
-		// Fetch initial table data
 		await tick();
 		fetchNasyathData(currentSort, currentFilters, currentPage);
 	});
 
 	// --- DASHBOARD LOGIC ---
-	ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale, ArcElement);
-
-	interface ActivitySummary {
-		month: string;
-		count: number;
-	}
-
 	interface MemberActivity {
 		murid: { nama: string | null } | null;
 		activityCount: number;
 	}
 
-
-
-	const pieChartOptions = {
-		responsive: true,
-		maintainAspectRatio: false,
-		layout: {
-			padding: {
-				left: 10,
-				right: 10,
-				top: 20,
-				bottom: 0
-			}
-		},
+	const commonChartOptions = {
 		plugins: {
 			legend: {
 				position: 'bottom' as const,
-				rtl: true,
-				align: 'end' as const, // Mengatur rata kanan (karena RTL)
-				maxHeight: 80, // Maksimum tinggi legend
 				labels: {
 					boxWidth: 12,
 					usePointStyle: true,
-					padding: 8,
-					font: {
-						size: 11
-					}
-				},
-				overflow: {
-					y: 'scroll' // Membuat legend bisa di-scroll vertikal
+					font: { size: 11 }
 				}
 			},
 			tooltip: {
@@ -179,51 +152,81 @@
 		}
 	};
 
-	const barChartOptions = {
-		responsive: true,
+	const pieChartOptions = {
+		...commonChartOptions,
 		maintainAspectRatio: false,
-		layout: {
-			padding: {
-				left: 10,
-				right: 10,
-				top: 20,
-				bottom: 10
-			}
-		},
+	};
+
+	const barChartOptions = {
+		...commonChartOptions,
 		scales: {
 			y: {
 				beginAtZero: true,
 				ticks: {
-					font: {
-						size: 11
-					},
-					callback: function (value: any) {
-						return toHindi(value);
-					}
+					font: { size: 11 },
+					callback: function (value: any) { return toHindi(value); }
 				}
 			},
 			x: {
-				ticks: {
-					font: {
-						size: 11
-					}
-				}
-			}
-		},
-		plugins: {
-			legend: {
-				position: 'top' as const,
-				labels: {
-					boxWidth: 15,
-					usePointStyle: true,
-					padding: 15,
-					font: {
-						size: 11
-					}
-				}
+				ticks: { font: { size: 11 } }
 			}
 		}
 	};
+
+	// --- DERIVED CHART DATA ---
+	const dayNames = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+	
+	let activitiesPerMonth = $derived({
+		labels: data.charts.activitiesPerMonth.map((item) => {
+			const [year, month] = item.month.split('-');
+			return new Date(Number(year), Number(month) - 1).toLocaleString('ar-EG', {
+				month: 'short',
+				year: '2-digit'
+			});
+		}),
+		datasets: [{
+			label: 'عدد الأنشطة',
+			data: data.charts.activitiesPerMonth.map((item) => item.count),
+			backgroundColor: 'rgba(54, 162, 235, 0.5)',
+			borderColor: 'rgba(54, 162, 235, 1)',
+			borderWidth: 2,
+			fill: true,
+			tension: 0.4
+		}]
+	});
+
+	let mostActiveMembers = $derived({
+		labels: data.charts.mostActiveMembers.map((item) => item.murid?.nama || 'بدون اسم'),
+		datasets: [{
+			data: data.charts.mostActiveMembers.map((item) => item.activityCount),
+			backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#C7C7C7']
+		}]
+	});
+
+	let activitiesByDay = $derived({
+		labels: dayNames,
+		datasets: [{
+			label: 'الأنشطة حسب اليوم',
+			data: dayNames.map((_, i) => {
+				const found = data.charts.activitiesByDay.find(d => Number(d.dayOfWeek) === i);
+				return found ? found.count : 0;
+			}),
+			backgroundColor: 'rgba(75, 192, 192, 0.6)',
+			borderColor: 'rgba(75, 192, 192, 1)',
+			borderWidth: 1
+		}]
+	});
+
+	let topPlaces = $derived({
+		labels: data.charts.topPlaces.map(p => p.tempat),
+		datasets: [{
+			label: 'الأماكن الأكثر زيارة',
+			data: data.charts.topPlaces.map(p => p.count),
+			backgroundColor: 'rgba(255, 159, 64, 0.6)',
+			borderColor: 'rgba(255, 159, 64, 1)',
+			borderWidth: 1
+		}]
+	});
 
 	// --- TABLE LOGIC ---
 	interface NasyathRow {
@@ -460,11 +463,6 @@
 	}
 
 	import { absoluteDropdownStore } from '$lib/stores/absoluteDropdown';
-	interface Props {
-		data: PageDataExtended;
-	}
-
-	let { data }: Props = $props();
 
 	// --- MONTH PICKER LOGIC ---
 	let selectedDate = $state(new Date());
@@ -506,45 +504,6 @@
 	function nextMonth() {
 		selectedDate = new Date(selectedDate.setMonth(selectedDate.getMonth() + 1));
 	}
-	let activitiesPerMonth = $derived({
-		labels: data.charts.activitiesPerMonth.map((item: { month: string; count: number }) => {
-			const [year, month] = item.month.split('-');
-			return new Date(Number(year), Number(month) - 1).toLocaleString('default', {
-				month: 'short',
-				year: '2-digit'
-			});
-		}),
-		datasets: [
-			{
-				label: 'Jumlah Kegiatan',
-				data: data.charts.activitiesPerMonth.map((item) => item.count),
-				backgroundColor: 'rgba(54, 162, 235, 0.6)',
-				borderColor: 'rgba(54, 162, 235, 1)',
-				borderWidth: 1
-			}
-		]
-	});
-	let mostActiveMembers = $derived({
-		labels: data.charts.mostActiveMembers.map(
-			(item: MemberActivity) => item.murid?.nama || 'بدون اسم'
-		),
-		datasets: [
-			{
-				data: data.charts.mostActiveMembers.map((item: MemberActivity) => item.activityCount),
-				backgroundColor: [
-					'#FF6384',
-					'#36A2EB',
-					'#FFCE56',
-					'#4BC0C0',
-					'#9966FF',
-					'#FF9F40',
-					'#C7C7C7'
-				],
-				borderColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#C7C7C7'],
-				borderWidth: 1
-			}
-		]
-	});
 	let columns = $derived((() => {
 		const baseColumns: ColumnDef[] = [
 			{ key: 'kegiatan', label: 'النشاط', sortable: true, filterable: 'text' },
@@ -619,81 +578,144 @@
 		<!-- DASHBOARD VIEW -->
 		<div class="space-y-6">
 			<!-- KPI Cards -->
-			<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-				<div class="stat rounded-lg bg-base-200 shadow">
-					<div class="stat-figure text-primary"><Calendar class="h-8 w-8" /></div>
-					<div class="stat-title">{data.kpi.kpiTitle}</div>
-					<div class="stat-value text-primary">{toHindi(data.kpi.totalThisMonth)}</div>
+			<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+				<div class="stat rounded-xl bg-base-100 shadow-md border border-base-200">
+					<div class="stat-figure text-primary"><Calendar class="h-8 w-8 opacity-20" /></div>
+					<div class="stat-title text-xs font-bold uppercase tracking-wider">{data.kpi.kpiTitle}</div>
+					<div class="stat-value text-primary text-3xl">{toHindi(data.kpi.totalThisMonth)}</div>
+					<div class="stat-desc text-xs mt-1">من إجمالي {toHindi(data.kpi.totalThisYear)} هذا العام</div>
 				</div>
-				<div class="stat rounded-lg bg-base-200 shadow">
-					<div class="stat-figure text-secondary"><Calendar class="h-8 w-8" /></div>
-					<div class="stat-title">نشاط هذا العام</div>
-					<div class="stat-value text-secondary">{toHindi(data.kpi.totalThisYear)}</div>
+				
+				<div class="stat rounded-xl bg-base-100 shadow-md border border-base-200">
+					<div class="stat-figure text-secondary"><UserCheck class="h-8 w-8 opacity-20" /></div>
+					<div class="stat-title text-xs font-bold uppercase tracking-wider">الأعضاء المشاركون</div>
+					<div class="stat-value text-secondary text-3xl">{toHindi(data.kpi.uniqueMuridCount)}</div>
+					<div class="stat-desc text-xs mt-1">عضو نشط في هذه الفترة</div>
 				</div>
-				<div class="stat rounded-lg bg-base-200 shadow">
-					<div class="stat-figure text-accent"><TrendingUp class="h-8 w-8" /></div>
-					<div class="stat-title">النشاط الأكثر شيوعًا</div>
-					<div class="stat-value truncate text-accent">{data.kpi.mostFrequentActivity}</div>
+
+				<div class="stat rounded-xl bg-base-100 shadow-md border border-base-200">
+					<div class="stat-figure text-accent"><Route class="h-8 w-8 opacity-20" /></div>
+					<div class="stat-title text-xs font-bold uppercase tracking-wider">إجمالي المسافة</div>
+					<div class="stat-value text-accent text-3xl">{toHindi(data.kpi.totalJarak)} <span class="text-sm font-normal">كم</span></div>
+					<div class="stat-desc text-xs mt-1">المسافة المقطوعة للأنشطة</div>
+				</div>
+
+				<div class="stat rounded-xl bg-base-100 shadow-md border border-base-200">
+					<div class="stat-figure text-warning"><Clock class="h-8 w-8 opacity-20" /></div>
+					<div class="stat-title text-xs font-bold uppercase tracking-wider">متوسط المدة</div>
+					<div class="stat-value text-warning text-3xl">{toHindi(data.kpi.avgDurasi)} <span class="text-sm font-normal">ساعة</span></div>
+					<div class="stat-desc text-xs mt-1">لكل نشاط في المتوسط</div>
 				</div>
 			</div>
-			<!-- Charts -->
-			<div class="grid grid-cols-1 gap-6 lg:grid-cols-5">
-				<div class="card bg-base-200 shadow-lg lg:col-span-3">
-					<div class="card-body">
-						<h2 class="card-title mb-4">النشاط الشهري (آخر 6 أشهر)</h2>
-						<div class="h-80">
-							<!-- <Bar data={activitiesPerMonth} options={barChartOptions} /> -->
+
+			<!-- Main Charts Grid -->
+			<div class="grid grid-cols-1 gap-6 lg:grid-cols-12">
+				<!-- Monthly Trend - Line/Area Chart -->
+				<div class="card bg-base-100 shadow-md border border-base-200 lg:col-span-8">
+					<div class="card-body p-4 sm:p-6">
+						<div class="flex items-center justify-between mb-4">
+							<h2 class="card-title text-base font-bold flex items-center gap-2">
+								<TrendingUp class="h-5 w-5 text-primary" />
+								اتجاه النشاط الشهري
+							</h2>
+						</div>
+						<div class="h-64 sm:h-80">
+							<BaseChart type="line" data={activitiesPerMonth} options={barChartOptions} />
 						</div>
 					</div>
 				</div>
-				<div class="card bg-base-200 shadow-lg lg:col-span-2">
-					<div class="card-body">
-						<h2 class="card-title mb-4">الأعضاء الأكثر نشاطًا</h2>
-						<div class="flex h-[400px] items-center justify-center">
-							<div class="h-full w-full overflow-hidden">
-								<div class="h-[320px]">
-									<!-- <Pie data={mostActiveMembers} options={pieChartOptions} /> -->
-								</div>
-								<div class="legend-container h-[80px] overflow-y-auto px-4">
-									<!-- Legend akan muncul di sini -->
-								</div>
-							</div>
+
+				<!-- Most Active Members - Doughnut Chart -->
+				<div class="card bg-base-100 shadow-md border border-base-200 lg:col-span-4">
+					<div class="card-body p-4 sm:p-6">
+						<h2 class="card-title text-base font-bold flex items-center gap-2 mb-4">
+							<Users class="h-5 w-5 text-secondary" />
+							الأعضاء الأكثر نشاطًا
+						</h2>
+						<div class="h-64 sm:h-80">
+							<BaseChart type="doughnut" data={mostActiveMembers} options={pieChartOptions} />
+						</div>
+					</div>
+				</div>
+
+				<!-- Top Places - Horizontal Bar Chart -->
+				<div class="card bg-base-100 shadow-md border border-base-200 lg:col-span-6">
+					<div class="card-body p-4 sm:p-6">
+						<h2 class="card-title text-base font-bold flex items-center gap-2 mb-4">
+							<MapPin class="h-5 w-5 text-accent" />
+							الأماكن الأكثر تكراراً
+						</h2>
+						<div class="h-64 sm:h-80">
+							<BaseChart type="bar" data={topPlaces} options={{
+								...barChartOptions,
+								indexAxis: 'y'
+							}} />
+						</div>
+					</div>
+				</div>
+
+				<!-- Activities by Day - Bar Chart -->
+				<div class="card bg-base-100 shadow-md border border-base-200 lg:col-span-6">
+					<div class="card-body p-4 sm:p-6">
+						<h2 class="card-title text-base font-bold flex items-center gap-2 mb-4">
+							<Calendar class="h-5 w-5 text-warning" />
+							توزيع الأنشطة حسب أيام الأسبوع
+						</h2>
+						<div class="h-64 sm:h-80">
+							<BaseChart type="bar" data={activitiesByDay} options={barChartOptions} />
 						</div>
 					</div>
 				</div>
 			</div>
-			<!-- Recent Activities Table -->
-			<div class="card bg-base-200 shadow-lg">
-				<div class="card-body">
-					<h2 class="card-title mb-4">أحدث 5 أنشطة</h2>
+
+			<!-- Recent Activities Table with Enhanced Styling -->
+			<div class="card bg-base-100 shadow-md border border-base-200">
+				<div class="card-body p-0">
+					<div class="p-4 sm:p-6 border-b border-base-200 flex items-center justify-between">
+						<h2 class="card-title text-base font-bold flex items-center gap-2">
+							<Clock class="h-5 w-5 text-info" />
+							أحدث الأنشطة المسجلة
+						</h2>
+						<div class="badge badge-outline">{toHindi(data.recentActivities.length)} أنشطة</div>
+					</div>
 					<div class="overflow-x-auto">
-						<table class="table w-full">
+						<table class="table table-zebra w-full">
 							<thead>
-								<tr>
-									{#if data.canReadAll}<th>الاسم</th>{/if}
-									<th>النشاط</th>
-									<th>تاريخ البدء</th>
-									<th>المكان</th>
+								<tr class="bg-base-200/50">
+									{#if data.canReadAll}<th class="text-xs uppercase">العضو</th>{/if}
+									<th class="text-xs uppercase">النشاط</th>
+									<th class="text-xs uppercase">تاريخ البدء</th>
+									<th class="text-xs uppercase">المكان</th>
 								</tr>
 							</thead>
-							<tbody>
+							<tbody class="text-sm">
 								{#each data.recentActivities as activity}
-									<tr>
+									<tr class="hover">
 										{#if data.canReadAll}
-											<td>{activity.muridNama || '-'}</td>
+											<td class="font-medium text-primary">{activity.muridNama || '-'}</td>
 										{/if}
-										<td>{activity.kegiatan}</td>
+										<td class="font-medium">{activity.kegiatan}</td>
 										<td>
 											{#if activity.tanggalMulai}
-												{new Date(Date.parse(activity.tanggalMulai)).toLocaleDateString('ar-EG')}
+												<div class="flex items-center gap-2">
+													<Calendar class="h-3.5 w-3.5 opacity-50" />
+													{toHindi(new Date(Date.parse(activity.tanggalMulai)).toLocaleDateString('ar-EG'))}
+												</div>
 											{:else}-{/if}
 										</td>
-										<td>{activity.tempat || '-'}</td>
+										<td>
+											{#if activity.tempat}
+												<div class="flex items-center gap-2">
+													<MapPin class="h-3.5 w-3.5 opacity-50" />
+													{activity.tempat}
+												</div>
+											{:else}-{/if}
+										</td>
 									</tr>
 								{:else}
 									<tr>
-										<td colspan={data.canReadAll ? 4 : 3} class="text-center">
-											لا توجد أنشطة حديثة.
+										<td colspan={data.canReadAll ? 4 : 3} class="text-center py-8 opacity-50 italic">
+											لا توجد أنشطة حديثة متاحة لهذا النطاق.
 										</td>
 									</tr>
 								{/each}
