@@ -3,20 +3,19 @@
 		Users, 
 		Activity, 
 		Clock, 
-		ArrowRight, 
 		PlusCircle, 
-		TrendingUp, 
 		UserPlus, 
 		Calendar,
-		ChevronRight,
-		RefreshCw,
 		ShieldCheck,
 		GraduationCap,
-		Award
+		Award,
+		AlertTriangle,
+		Settings
 	} from 'lucide-svelte';
 	import { formatDateShort } from '$lib/utils/date';
 	import type { PageData } from './$types';
 	import { fly, fade } from 'svelte/transition';
+	import BaseChart from '$lib/components/charts/BaseChart.svelte';
 
 	interface Props {
 		data: PageData;
@@ -26,8 +25,18 @@
 
 	// Computed stats
 	const getMarhalahCount = (m: number) => data.stats.marhalah.find(item => item.marhalah === m)?.count || 0;
-	const priaCount = data.stats.gender.find(item => item.gender === true)?.count || 0;
-	const wanitaCount = data.stats.gender.find(item => item.gender === false)?.count || 0;
+	
+	// Chart Data
+	let genderData = $derived({
+		labels: ['Pria', 'Wanita'],
+		datasets: [{
+			data: [
+				data.stats.gender.find(item => item.gender === true)?.count || 0,
+				data.stats.gender.find(item => item.gender === false)?.count || 0
+			],
+			backgroundColor: ['#3b82f6', '#ec4899']
+		}]
+	});
 </script>
 
 <svelte:head>
@@ -39,7 +48,7 @@
 	<div class="flex flex-col md:flex-row md:items-center justify-between gap-6" in:fade={{ duration: 500 }}>
 		<div>
 			<h1 class="text-4xl md:text-5xl font-black tracking-tight mb-2">
-				Selamat Datang, <span class="text-gradient">{data.user.username}</span>!
+				Selamat Datang, <span class="text-primary">{data.user.username}</span>
 			</h1>
 			<p class="text-base-content/60 flex items-center gap-2 mt-1 font-medium">
 				<Calendar class="h-5 w-5 text-primary" />
@@ -48,223 +57,135 @@
 		</div>
 		<div class="flex gap-3">
 			<a href="/member/pendataan/new" class="btn btn-primary btn-lg shadow-xl shadow-primary/30 group px-8">
-				<PlusCircle class="h-5 w-5 transition-transform group-hover:rotate-90" /> Tambah Murid
+				<PlusCircle class="h-5 w-5" /> Tambah Murid
 			</a>
 		</div>
 	</div>
 
+	<!-- Admin Alerts -->
+	{#if data.isAdmin && data.dataIntegrityIssues > 0}
+		<div class="alert alert-warning shadow-lg" in:fly={{ y: -10 }}>
+			<AlertTriangle class="h-6 w-6" />
+			<div>
+				<h3 class="font-bold">Perhatian Data!</h3>
+				<div class="text-sm">Terdapat {data.dataIntegrityIssues} murid dengan data kontak/alamat yang tidak lengkap.</div>
+			</div>
+			<div class="flex-none">
+				<a href="/member/pendataan" class="btn btn-sm btn-outline">Periksa Sekarang</a>
+			</div>
+		</div>
+	{/if}
+
 	<!-- Stats Overview -->
-	<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" in:fly={{ y: 20, duration: 600, delay: 100 }}>
-		<div class="tdmi-card group hover:border-primary/30 transition-all border border-base-200">
+	<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+		<div class="card bg-base-100 shadow-md border border-base-200 p-6">
 			<div class="flex justify-between items-start">
 				<div>
 					<p class="text-xs font-bold uppercase tracking-widest text-base-content/50">Total Murid</p>
 					<h2 class="text-3xl font-black mt-1">{data.stats.totalMurid}</h2>
 				</div>
-				<div class="p-3 rounded-2xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-content transition-colors">
+				<div class="p-3 rounded-2xl bg-primary/10 text-primary">
 					<Users class="h-6 w-6" />
 				</div>
 			</div>
-			<div class="mt-4 flex items-center text-xs text-success font-medium">
-				<TrendingUp class="h-3 w-3 mr-1" /> Terus Berkembang
-			</div>
 		</div>
 
-		<div class="tdmi-card group hover:border-info/30 transition-all border border-base-200">
+		<div class="card bg-base-100 shadow-md border border-base-200 p-6">
 			<div class="flex justify-between items-start">
 				<div>
 					<p class="text-xs font-bold uppercase tracking-widest text-base-content/50">Marhalah 1</p>
 					<h2 class="text-3xl font-black mt-1">{getMarhalahCount(1)}</h2>
 				</div>
-				<div class="p-3 rounded-2xl bg-info/10 text-info group-hover:bg-info group-hover:text-info-content transition-colors">
+				<div class="p-3 rounded-2xl bg-info/10 text-info">
 					<GraduationCap class="h-6 w-6" />
 				</div>
 			</div>
-			<div class="mt-4 w-full bg-base-200 rounded-full h-1.5 overflow-hidden">
-				<div class="bg-info h-full transition-all" style="width: {(getMarhalahCount(1) / (data.stats.totalMurid || 1)) * 100}%"></div>
-			</div>
 		</div>
 
-		<div class="tdmi-card group hover:border-warning/30 transition-all border border-base-200">
+		<div class="card bg-base-100 shadow-md border border-base-200 p-6">
 			<div class="flex justify-between items-start">
 				<div>
 					<p class="text-xs font-bold uppercase tracking-widest text-base-content/50">Marhalah 2</p>
 					<h2 class="text-3xl font-black mt-1">{getMarhalahCount(2)}</h2>
 				</div>
-				<div class="p-3 rounded-2xl bg-warning/10 text-warning group-hover:bg-warning group-hover:text-warning-content transition-colors">
+				<div class="p-3 rounded-2xl bg-warning/10 text-warning">
 					<ShieldCheck class="h-6 w-6" />
 				</div>
 			</div>
-			<div class="mt-4 w-full bg-base-200 rounded-full h-1.5 overflow-hidden">
-				<div class="bg-warning h-full transition-all" style="width: {(getMarhalahCount(2) / (data.stats.totalMurid || 1)) * 100}%"></div>
-			</div>
 		</div>
 
-		<div class="tdmi-card group hover:border-secondary/30 transition-all border border-base-200">
+		<div class="card bg-base-100 shadow-md border border-base-200 p-6">
 			<div class="flex justify-between items-start">
 				<div>
 					<p class="text-xs font-bold uppercase tracking-widest text-base-content/50">Marhalah 3</p>
 					<h2 class="text-3xl font-black mt-1">{getMarhalahCount(3)}</h2>
 				</div>
-				<div class="p-3 rounded-2xl bg-secondary/10 text-secondary group-hover:bg-secondary group-hover:text-secondary-content transition-colors">
+				<div class="p-3 rounded-2xl bg-secondary/10 text-secondary">
 					<Award class="h-6 w-6" />
 				</div>
-			</div>
-			<div class="mt-4 w-full bg-base-200 rounded-full h-1.5 overflow-hidden">
-				<div class="bg-secondary h-full transition-all" style="width: {(getMarhalahCount(3) / (data.stats.totalMurid || 1)) * 100}%"></div>
 			</div>
 		</div>
 	</div>
 
 	<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-		<!-- Main Activity Section -->
-		<div class="lg:col-span-2 space-y-6" in:fly={{ x: -20, duration: 600, delay: 200 }}>
-			<div class="card bg-base-100 shadow-xl border border-base-200 overflow-hidden">
-				<div class="card-body p-0">
-					<div class="p-6 border-b border-base-200 flex items-center justify-between bg-base-200/20">
-						<h3 class="font-bold flex items-center gap-2">
-							<Activity class="h-5 w-5 text-primary" />
-							Aktivitas Terbaru
-						</h3>
-						<a href="/member/pendataan" class="btn btn-ghost btn-xs">Lihat Semua</a>
-					</div>
-					
-					<div class="tabs tabs-bordered w-full">
-						<input type="radio" name="recent_tabs" class="tab" aria-label="Baru Ditambahkan" checked />
-						<div class="tab-content bg-base-100 p-0">
-							<div class="divide-y divide-base-100">
-								{#each data.recentlyAdded as m}
-									<div class="p-4 hover:bg-base-200/30 transition-colors flex items-center justify-between group">
-										<div class="flex items-center gap-3">
-											<div class="avatar placeholder">
-												<div class="bg-primary/10 text-primary rounded-full w-10 h-10 ring ring-primary/5">
-													<span class="text-sm font-bold">{m.nama.substring(0, 2).toUpperCase()}</span>
-												</div>
-											</div>
-											<div>
-												<h4 class="font-bold text-sm group-hover:text-primary transition-colors">{m.nama}</h4>
-												<p class="text-[10px] text-base-content/50 flex items-center gap-1 mt-0.5">
-													<Clock class="h-3 w-3" />
-													Daftar: {formatDateShort(m.updatedAt)}
-												</p>
-											</div>
-										</div>
-										<a href="/member/pendataan/{m.id}" class="btn btn-circle btn-ghost btn-sm opacity-0 group-hover:opacity-100 transition-all">
-											<ArrowRight class="h-4 w-4" />
-										</a>
-									</div>
-								{:else}
-									<div class="p-10 text-center opacity-50">Belum ada data murid baru</div>
-								{/each}
+		<div class="lg:col-span-2 space-y-6">
+			<!-- Recent Activities -->
+			<div class="card bg-base-100 shadow-md border border-base-200">
+				<div class="card-body p-6">
+					<h3 class="font-bold flex items-center gap-2 mb-4">
+						<Activity class="h-5 w-5 text-primary" /> Aktivitas Terakhir Anda
+					</h3>
+					<div class="space-y-2">
+						{#each data.recentActivities as act}
+							<div class="flex items-center justify-between p-3 bg-base-200/50 rounded-lg">
+								<span class="font-medium">{act.kegiatan}</span>
+								<span class="text-xs text-base-content/60">{formatDateShort(act.tanggalMulai || '')}</span>
 							</div>
-						</div>
-
-						<input type="radio" name="recent_tabs" class="tab" aria-label="Terakhir Diperbarui" />
-						<div class="tab-content bg-base-100 p-0">
-							<div class="divide-y divide-base-100">
-								{#each data.recentlyUpdated as m}
-									<div class="p-4 hover:bg-base-200/30 transition-colors flex items-center justify-between group">
-										<div class="flex items-center gap-3">
-											<div class="avatar placeholder">
-												<div class="bg-secondary/10 text-secondary rounded-full w-10 h-10 ring ring-secondary/5">
-													<span class="text-sm font-bold">{m.nama.substring(0, 2).toUpperCase()}</span>
-												</div>
-											</div>
-											<div>
-												<h4 class="font-bold text-sm group-hover:text-secondary transition-colors">{m.nama}</h4>
-												<p class="text-[10px] text-base-content/50 flex items-center gap-1 mt-0.5">
-													<RefreshCw class="h-3 w-3" />
-													Update: {formatDateShort(m.updatedAt)}
-												</p>
-											</div>
-										</div>
-										<a href="/member/pendataan/{m.id}" class="btn btn-circle btn-ghost btn-sm opacity-0 group-hover:opacity-100 transition-all">
-											<ArrowRight class="h-4 w-4" />
-										</a>
-									</div>
-								{:else}
-									<div class="p-10 text-center opacity-50">Belum ada pembaruan data</div>
-								{/each}
-							</div>
-						</div>
+						{:else}
+							<p class="text-sm opacity-50 italic">Anda belum mencatat aktivitas apa pun.</p>
+						{/each}
 					</div>
 				</div>
 			</div>
+
+            <!-- Active Piket -->
+			{#if data.activePiket.length > 0}
+			<div class="card bg-warning/10 border border-warning/20 shadow-none">
+				<div class="card-body">
+					<h3 class="font-bold text-warning flex items-center gap-2">
+						<ShieldCheck class="h-5 w-5" /> Piket Aktif Anda
+					</h3>
+					{#each data.activePiket as piket}
+						<div class="flex justify-between items-center bg-white/50 p-3 rounded-lg">
+							<span>{piket.description || 'Tugas Piket'}</span>
+							<span class="font-bold">{formatDateShort(piket.startDate)} - {formatDateShort(piket.endDate)}</span>
+						</div>
+					{/each}
+				</div>
+			</div>
+			{/if}
 		</div>
 
-		<!-- Side Widgets Section -->
-		<div class="space-y-6" in:fly={{ x: 20, duration: 600, delay: 300 }}>
-			<!-- Quick Actions -->
-			<div class="card bg-primary text-primary-content shadow-xl overflow-hidden">
-				<div class="card-body">
-					<h3 class="font-bold flex items-center gap-2 mb-2">
-						<PlusCircle class="h-5 w-5" />
-						Aksi Cepat
-					</h3>
-					<div class="grid grid-cols-1 gap-2">
-						<a href="/member/pendataan/new" class="btn btn-sm btn-white/20 hover:bg-white/30 text-white border-none justify-start gap-3 h-12">
-							<div class="bg-white/20 p-1.5 rounded-lg">
-								<UserPlus class="h-4 w-4" />
-							</div>
-							Daftarkan Murid Baru
-						</a>
-						<a href="/member/pendataan" class="btn btn-sm btn-white/20 hover:bg-white/30 text-white border-none justify-start gap-3 h-12">
-							<div class="bg-white/20 p-1.5 rounded-lg">
-								<Activity class="h-4 w-4" />
-							</div>
-							Kelola Pendataan
-						</a>
-					</div>
+		<div class="space-y-6">
+			<!-- Demographic Chart -->
+			<div class="card bg-base-100 shadow-md border border-base-200 p-6">
+				<h3 class="font-bold text-sm uppercase tracking-wider text-base-content/50 mb-4">Demografi Murid</h3>
+				<div class="h-48">
+					<BaseChart type="doughnut" data={genderData} options={{ responsive: true, maintainAspectRatio: false }} />
 				</div>
 			</div>
 
-			<!-- Demographic Card -->
-			<div class="card bg-base-100 shadow-xl border border-base-200">
-				<div class="card-body">
-					<h3 class="font-bold text-sm uppercase tracking-wider text-base-content/50 mb-4">Demografi Gender</h3>
-					
-					<div class="space-y-4">
-						<div>
-							<div class="flex justify-between text-sm mb-1">
-								<span class="flex items-center gap-1.5 font-medium"><span class="w-2 h-2 rounded-full bg-blue-500"></span> Pria</span>
-								<span class="opacity-70">{priaCount}</span>
-							</div>
-							<div class="w-full bg-base-200 rounded-full h-2">
-								<div class="bg-blue-500 h-full rounded-full transition-all" style="width: {(priaCount / (data.stats.totalMurid || 1)) * 100}%"></div>
-							</div>
-						</div>
-						
-						<div>
-							<div class="flex justify-between text-sm mb-1">
-								<span class="flex items-center gap-1.5 font-medium"><span class="w-2 h-2 rounded-full bg-pink-500"></span> Wanita</span>
-								<span class="opacity-70">{wanitaCount}</span>
-							</div>
-							<div class="w-full bg-base-200 rounded-full h-2">
-								<div class="bg-pink-500 h-full rounded-full transition-all" style="width: {(wanitaCount / (data.stats.totalMurid || 1)) * 100}%"></div>
-							</div>
-						</div>
-					</div>
-					
-					<div class="mt-6 p-4 rounded-xl bg-base-200/50 text-[11px] leading-relaxed italic">
-						"Data demografi ini membantu dalam perencanaan kegiatan (Nasyath) yang lebih tepat sasaran."
+			<!-- Admin Quick Links -->
+			{#if data.isAdmin}
+				<div class="card bg-base-200 shadow-md border border-base-200">
+					<div class="card-body p-6">
+						<h3 class="font-bold flex items-center gap-2 mb-2">
+							<Settings class="h-5 w-5" /> Panel Admin
+						</h3>
+						<a href="/admin/users" class="btn btn-sm btn-ghost justify-start">Kelola Pengguna</a>
 					</div>
 				</div>
-			</div>
+			{/if}
 		</div>
 	</div>
 </div>
-
-<style>
-	/* Custom styles for dashboard */
-	:global(.tab-content) {
-		@apply border-base-200;
-	}
-	
-	.btn-white\/20 {
-		background-color: rgba(255, 255, 255, 0.1);
-	}
-	
-	.btn-white\/30 {
-		background-color: rgba(255, 255, 255, 0.2);
-	}
-</style>

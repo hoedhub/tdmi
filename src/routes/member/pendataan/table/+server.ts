@@ -69,29 +69,38 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			if (filters.global) {
 				const globalSearch = `%${filters.global}%`;
 				conditions.push(
-					sql`(${muridTable.nama} LIKE ${globalSearch} OR ${muridTable.namaArab} LIKE ${globalSearch} OR ${muridTable.nomorTelepon} LIKE ${globalSearch})`
+					sql`(${muridTable.nama} LIKE ${globalSearch} 
+						OR ${muridTable.namaArab} LIKE ${globalSearch} 
+						OR ${muridTable.nomorTelepon} LIKE ${globalSearch}
+						OR ${propTable.propinsi} LIKE ${globalSearch}
+						OR ${kokabTable.kokab} LIKE ${globalSearch}
+						OR ${kecamatanTable.kecamatan} LIKE ${globalSearch}
+						OR ${deskelTable.deskel} LIKE ${globalSearch})`
 				);
 			}
 			if (filters.columns) {
 				for (const key in filters.columns) {
-					const value = filters.columns[key];
-					if (value) {
+					const filterObj = filters.columns[key];
+					const value = filterObj?.value;
+					if (value !== undefined && value !== null && value !== '') {
 						// Handle boolean and specific value filters
 						if (key === 'aktif' || key === 'qari' || key === 'partisipasi') {
-							const boolValue = value === 'Aktif' || value === 'Ya' || value === true;
+							const boolValue = value === 'Aktif' || value === 'Ya' || value === true || value === 'true';
 							conditions.push(eq((muridTable as any)[key], boolValue));
 						} else if (key === 'gender') {
-							const boolValue = value === 'Pria' || value === true;
+							const boolValue = value === 'Pria' || value === true || value === 'true';
 							conditions.push(eq(muridTable.gender, boolValue));
 						} else if (key === 'marhalah') {
-							conditions.push(eq(muridTable.marhalah, parseInt(value) as 1 | 2 | 3));
+							conditions.push(eq(muridTable.marhalah, parseInt(value as string) as 1 | 2 | 3));
 						}
 						// Handle territory name filters
-						else if (key === 'alamat' || key === 'mursyidName' || key === 'baiatName' || key === 'wiridName') {
+						else if (key === 'alamat' || key === 'propinsiName' || key === 'mursyidName' || key === 'baiatName' || key === 'wiridName') {
 							const searchVal = `%${value}%`;
 							const cols = [];
 							if (key === 'alamat') {
 								cols.push(muridTable.alamat, deskelTable.deskel, kecamatanTable.kecamatan, kokabTable.kokab, propTable.propinsi);
+							} else if (key === 'propinsiName') {
+								cols.push(propTable.propinsi);
 							} else if (key === 'mursyidName') {
 								cols.push(mursyid.nama);
 							} else if (key === 'baiatName') {
@@ -112,7 +121,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 						) {
 							conditions.push(like((muridTable as any)[key], `%${value}%`));
 						}
-						// Fallback for any other direct column name that might be passed
+						// Fallback
 						else if (key in muridTable) {
 							conditions.push(like((muridTable as any)[key], `%${value}%`));
 						}

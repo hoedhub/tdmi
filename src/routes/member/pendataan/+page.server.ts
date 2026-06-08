@@ -2,8 +2,8 @@ import { error, redirect } from '@sveltejs/kit';
 import { userHasPermission } from '$lib/server/accessControl';
 import type { PageServerLoad } from './$types';
 import { db } from '$lib/drizzle';
-import { muridTable } from '$lib/drizzle/schema';
-import { desc, sql, notInArray } from 'drizzle-orm';
+import { muridTable, propTable, kokabTable, kecamatanTable, deskelTable } from '$lib/drizzle/schema';
+import { desc, sql, notInArray, eq } from 'drizzle-orm';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	if (!locals.user) {
@@ -44,12 +44,28 @@ export const load: PageServerLoad = async ({ locals }) => {
 			.limit(3)
 			.all();
 
+		// Fetch murid counts per province for the map
+		const sebaranMurid = await db
+			.select({
+				id: propTable.id,
+				propinsi: propTable.propinsi,
+				count: sql<number>`count(${muridTable.id})`
+			})
+			.from(propTable)
+			.leftJoin(kokabTable, eq(kokabTable.idProp, propTable.id))
+			.leftJoin(kecamatanTable, eq(kecamatanTable.idKokab, kokabTable.id))
+			.leftJoin(deskelTable, eq(deskelTable.idKecamatan, kecamatanTable.id))
+			.leftJoin(muridTable, eq(muridTable.deskelId, deskelTable.id))
+			.groupBy(propTable.id, propTable.propinsi)
+			.all();
+
 		return {
 			user: locals.user,
 			canReadMurid,
 			canWriteMurid,
 			recentlyAdded,
 			recentlyUpdated,
+			sebaranMurid,
 			totalItems: 0,
 			dbError: false
 		};

@@ -7,12 +7,14 @@
 	import { SuperTable } from '$lib/components/SuperTable';
 	import type { ColumnDef, SortConfig, FilterState } from '$lib/components/SuperTable';
 	import { goto } from '$app/navigation';
-	import { Pen, Trash, PlusCircle, Clock, RefreshCw, ChevronRight } from 'lucide-svelte';
+	import { Pen, Trash, PlusCircle, Clock, RefreshCw, ChevronRight, List, Map as MapIcon } from 'lucide-svelte';
 	import { onMount } from 'svelte';
 	import type { DatabaseUserAttributes } from '$lib/server/auth';
 	import { api } from '$lib/utils/api';
 	import { error as toastError, success as toastSuccess } from '$lib/components/toast';
 	import { formatDateShort } from '$lib/utils/date';
+	import IndonesiaMap from '$lib/components/charts/IndonesiaMap.svelte';
+	import { fade } from 'svelte/transition';
 
 	// --- Type Definitions ---
 	// Use a type intersection (&) to extend PageData, which is the correct approach.
@@ -68,6 +70,7 @@
 	let muridData: Murid[] = $state([]);
 	let totalItems = $state(data.totalItems);
 	let isNavigating = $state(false);
+	let activeTab = $state<'table' | 'map'>('table');
 
 	let loading = $state(false);
 	let pageSize = $state(10);
@@ -79,6 +82,37 @@
 	// --- Reactive Data from Props ---
 	let canReadMurid = $derived(data.canReadMurid);
 	let canWriteMurid = $derived(data.canWriteMurid);
+
+	async function handleProvinceClick(id: number, name: string) {
+		// Switch to table tab
+		activeTab = 'table';
+		
+		console.log('Before update:', JSON.stringify(currentFilters));
+
+		// 1. Update filter state secara langsung
+		if (!currentFilters.columns) {
+			currentFilters.columns = {};
+		}
+		currentFilters.columns.propinsiName = { value: name, operator: 'contains' };
+		
+		console.log('After update:', JSON.stringify(currentFilters));
+		
+		// 2. Beri waktu sejenak agar Svelte mendeteksi perubahan state
+		await tick();
+		
+		// 3. Trigger fetch
+		await fetchTableData(currentSort, currentFilters, 1, pageSize);
+		
+		// Scroll to top
+		window.scrollTo({ top: 0, behavior: 'smooth' });
+	}
+
+	async function resetFilter() {
+		// Reset filter state
+		currentFilters = { columns: {} };
+		// Trigger fetch
+		await fetchTableData(currentSort, currentFilters, 1, pageSize);
+	}
 
 	function calculateAge(tglLahir: string | null): number | null {
 		if (!tglLahir) return null;
@@ -327,6 +361,20 @@
 <div class="mb-6 flex flex-wrap items-center justify-between space-y-2">
 	<h1 class="card-title text-2xl">Manajemen Data Murid</h1>
 	<div class="flex items-center gap-2">
+		<div class="tabs tabs-boxed mr-4">
+			<button 
+				class="tab tab-sm gap-2 {activeTab === 'table' ? 'tab-active' : ''}" 
+				onclick={() => activeTab = 'table'}
+			>
+				<List class="h-4 w-4" /> Daftar
+			</button>
+			<button 
+				class="tab tab-sm gap-2 {activeTab === 'map' ? 'tab-active' : ''}" 
+				onclick={() => activeTab = 'map'}
+			>
+				<MapIcon class="h-4 w-4" /> Peta Sebaran
+			</button>
+		</div>
 		{#if canWriteMurid}
 			<a href="/member/pendataan/new" class="btn btn-primary btn-sm">
 				<PlusCircle class="h-4 w-4" /> Tambah Murid Baru
@@ -337,65 +385,95 @@
 
 
 
-<SuperTable
-		data={muridData}
-		{columns}
-		rowKey="id"
-		bind:itemsPerPageProp={pageSize}
-		bind:currentPageProp={currentPage}
-		totalItemsProp={totalItems}
-		isLoadingProp={loading}
-		bind:sort={currentSort}
-		serverSide={true}
-		bind:filterStateProp={currentFilters}
-		onsort={handleSort}
-		onfilter={handleFilter}
-		onpageChange={handlePageChange}
-		onitemsPerPageChange={handleItemsPerPageChange}
-		onrowClick={(row) => {
-			isNavigating = true;
-			goto(`/member/pendataan/${row.id}`);
-		}}
-		onselectionChange={handleSelectionChange}
-		tableClass={isNavigating ? 'blur-sm grayscale opacity-50 pointer-events-none transition-all duration-300' : 'transition-all duration-300'}
-	>
-		{#snippet bulkActions({ selectedIds })}
-			{#if canWriteMurid && selectedIds.length === 1}
-				<button class="btn btn-secondary btn-sm" onclick={handleEditSelected}>
-					<Pen class="h-4 w-4" />
-					Edit Selected
-				</button>
-			{/if}
-		{/snippet}
-		
-		{#snippet loadingState()}
-			<div class="p-8 text-center">
-				<span class="loading loading-spinner mb-4"></span>
-				<p class="text-lg font-semibold">Memuat data...</p>
-				<p class="text-sm text-base-content/70">Harap tunggu sebentar.</p>
-			</div>
-		{/snippet}
+{#if activeTab === 'table'}
+	{#if currentFilters.columns.propinsiName}
+		<div class="alert alert-warning shadow-sm mb-4 py-2 px-4 flex items-center gap-2">
+			<span class="font-medium text-warning-content flex-grow">
+				Filter Propinsi: <strong>{currentFilters.columns.propinsiName.value}</strong>
+			</span>
+			<button 
+                class="cursor-pointer hover:scale-125 transition-transform text-warning-content font-bold text-xl leading-none" 
+                onclick={resetFilter}
+                aria-label="Reset Filter"
+            >
+				&times;
+			</button>
+		</div>
+	{/if}
 
-		{#snippet rowActions({ row })}
-			{#if canWriteMurid}
-				<div class="flex gap-2">
-					<a
-						href={`/member/pendataan/${row.id}/edit?from=table`}
-						class="btn btn-ghost btn-sm"
-						onclick={stopPropagation(() => {})}
-					>
-						<Pen class="h-4 w-4" />
-					</a>
-					<button
-						class="btn btn-ghost btn-sm text-error"
-						onclick={stopPropagation(() => handleDeleteMurid(row.id, row.nama))}
-					>
-						<Trash class="h-4 w-4" />
-					</button>
-				</div>
-			{/if}
-		{/snippet}
-	</SuperTable>
+	<div in:fade={{ duration: 200 }}>
+		<SuperTable
+				data={muridData}
+				{columns}
+				rowKey="id"
+				bind:itemsPerPageProp={pageSize}
+				bind:currentPageProp={currentPage}
+				totalItemsProp={totalItems}
+				isLoadingProp={loading}
+				bind:sort={currentSort}
+				serverSide={true}
+				bind:filterStateProp={currentFilters}
+				onsort={handleSort}
+				onfilter={handleFilter}
+				onpageChange={handlePageChange}
+				onitemsPerPageChange={handleItemsPerPageChange}
+				onrowClick={(row) => {
+					isNavigating = true;
+					goto(`/member/pendataan/${row.id}`);
+				}}
+				onselectionChange={handleSelectionChange}
+				tableClass={isNavigating ? 'blur-sm grayscale opacity-50 pointer-events-none transition-all duration-300' : 'transition-all duration-300'}
+			>
+				{#snippet bulkActions({ selectedIds })}
+					{#if canWriteMurid && selectedIds.length === 1}
+						<button class="btn btn-secondary btn-sm" onclick={handleEditSelected}>
+							<Pen class="h-4 w-4" />
+							Edit Selected
+						</button>
+					{/if}
+				{/snippet}
+				
+				{#snippet loadingState()}
+					<div class="p-8 text-center">
+						<span class="loading loading-spinner mb-4"></span>
+						<p class="text-lg font-semibold">Memuat data...</p>
+						<p class="text-sm text-base-content/70">Harap tunggu sebentar.</p>
+					</div>
+				{/snippet}
+
+				{#snippet rowActions({ row })}
+					{#if canWriteMurid}
+						<div class="flex gap-2">
+							<a
+								href={`/member/pendataan/${row.id}/edit?from=table`}
+								class="btn btn-ghost btn-sm"
+								onclick={stopPropagation(() => {})}
+							>
+								<Pen class="h-4 w-4" />
+							</a>
+							<button
+								class="btn btn-ghost btn-sm text-error"
+								onclick={stopPropagation(() => handleDeleteMurid(row.id, row.nama))}
+							>
+								<Trash class="h-4 w-4" />
+							</button>
+						</div>
+					{/if}
+				{/snippet}
+			</SuperTable>
+	</div>
+{:else}
+	<div in:fade={{ duration: 200 }} class="space-y-4">
+		<div class="alert alert-info shadow-sm py-2 px-4">
+			<MapIcon class="h-5 w-5" />
+			<span>Klik pada propinsi untuk melihat daftar murid di wilayah tersebut.</span>
+		</div>
+		<IndonesiaMap 
+			data={data.sebaranMurid || []} 
+			onProvinceClick={handleProvinceClick}
+		/>
+	</div>
+{/if}
 
 	{#if isNavigating}
 		<div class="fixed inset-0 z-[100] flex items-center justify-center bg-base-100/10 backdrop-blur-[2px]">
