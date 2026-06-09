@@ -92,7 +92,7 @@
 			<!-- SEA LAYER -->
 			<rect width="1000" height="450" fill="var(--map-sea)" rx="24" />
 			
-			<g class="provinces">
+			<g class="provinces" transform="translate(100, 30)">
 				{#each paths as p}
 					{@const count = getCount(p.name)}
 					{@const id = getId(p.name)}
