@@ -136,6 +136,39 @@
 		wanita: 'Murid Wanita'
 	};
 
+	// --- Insights Logic ---
+	let sortedProvinces = $derived(
+		[...(data.sebaranMurid || [])].sort((a, b) => (b[mapViewMode] || 0) - (a[mapViewMode] || 0))
+	);
+
+	let topProvinces = $derived(sortedProvinces.slice(0, 5).filter((p) => (p[mapViewMode] || 0) > 0));
+
+	let nationalStats = $derived({
+		total: (data.sebaranMurid || []).reduce((acc: number, curr: any) => acc + (curr.total || 0), 0),
+		m1: (data.sebaranMurid || []).reduce((acc: number, curr: any) => acc + (curr.marhalah1 || 0), 0),
+		m2: (data.sebaranMurid || []).reduce((acc: number, curr: any) => acc + (curr.marhalah2 || 0), 0),
+		m3: (data.sebaranMurid || []).reduce((acc: number, curr: any) => acc + (curr.marhalah3 || 0), 0),
+		pria: (data.sebaranMurid || []).reduce((acc: number, curr: any) => acc + (curr.pria || 0), 0),
+		wanita: (data.sebaranMurid || []).reduce((acc: number, curr: any) => acc + (curr.wanita || 0), 0)
+	});
+
+	const topColors = [
+		'#6366f1', // Indigo
+		'#ec4899', // Pink
+		'#10b981', // Emerald
+		'#f59e0b', // Amber
+		'#3b82f6', // Blue
+		'#94a3b8'  // Others (Slate)
+	];
+
+	let modeTotal = $derived(
+		(data.sebaranMurid || []).reduce((acc: number, curr: any) => acc + (Number(curr[mapViewMode]) || 0), 0)
+	);
+
+	let othersCount = $derived(
+		modeTotal - topProvinces.reduce((acc, curr) => acc + (Number(curr[mapViewMode]) || 0), 0)
+	);
+
 	function calculateAge(tglLahir: string | null): number | null {
 		if (!tglLahir) return null;
 		const birthDate = new Date(tglLahir);
@@ -210,7 +243,7 @@
 			label: 'Baiat',
 			sortable: true,
 			filterable: 'text',
-			formatter: (v, row) => renderReferencedMurid(v, row.baiatMarhalah, row.baiatQari),
+			formatter: (v, row) => renderReferencedMurid(v, row.marhalah, row.qari),
 			hidden: true
 		},
 		{
@@ -218,7 +251,7 @@
 			label: 'Wirid',
 			sortable: true,
 			filterable: 'text',
-			formatter: (v, row) => renderReferencedMurid(v, row.wiridMarhalah, row.wiridQari),
+			formatter: (v, row) => renderReferencedMurid(v, row.marhalah, row.qari),
 			hidden: true
 		},
 		{ key: 'nomorTelepon', label: 'Telepon', sortable: true, filterable: 'text' },
@@ -514,10 +547,129 @@
 			</div>
 		</div>
 
-		<IndonesiaMap 
-			data={mapData} 
-			onProvinceClick={handleProvinceClick}
-		/>
+		<div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+			<!-- Map Section -->
+			<div class="lg:col-span-3 space-y-4">
+				<IndonesiaMap 
+					data={mapData} 
+					onProvinceClick={handleProvinceClick}
+				/>
+			</div>
+
+			<!-- Insight Panel -->
+			<div class="lg:col-span-1 space-y-3">
+				<!-- National Summary (Compact) -->
+				<div class="card bg-base-200 shadow-sm border border-base-300">
+					<div class="card-body p-3">
+						<div class="flex justify-between items-center mb-2">
+							<span class="text-[10px] font-black uppercase opacity-40 tracking-widest">Nasional</span>
+							<div class="badge badge-neutral badge-xs font-mono">{nationalStats.total} Murid</div>
+						</div>
+						<div class="flex justify-between items-center text-xs">
+							<div class="flex flex-col">
+								<span class="opacity-50 text-[9px] uppercase font-bold">Rasio Gender</span>
+								<span class="font-black text-primary">
+									{nationalStats.pria} <span class="opacity-30 mx-0.5">/</span> {nationalStats.wanita}
+									<span class="text-[10px] opacity-60 font-medium ml-1">({(nationalStats.pria / (nationalStats.wanita || 1)).toFixed(1)})</span>
+								</span>
+							</div>
+							<div class="flex gap-0.5 h-4 w-12 rounded-sm overflow-hidden bg-base-300">
+								<div class="bg-blue-500" style="width: {(nationalStats.pria / (nationalStats.total || 1)) * 100}%"></div>
+								<div class="bg-pink-500" style="width: {(nationalStats.wanita / (nationalStats.total || 1)) * 100}%"></div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Marhalah Distribution -->
+				<div class="card bg-base-100 shadow-sm border border-base-200">
+					<div class="card-body p-3">
+						<h3 class="card-title text-[10px] font-black uppercase opacity-40 tracking-widest mb-1">Distribusi Marhalah</h3>
+						<div class="flex h-1.5 w-full rounded-full overflow-hidden bg-base-300 my-1.5">
+							<div class="bg-info" style="width: {(nationalStats.m1 / (nationalStats.total || 1)) * 100}%"></div>
+							<div class="bg-warning" style="width: {(nationalStats.m2 / (nationalStats.total || 1)) * 100}%"></div>
+							<div class="bg-success" style="width: {(nationalStats.m3 / (nationalStats.total || 1)) * 100}%"></div>
+						</div>
+						<div class="grid grid-cols-3 gap-1 text-center">
+							<div class="flex flex-col">
+								<span class="text-[8px] font-bold opacity-50">M1</span>
+								<span class="text-[10px] font-black">{((nationalStats.m1 / (nationalStats.total || 1)) * 100).toFixed(0)}%</span>
+							</div>
+							<div class="flex flex-col border-x border-base-content/10">
+								<span class="text-[8px] font-bold opacity-50">M2</span>
+								<span class="text-[10px] font-black">{((nationalStats.m2 / (nationalStats.total || 1)) * 100).toFixed(0)}%</span>
+							</div>
+							<div class="flex flex-col">
+								<span class="text-[8px] font-bold opacity-50">M3</span>
+								<span class="text-[10px] font-black">{((nationalStats.m3 / (nationalStats.total || 1)) * 100).toFixed(0)}%</span>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Top Regions -->
+				<div class="card bg-base-100 border border-base-200 shadow-md">
+					<div class="card-body p-3">
+						<h3 class="card-title text-[10px] font-black uppercase tracking-tighter mb-1">
+							Top 5 Wilayah
+						</h3>
+						
+						<!-- Stacked Distribution Bar with Tooltips -->
+						<div class="flex h-2 w-full rounded-sm overflow-hidden bg-base-300 mb-3">
+							{#each topProvinces as p, i}
+								{@const pct = ((p[mapViewMode] / (modeTotal || 1)) * 100).toFixed(1)}
+								<div 
+									class="tooltip tooltip-bottom h-full" 
+									data-tip="{p.propinsi}: {pct}%"
+									style="width: {pct}%; background-color: {topColors[i]}"
+								></div>
+							{/each}
+							{#if othersCount > 0}
+								{@const otherPct = ((othersCount / (modeTotal || 1)) * 100).toFixed(1)}
+								<div 
+									class="tooltip tooltip-bottom h-full opacity-50" 
+									data-tip="Lainnya: {otherPct}%"
+									style="width: {otherPct}%; background-color: {topColors[5]}"
+								></div>
+							{/if}
+						</div>
+
+						<div class="flex flex-col gap-1.5">
+							{#if topProvinces.length === 0}
+								<p class="text-[10px] opacity-50 italic py-2 text-center">Tidak ada data.</p>
+							{:else}
+								{#each topProvinces as p, i}
+									{@const pct = ((p[mapViewMode] / (modeTotal || 1)) * 100).toFixed(1)}
+									<button 
+										class="flex items-center justify-between p-1.5 rounded bg-base-200/50 hover:bg-primary hover:text-primary-content transition-all group text-left border-l-4 tooltip tooltip-left w-full"
+										style="border-left-color: {topColors[i]}"
+										data-tip="Porsi: {pct}% dari total"
+										onclick={() => handleProvinceClick(p.id, p.propinsi)}
+									>
+										<div class="flex items-center gap-2 overflow-hidden pl-1">
+											<span class="text-xs font-bold truncate">{p.propinsi}</span>
+										</div>
+										<span class="text-[10px] font-mono font-black">{p[mapViewMode]}</span>
+									</button>
+								{/each}
+								{#if othersCount > 0}
+									<div class="flex items-center justify-between p-1.5 rounded opacity-40 text-left border-l-4 border-base-content/20 bg-base-200/30">
+										<span class="text-[9px] font-bold pl-1 uppercase">Lainnya</span>
+										<span class="text-[10px] font-mono">{othersCount}</span>
+									</div>
+								{/if}
+							{/if}
+						</div>
+					</div>
+				</div>
+
+				<!-- Action -->
+				<button class="btn btn-primary btn-sm no-animation hover:brightness-110 border-none w-full gap-2 shadow-lg shadow-primary/20">
+					<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+					<span class="font-black uppercase tracking-tighter text-[10px]">Cetak Laporan PDF</span>
+				</button>
+			</div>
+		</div>
 	</div>
 {/if}
 

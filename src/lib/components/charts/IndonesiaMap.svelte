@@ -85,14 +85,14 @@
 		</div>
 	{:else}
 		<svg 
-			viewBox="0 0 1000 450" 
+			viewBox="0 0 850 380" 
 			class="w-full h-auto max-h-[700px] p-2 sm:p-6"
 			xmlns="http://www.w3.org/2000/svg"
 		>
 			<!-- SEA LAYER -->
-			<rect width="1000" height="450" fill="var(--map-sea)" rx="24" />
+			<rect width="850" height="380" fill="var(--map-sea)" rx="24" />
 			
-			<g class="provinces" transform="translate(100, 30)">
+			<g class="provinces" transform="translate(30, 20)">
 				{#each paths as p}
 					{@const count = getCount(p.name)}
 					{@const id = getId(p.name)}
