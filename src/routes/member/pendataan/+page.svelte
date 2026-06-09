@@ -71,6 +71,7 @@
 	let totalItems = $state(data.totalItems);
 	let isNavigating = $state(false);
 	let activeTab = $state<'table' | 'map'>('table');
+	let mapViewMode = $state<'total' | 'marhalah1' | 'marhalah2' | 'marhalah3' | 'pria' | 'wanita'>('total');
 
 	let loading = $state(false);
 	let pageSize = $state(10);
@@ -113,6 +114,27 @@
 		// Trigger fetch
 		await fetchTableData(currentSort, currentFilters, 1, pageSize);
 	}
+
+	// Transform data based on selected view mode
+	let mapData = $derived(
+		(data.sebaranMurid || []).map((item: any) => {
+			const val = item[mapViewMode];
+			return {
+				id: item.id,
+				propinsi: item.propinsi,
+				count: typeof val === 'number' ? val : Number(val || 0)
+			};
+		})
+	);
+
+	const mapLabels: Record<string, string> = {
+		total: 'Total Murid',
+		marhalah1: 'Murid Marhalah 1',
+		marhalah2: 'Murid Marhalah 2',
+		marhalah3: 'Murid Marhalah 3',
+		pria: 'Murid Pria',
+		wanita: 'Murid Wanita'
+	};
 
 	function calculateAge(tglLahir: string | null): number | null {
 		if (!tglLahir) return null;
@@ -464,12 +486,36 @@
 	</div>
 {:else}
 	<div in:fade={{ duration: 200 }} class="space-y-4">
-		<div class="alert alert-info shadow-sm py-2 px-4">
-			<MapIcon class="h-5 w-5" />
-			<span>Klik pada propinsi untuk melihat daftar murid di wilayah tersebut.</span>
+		<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+			<div class="alert alert-info shadow-sm py-2 px-4 flex items-center gap-2 flex-1">
+				<MapIcon class="h-5 w-5" />
+				<span class="text-sm">Klik wilayah untuk melihat detail di tabel.</span>
+			</div>
+
+			<div class="join shadow-sm border border-base-200">
+				<select 
+					class="select select-sm select-bordered join-item font-bold"
+					bind:value={mapViewMode}
+				>
+					<optgroup label="Demografi">
+						<option value="total">Total Murid</option>
+						<option value="pria">Pria</option>
+						<option value="wanita">Wanita</option>
+					</optgroup>
+					<optgroup label="Marhalah">
+						<option value="marhalah1">Marhalah 1</option>
+						<option value="marhalah2">Marhalah 2</option>
+						<option value="marhalah3">Marhalah 3</option>
+					</optgroup>
+				</select>
+				<div class="bg-base-200 px-4 py-1 flex items-center join-item text-xs font-black uppercase opacity-50">
+					Mode View
+				</div>
+			</div>
 		</div>
+
 		<IndonesiaMap 
-			data={data.sebaranMurid || []} 
+			data={mapData} 
 			onProvinceClick={handleProvinceClick}
 		/>
 	</div>

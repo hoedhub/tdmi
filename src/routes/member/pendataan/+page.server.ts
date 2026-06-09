@@ -44,12 +44,17 @@ export const load: PageServerLoad = async ({ locals }) => {
 			.limit(3)
 			.all();
 
-		// Fetch murid counts per province for the map
-		const sebaranMurid = await db
+		// Fetch murid counts per province for the map with detailed breakdown
+		const sebaranRaw = await db
 			.select({
 				id: propTable.id,
 				propinsi: propTable.propinsi,
-				count: sql<number>`count(${muridTable.id})`
+				total: sql<number>`CAST(COUNT(${muridTable.id}) AS INTEGER)`,
+				marhalah1: sql<number>`CAST(COUNT(CASE WHEN ${muridTable.marhalah} = 1 THEN 1 END) AS INTEGER)`,
+				marhalah2: sql<number>`CAST(COUNT(CASE WHEN ${muridTable.marhalah} = 2 THEN 1 END) AS INTEGER)`,
+				marhalah3: sql<number>`CAST(COUNT(CASE WHEN ${muridTable.marhalah} = 3 THEN 1 END) AS INTEGER)`,
+				pria: sql<number>`CAST(COUNT(CASE WHEN ${muridTable.gender} = 1 THEN 1 END) AS INTEGER)`,
+				wanita: sql<number>`CAST(COUNT(CASE WHEN ${muridTable.gender} = 0 THEN 1 END) AS INTEGER)`
 			})
 			.from(propTable)
 			.leftJoin(kokabTable, eq(kokabTable.idProp, propTable.id))
@@ -58,6 +63,17 @@ export const load: PageServerLoad = async ({ locals }) => {
 			.leftJoin(muridTable, eq(muridTable.deskelId, deskelTable.id))
 			.groupBy(propTable.id, propTable.propinsi)
 			.all();
+
+		// Clean the data to ensure numbers
+		const sebaranMurid = sebaranRaw.map(s => ({
+			...s,
+			total: Number(s.total || 0),
+			marhalah1: Number(s.marhalah1 || 0),
+			marhalah2: Number(s.marhalah2 || 0),
+			marhalah3: Number(s.marhalah3 || 0),
+			pria: Number(s.pria || 0),
+			wanita: Number(s.wanita || 0)
+		}));
 
 		return {
 			user: locals.user,
