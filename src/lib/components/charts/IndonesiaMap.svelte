@@ -25,23 +25,30 @@
 	let loaded = $state(false);
 
 	onMount(async () => {
-		const response = await fetch('/indonesia-paths.json');
-		paths = await response.json();
-		loaded = true;
+		try {
+			const response = await fetch('/indonesia-paths.json');
+			const allPaths = await response.json();
+			// Filter to ensure only Indonesian provinces are shown (already cleaned, but safety check)
+			paths = allPaths;
+		} catch (e) {
+			console.error('Failed to load map paths:', e);
+		} finally {
+			loaded = true;
+		}
 	});
 
-	// Color scale logic
 	const maxCount = $derived(Math.max(...data.map((p) => p.count), 1));
 	
 	function getProvinceColor(count: number) {
-		if (count === 0) return 'fill-base-300';
-		// Intensity from 0 to 8
-		const intensity = Math.min(Math.round((count / maxCount) * 8), 8);
-		const colors = [
-			'fill-primary/20', 'fill-primary/30', 'fill-primary/40', 'fill-primary/50', 'fill-primary/60',
-			'fill-primary/70', 'fill-primary/80', 'fill-primary/90', 'fill-primary'
-		];
-		return colors[intensity];
+		if (count === 0) return 'var(--map-land-empty)';
+		
+		const ratio = count / maxCount;
+		// 5-level scale using CSS variables for theme safety
+		if (ratio < 0.15) return 'var(--map-p-1)';
+		if (ratio < 0.4) return 'var(--map-p-2)';
+		if (ratio < 0.7) return 'var(--map-p-3)';
+		if (ratio < 0.9) return 'var(--map-p-4)';
+		return 'oklch(var(--p))';
 	}
 
 	let hoveredProvince = $state<{ name: string; count: number; x: number; y: number } | null>(null);
@@ -61,28 +68,45 @@
 	function getId(name: string) {
 		return data.find(p => p.propinsi.toUpperCase() === name.toUpperCase())?.id;
 	}
+
+	function handleKeydown(event: KeyboardEvent, id: number, name: string) {
+		if (event.key === 'Enter' || event.key === ' ') {
+			event.preventDefault();
+			onProvinceClick?.(id, name);
+		}
+	}
 </script>
 
-<div class="relative w-full h-full min-h-[450px] flex items-center justify-center bg-base-100 rounded-2xl border border-base-200 overflow-hidden shadow-sm">
+<div class="relative w-full h-full min-h-[450px] flex items-center justify-center bg-base-100 rounded-3xl border border-base-200 overflow-hidden shadow-sm map-container">
 	{#if !loaded}
-		<span class="loading loading-spinner text-primary"></span>
+		<div class="flex flex-col items-center gap-2">
+			<span class="loading loading-spinner loading-lg text-primary"></span>
+			<span class="text-xs font-bold opacity-40 uppercase tracking-widest">Memuat Peta...</span>
+		</div>
 	{:else}
 		<svg 
 			viewBox="0 0 1000 450" 
-			class="w-full h-auto max-h-[600px] p-8"
+			class="w-full h-auto max-h-[700px] p-2 sm:p-6"
 			xmlns="http://www.w3.org/2000/svg"
 		>
+			<!-- SEA LAYER -->
+			<rect width="1000" height="450" fill="var(--map-sea)" rx="24" />
+			
 			<g class="provinces">
 				{#each paths as p}
 					{@const count = getCount(p.name)}
 					{@const id = getId(p.name)}
 					<path
 						d={p.d}
-						class="transition-all duration-300 cursor-pointer stroke-base-100 hover:stroke-primary hover:filter hover:brightness-105 {getProvinceColor(count)}"
-						stroke-width="0.5"
+						role="button"
+						tabindex="0"
+						aria-label="{p.name}: {count} murid"
+						class="province-path transition-all duration-300 cursor-pointer"
+						style="fill: {getProvinceColor(count)}; stroke: var(--map-border); stroke-width: 0.6px;"
 						onmousemove={(e) => handleMouseMove(e, p.name, count)}
 						onmouseleave={handleMouseLeave}
 						onclick={() => id && onProvinceClick?.(id, p.name)}
+						onkeydown={(e) => id && handleKeydown(e, id, p.name)}
 					/>
 				{/each}
 			</g>
@@ -91,37 +115,37 @@
 
 	{#if hoveredProvince}
 		<div 
-			transition:fade={{ duration: 150 }}
-			class="fixed z-[100] pointer-events-none bg-base-100/95 backdrop-blur-md text-base-content p-4 rounded-xl shadow-2xl border border-base-200 flex flex-col gap-1 min-w-[180px]"
+			transition:fade={{ duration: 100 }}
+			class="fixed z-[100] pointer-events-none bg-base-100 text-base-content p-4 rounded-2xl shadow-2xl border border-base-300 flex flex-col gap-1 min-w-[180px]"
 			style="left: {hoveredProvince.x + 20}px; top: {hoveredProvince.y + 20}px;"
 		>
-			<div class="text-[10px] font-bold opacity-50 uppercase tracking-widest mb-1">Wilayah</div>
-			<div class="font-extrabold text-lg leading-tight">{hoveredProvince.name}</div>
+			<div class="text-[10px] font-bold opacity-40 uppercase tracking-widest">Wilayah</div>
+			<div class="font-black text-lg leading-tight">{hoveredProvince.name}</div>
 			<div class="divider my-1 opacity-10"></div>
-			<div class="flex items-center justify-between mt-1">
-				<span class="text-sm opacity-70">Murid Terdaftar</span>
-				<span class="badge badge-primary badge-lg font-mono font-bold">{hoveredProvince.count}</span>
+			<div class="flex items-center justify-between">
+				<span class="text-sm font-medium opacity-60">Terdaftar</span>
+				<span class="badge badge-primary font-mono font-black">{hoveredProvince.count}</span>
 			</div>
 		</div>
 	{/if}
 
-	<!-- Legend -->
-	<div class="absolute bottom-6 left-6 flex flex-col gap-3 p-4 bg-base-100/90 backdrop-blur rounded-2xl border border-base-200 shadow-lg">
-		<div class="text-[10px] font-black uppercase opacity-40 tracking-widest">Densitas Murid</div>
-		<div class="flex items-center gap-3">
+	<!-- LEGEND -->
+	<div class="absolute bottom-6 right-6 flex flex-col gap-3 p-4 bg-base-100/80 backdrop-blur-xl rounded-2xl border border-base-200 shadow-xl">
+		<div class="text-[10px] font-black uppercase opacity-40 tracking-widest text-center">Kepadatan</div>
+		<div class="flex items-center gap-2">
 			<div class="flex flex-col items-center gap-1">
-				<div class="w-4 h-4 bg-base-300 rounded-md"></div>
-				<span class="text-[9px] font-bold">0</span>
+				<div class="w-4 h-4 rounded shadow-inner" style="background-color: var(--map-land-empty); border: 1px solid var(--map-border)"></div>
+				<span class="text-[9px] font-bold opacity-50">0</span>
 			</div>
 			<div class="flex gap-1 items-end">
-				<div class="w-4 h-4 bg-primary/20 rounded-md"></div>
-				<div class="w-4 h-6 bg-primary/40 rounded-md"></div>
-				<div class="w-4 h-8 bg-primary/60 rounded-md"></div>
-				<div class="w-4 h-10 bg-primary/80 rounded-md"></div>
-				<div class="w-4 h-12 bg-primary rounded-md"></div>
+				<div class="w-3 h-4 rounded-t" style="background-color: var(--map-p-1)"></div>
+				<div class="w-3 h-6 rounded-t" style="background-color: var(--map-p-2)"></div>
+				<div class="w-3 h-8 rounded-t" style="background-color: var(--map-p-3)"></div>
+				<div class="w-3 h-10 rounded-t" style="background-color: var(--map-p-4)"></div>
+				<div class="w-3 h-12 rounded-t bg-primary"></div>
 			</div>
 			<div class="flex flex-col items-center gap-1">
-				<div class="w-4 h-4 bg-primary rounded-md opacity-0"></div>
+				<div class="w-4 h-4"></div>
 				<span class="text-[9px] font-bold">{maxCount}</span>
 			</div>
 		</div>
@@ -129,12 +153,63 @@
 </div>
 
 <style>
-	path {
+	.map-container {
+		/* 
+           UNIVERSAL THEME ADAPTER
+           We use oklch() wrapper for all variables to ensure DaisyUI 4 compatibility.
+           We use color-mix to derive shades relative to the active theme.
+        */
+        
+        /* 1. The Sea: A mix of neutral and base background. */
+		--map-sea: color-mix(in oklch, oklch(var(--n)) 15%, oklch(var(--b1)));
+        
+        /* 2. Empty Land: Slightly lighter/darker than sea to remain distinct. */
+		--map-land-empty: color-mix(in oklch, oklch(var(--bc)) 8%, oklch(var(--b1)));
+        
+        /* 3. The Border: ALWAYS derived from Base Content (Text Color) for guaranteed contrast. */
+        --map-border: oklch(var(--bc) / 0.25);
+		
+		/* 4. Density Scale: Explicitly mixing Primary with the base background. */
+		--map-p-1: color-mix(in oklch, oklch(var(--p)) 20%, var(--map-land-empty));
+		--map-p-2: color-mix(in oklch, oklch(var(--p)) 40%, var(--map-land-empty));
+		--map-p-3: color-mix(in oklch, oklch(var(--p)) 60%, var(--map-land-empty));
+		--map-p-4: color-mix(in oklch, oklch(var(--p)) 80%, var(--map-land-empty));
+	}
+
+	.province-path {
 		vector-effect: non-scaling-stroke;
-		filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
+		outline: none;
 	}
-	path:hover {
-		filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
+	
+	.province-path:focus-visible {
+		stroke: oklch(var(--p)) !important;
+		stroke-width: 3px !important;
+		filter: brightness(1.2);
+	}
+
+	.province-path:hover {
+		filter: brightness(1.1);
 		transform: translateY(-1px);
+        stroke: oklch(var(--bc) / 0.5) !important;
+        stroke-width: 1.5px !important;
 	}
+
+    /* SPECIFIC FIX FOR EXTREME THEMES (High/Low Lightness) */
+    /* Light themes like Lofi, Pastel, Wireframe */
+    :global([data-theme='lofi']), :global([data-theme='wireframe']), :global([data-theme='pastel']) {
+        .map-container {
+            --map-sea: #f0f4f8;
+            --map-land-empty: #ffffff;
+            --map-border: rgba(0,0,0,0.1);
+        }
+    }
+
+    /* Dark themes like Black, Luxury, Night-Glow */
+    :global([data-theme='black']), :global([data-theme='luxury']), :global([data-theme='tdmi-night-glow']) {
+        .map-container {
+            --map-sea: #000000;
+            --map-land-empty: #1a1a1a;
+            --map-border: rgba(255,255,255,0.15);
+        }
+    }
 </style>

@@ -95,3 +95,10 @@ Setiap kali melakukan operasi yang memodifikasi skema atau data (Seeding, Migrat
 4. **Eksekusi & Validasi:** Jalankan perubahan dan segera cek aksesitas user utama.
 
 *Protokol ini dibuat atas instruksi User untuk mencegah kehilangan data akses Admin.*
+
+## CSS & Theming Standards
+- This project uses **DaisyUI v4** with **OKLCH** color space.
+- Always wrap CSS variables with the oklch() function when using them in inline styles or custom CSS (e.g., style="fill: oklch(var(--p))").
+- Color variables available: --p (primary), --s (secondary), --n (neutral), --b1 to --b3 (base backgrounds), --bc (base content/text).
+- Use color-mix(in oklch, ...) for deriving dynamic shades to maintain perceptual consistency across 30+ themes.
+- High-contrast UI elements (like maps) should derive borders from oklch(var(--bc) / opacity) to ensure visibility.
