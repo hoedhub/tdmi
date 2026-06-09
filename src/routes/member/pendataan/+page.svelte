@@ -9,6 +9,8 @@
 	import { PlusCircle, List, Map as MapIcon } from 'lucide-svelte';
 	import { onMount } from 'svelte';
 	import { api } from '$lib/utils/api';
+	import { page } from '$app/stores';
+	import { tablePersistence } from '$lib/stores/tablePersistence.svelte';
 	import { error as toastError, success as toastSuccess } from '$lib/components/toast';
 	import { formatDateShort } from '$lib/utils/date';
 	import IndonesiaMap from '$lib/components/charts/IndonesiaMap.svelte';
@@ -83,20 +85,122 @@
 	let isGeneratingPDF = $state(false);
 	let mapSvgHtml = $state('');
 	let mapPaths = $state<any[]>([]);
+	let selectedProvince = $state<{ id: number; name: string } | null>(null);
+	let provinceData: any[] = $state([]);
+	let provinceLoading = $state(false);
+	let provinceTotalItems = $state(0);
+	let provincePage = $state(1);
+	const PROVINCE_PAGE_SIZE = 5;
+	let lastFetchedProvinceName: string | null = null;
+	let tableNeedsRefresh = $state(false);
 
 	// --- Reactive Data from Props ---
 	let canReadMurid = $derived(data.canReadMurid);
 	let canWriteMurid = $derived(data.canWriteMurid);
 
+	let selectedProvinceStats = $derived(
+		(() => {
+			const sp = selectedProvince;
+			return sp
+				? (data.sebaranMurid || []).find(
+						(p) => p.propinsi.toUpperCase() === sp.name.toUpperCase()
+				  ) ?? null
+				: null;
+		})()
+	);
+
 	async function handleProvinceClick(id: number, name: string) {
-		activeTab = 'table';
+		selectedProvince = { id, name };
 		if (!currentFilters.columns) {
 			currentFilters.columns = {};
 		}
 		currentFilters.columns.propinsiName = { value: name, operator: 'contains' };
-		await tick();
-		await fetchTableData(currentSort, currentFilters, 1, pageSize);
+		provincePage = 1;
+		await fetchProvinceData(1);
+	}
+
+	async function fetchProvinceData(page: number) {
+		provinceLoading = true;
+		provincePage = page;
+		try {
+			const provinceFilters: FilterState = currentFilters.columns?.propinsiName
+				? { columns: { propinsiName: currentFilters.columns.propinsiName } }
+				: { columns: {} };
+			const response = await api('/member/pendataan/table', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					sort: [],
+					filters: provinceFilters,
+					page,
+					pageSize: PROVINCE_PAGE_SIZE
+				})
+			});
+			if (!response.ok) throw new Error('Gagal mengambil data');
+			const result = await response.json();
+			provinceData = result.murid;
+			provinceTotalItems = result.totalItems;
+		} catch (err) {
+			const error = err as Error;
+			toastError(error.message || 'Gagal memuat data provinsi.');
+			provinceData = [];
+		} finally {
+			provinceLoading = false;
+		}
+	}
+
+	function deselectProvince() {
+		selectedProvince = null;
+		provinceData = [];
+		provinceTotalItems = 0;
+		tableNeedsRefresh = true;
+		if (currentFilters.columns) {
+			delete currentFilters.columns.propinsiName;
+		}
+		// Hapus persistence agar SuperTable tidak restore filter lama saat dibuat ulang
+		tablePersistence.saveState($page.url.pathname, {
+			currentPage: 1,
+			itemsPerPage: pageSize,
+			filterState: { columns: {} },
+			sort: [],
+			baseArea: '/member/pendataan'
+		});
+	}
+
+	function applyProvinceFilter() {
+		currentFilters = { columns: { propinsiName: currentFilters.columns?.propinsiName } };
+		currentPage = 1;
+		fetchTableData(currentSort, currentFilters, 1, pageSize);
+	}
+
+	function viewProvinceInTable() {
+		activeTab = 'table';
+		const provinceName = currentFilters.columns?.propinsiName?.value;
+		lastFetchedProvinceName = provinceName ?? null;
+		applyProvinceFilter();
 		window.scrollTo({ top: 0, behavior: 'smooth' });
+	}
+
+	function removeProvinceFilter() {
+		deselectProvince();
+		lastFetchedProvinceName = null;
+		fetchTableData(currentSort, currentFilters, currentPage, pageSize);
+	}
+
+	function switchToTable() {
+		const hadProvinceFilter = !!currentFilters.columns?.propinsiName;
+		const provinceName = currentFilters.columns?.propinsiName?.value;
+		activeTab = 'table';
+		currentPage = 1;
+		if (hadProvinceFilter) {
+			if (provinceName !== lastFetchedProvinceName) {
+				lastFetchedProvinceName = provinceName ?? null;
+				applyProvinceFilter();
+			}
+		} else if (tableNeedsRefresh) {
+			tableNeedsRefresh = false;
+			fetchTableData(currentSort, currentFilters, 1, pageSize);
+		}
 	}
 
 	async function resetFilter() {
@@ -458,7 +562,7 @@
 	<h1 class="card-title text-2xl">Manajemen Data Murid</h1>
 	<div class="flex items-center gap-2">
 		<div class="tabs tabs-boxed mr-4">
-			<button class="tab tab-sm gap-2 {activeTab === 'table' ? 'tab-active' : ''}" onclick={() => (activeTab = 'table')}>
+			<button class="tab tab-sm gap-2 {activeTab === 'table' ? 'tab-active' : ''}" onclick={switchToTable}>
 				<List class="h-4 w-4" /> Daftar
 			</button>
 			<button class="tab tab-sm gap-2 {activeTab === 'map' ? 'tab-active' : ''}" onclick={() => (activeTab = 'map')}>
@@ -479,7 +583,7 @@
 			<span class="flex-grow font-medium text-warning-content">
 				Filter Propinsi: <strong>{currentFilters.columns.propinsiName.value}</strong>
 			</span>
-			<button class="cursor-pointer text-xl font-bold leading-none text-warning-content transition-transform hover:scale-125" onclick={resetFilter} aria-label="Reset Filter">
+			<button class="cursor-pointer text-xl font-bold leading-none text-warning-content transition-transform hover:scale-125" onclick={removeProvinceFilter} aria-label="Hapus Filter Propinsi">
 				&times;
 			</button>
 		</div>
@@ -532,25 +636,145 @@
 			</div>
 		</div>
 
-		<div class="grid grid-cols-1 gap-6 lg:grid-cols-4">
-			<div class="space-y-4 lg:col-span-3">
-				<IndonesiaMap data={mapData} onProvinceClick={handleProvinceClick} paths={mapPaths} />
+		{#if selectedProvince}
+			<div class="grid grid-cols-1 gap-6 lg:grid-cols-4">
+				<div class="lg:col-span-3">
+					<IndonesiaMap
+						data={mapData}
+						onProvinceClick={handleProvinceClick}
+						paths={mapPaths}
+						selectedProvince={selectedProvince.name}
+					/>
+				</div>
+				<div class="lg:col-span-1">
+					<div class="card border border-base-300 bg-base-200 shadow-sm">
+						<div class="card-body p-3">
+							<div class="mb-2 flex items-center justify-between">
+								<span class="text-[10px] font-black uppercase tracking-widest opacity-40">Wilayah</span>
+								<button class="btn btn-ghost btn-xs btn-circle" onclick={deselectProvince} aria-label="Tutup">
+									&times;
+								</button>
+							</div>
+							<div class="font-black text-lg leading-tight">{selectedProvince.name}</div>
+
+							{#if selectedProvinceStats}
+								<div class="stats stats-vertical bg-base-100 shadow-sm mt-2">
+									<div class="stat px-2 py-1">
+										<div class="stat-title text-[8px]">Total Murid</div>
+										<div class="stat-value text-lg">{selectedProvinceStats.total}</div>
+									</div>
+									<div class="stat px-2 py-1">
+										<div class="stat-title text-[8px]">Marhalah</div>
+										<div class="stat-value text-lg flex items-center gap-2">
+											<span class="text-info">{selectedProvinceStats.marhalah1}</span>
+											<span class="text-warning">{selectedProvinceStats.marhalah2}</span>
+											<span class="text-success">{selectedProvinceStats.marhalah3}</span>
+										</div>
+									</div>
+									<div class="stat px-2 py-1">
+										<div class="stat-title text-[8px]">Rasio P/W</div>
+										<div class="stat-value text-lg">
+											{selectedProvinceStats.pria}<span class="mx-0.5 opacity-30">/</span>{selectedProvinceStats.wanita}
+										</div>
+									</div>
+								</div>
+							{/if}
+						</div>
+					</div>
+				</div>
 			</div>
-			<div class="lg:col-span-1">
-				<MuridInsightPanel
-					{nationalStats}
-					{topProvinces}
-					{modeTotal}
-					{othersCount}
-					{mapViewMode}
-					{mapLabels}
-					{topColors}
-					onProvinceClick={handleProvinceClick}
-					onDownloadPDF={downloadPDF}
-					{isGeneratingPDF}
-				/>
+
+			<div class="card border border-base-300 bg-base-100 shadow-sm mt-4">
+				<div class="card-body p-3">
+					<div class="flex items-center justify-between mb-3">
+						<div>
+							<span class="text-[10px] font-black uppercase tracking-widest opacity-40">Data Murid</span>
+							<span class="text-sm font-black ml-2">{selectedProvince.name}</span>
+							{#if !provinceLoading}
+								<span class="text-xs opacity-50 ml-1">({provinceTotalItems} murid)</span>
+							{/if}
+						</div>
+						<div class="flex gap-2">
+							<button class="btn btn-ghost btn-xs" onclick={deselectProvince}>Tutup</button>
+							<button class="btn btn-primary btn-xs" onclick={viewProvinceInTable}>Lihat Semua</button>
+						</div>
+					</div>
+
+					{#if provinceLoading}
+						<div class="flex justify-center py-8">
+							<span class="loading loading-spinner loading-md text-primary"></span>
+						</div>
+					{:else if provinceData.length === 0}
+						<p class="py-4 text-center text-sm opacity-50 italic">Tidak ada data murid di provinsi ini.</p>
+					{:else}
+						<div class="overflow-x-auto">
+							<table class="table table-sm">
+								<thead>
+									<tr>
+										<th>Nama</th>
+										<th class="hidden sm:table-cell"> Gender</th>
+										<th class="hidden md:table-cell">Marhalah</th>
+										<th class="hidden lg:table-cell">Daerah</th>
+									</tr>
+								</thead>
+								<tbody>
+									{#each provinceData as m}
+										<tr class="hover">
+											<td class="font-bold">{m.nama}</td>
+											<td class="hidden sm:table-cell">{m.gender ? 'Pria' : 'Wanita'}</td>
+											<td class="hidden md:table-cell">M{m.marhalah}</td>
+											<td class="hidden lg:table-cell text-xs opacity-60">{m.kokabName ?? '-'}</td>
+										</tr>
+									{/each}
+								</tbody>
+							</table>
+						</div>
+
+						{#if provinceTotalItems > PROVINCE_PAGE_SIZE}
+							<div class="flex justify-center gap-2 mt-3">
+								<button
+									class="btn btn-ghost btn-xs"
+									disabled={provincePage <= 1}
+									onclick={() => fetchProvinceData(provincePage - 1)}
+								>
+									Sebelumnya
+								</button>
+								<span class="text-xs self-center opacity-50">
+									Halaman {provincePage} dari {Math.ceil(provinceTotalItems / PROVINCE_PAGE_SIZE)}
+								</span>
+								<button
+									class="btn btn-ghost btn-xs"
+									disabled={provincePage >= Math.ceil(provinceTotalItems / PROVINCE_PAGE_SIZE)}
+									onclick={() => fetchProvinceData(provincePage + 1)}
+								>
+									Selanjutnya
+								</button>
+							</div>
+						{/if}
+					{/if}
+				</div>
 			</div>
-		</div>
+		{:else}
+			<div class="grid grid-cols-1 gap-6 lg:grid-cols-4">
+				<div class="space-y-4 lg:col-span-3">
+					<IndonesiaMap data={mapData} onProvinceClick={handleProvinceClick} paths={mapPaths} />
+				</div>
+				<div class="lg:col-span-1">
+					<MuridInsightPanel
+						{nationalStats}
+						{topProvinces}
+						{modeTotal}
+						{othersCount}
+						{mapViewMode}
+						{mapLabels}
+						{topColors}
+						onProvinceClick={handleProvinceClick}
+						onDownloadPDF={downloadPDF}
+						{isGeneratingPDF}
+					/>
+				</div>
+			</div>
+		{/if}
 	</div>
 {/if}
 

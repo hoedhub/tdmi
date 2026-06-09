@@ -99,23 +99,27 @@
 	onMount(() => {
 		$selectedIds = new Set();
 		
-		// Load persisted state if available
 		const cacheKey = persistenceId || $page.url.pathname;
 		const savedState = tablePersistence.getState(cacheKey);
-		
+
 		if (savedState) {
-			// Restore bound props to push back to parent
-			$currentPage = savedState.currentPage;
-			$itemsPerPage = savedState.itemsPerPage;
-			$filterState = savedState.filterState;
-			
-			currentPageProp = savedState.currentPage;
-			itemsPerPageProp = savedState.itemsPerPage;
-			sort = savedState.sort || [];
-			filterStateProp = savedState.filterState;
-		} else {
-			$filterState = { global: '', columns: {} };
+			const hasActiveFilters = filterStateProp && (
+				filterStateProp.global ||
+				Object.keys(filterStateProp.columns || {}).length > 0
+			);
+			if (!hasActiveFilters) {
+				$currentPage = savedState.currentPage;
+				$itemsPerPage = savedState.itemsPerPage;
+				$filterState = savedState.filterState;
+
+				currentPageProp = savedState.currentPage;
+				itemsPerPageProp = savedState.itemsPerPage;
+				sort = savedState.sort || [];
+				filterStateProp = savedState.filterState;
+			}
 		}
+		// No else — $filterState is already synced from filterStateProp via $effect,
+		// or defaults to { global: '', columns: {} } from the store.
 
 		const onResize = () => {
 			isMobile = window.innerWidth < 768;
@@ -267,26 +271,39 @@
 	}
 
 	function handleGlobalFilter(value: string) {
-		$filterState.global = value;
-		debouncedDispatchFilter($filterState);
+		const newState = { ...$filterState, global: value };
+		filterState.set(newState);
+		filterStateProp = newState;
+		debouncedDispatchFilter(newState);
 	}
 
 	function handleLiveFilterChange(key: string, value: any) {
-		// Create a new object to ensure Svelte reactivity
-		$filterState.columns = { ...$filterState.columns, [key]: value };
-		debouncedDispatchFilter($filterState);
+		const newState = {
+			...$filterState,
+			columns: { ...$filterState.columns, [key]: value }
+		};
+		filterState.set(newState);
+		filterStateProp = newState;
+		debouncedDispatchFilter(newState);
 	}
 
 	function handleApplyDrawerFilters(filters: Record<string, any>) {
-		$filterState.columns = filters;
-		// Dispatch immediately without debounce for drawer's "Apply" button
+		const newState = { ...$filterState, columns: filters };
+		filterState.set(newState);
+		filterStateProp = newState;
 		if (serverSide) $isLoading = true;
-		onfilter?.($filterState);
+		onfilter?.(newState);
 	}
 
 	function resetColumnFilters() {
-		$filterState.columns = {};
-		debouncedDispatchFilter($filterState);
+		const preserved: Record<string, any> = {};
+		if ($filterState.columns?.propinsiName) {
+			preserved.propinsiName = $filterState.columns.propinsiName;
+		}
+		const newState = { ...$filterState, columns: preserved };
+		filterState.set(newState);
+		filterStateProp = newState;
+		debouncedDispatchFilter(newState);
 	}
 
 	function handleSelectAll(selected: boolean) {

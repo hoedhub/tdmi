@@ -81,7 +81,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			if (filters.columns) {
 				for (const key in filters.columns) {
 					const filterObj = filters.columns[key];
-					const value = filterObj?.value;
+					const value = filterObj?.value ?? filterObj;
 					if (value !== undefined && value !== null && value !== '') {
 						// Handle boolean and specific value filters
 						if (key === 'aktif' || key === 'qari' || key === 'partisipasi') {

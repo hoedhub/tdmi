@@ -151,7 +151,7 @@
 		<!-- Actions column filter space -->
 		<th class="w-auto px-2 align-bottom pt-0">
 			<!-- Tombol Reset hanya muncul jika ada filter aktif -->
-			{#if Object.values(filterValues).some((v) => v && v !== 'All')}
+			{#if Object.entries(filterValues).some(([key, v]) => key !== 'propinsiName' && v && v !== 'All')}
 				<button class="btn btn-ghost btn-xs -mb-1 text-error" onclick={() => onreset?.()}>
 					Reset
 				</button>

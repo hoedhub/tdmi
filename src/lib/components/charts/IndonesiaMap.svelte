@@ -18,9 +18,10 @@
 		data: ProvinceData[];
 		onProvinceClick?: (id: number, name: string) => void;
 		paths?: PathData[];
+		selectedProvince?: string | null;
 	}
 
-	let { data, onProvinceClick, paths: externalPaths }: Props = $props();
+	let { data, onProvinceClick, paths: externalPaths, selectedProvince }: Props = $props();
 
 	let internalPaths: PathData[] = $state([]);
 	let loaded = $state(false);
@@ -112,6 +113,7 @@
 						tabindex="0"
 						aria-label="{p.name}: {count} murid"
 						class="province-path transition-all duration-300 cursor-pointer"
+						class:selected={p.name.toUpperCase() === selectedProvince?.toUpperCase()}
 						style="fill: {getProvinceColor(count)}; stroke: var(--map-border); stroke-width: 0.6px;"
 						onmousemove={(e) => handleMouseMove(e, p.name, count)}
 						onmouseleave={handleMouseLeave}
@@ -194,6 +196,13 @@
 		stroke: oklch(var(--p)) !important;
 		stroke-width: 3px !important;
 		filter: brightness(1.2);
+	}
+
+	.province-path.selected {
+		stroke: oklch(var(--p)) !important;
+		stroke-width: 2.5px !important;
+		filter: brightness(1.15);
+		outline: none;
 	}
 
 	.province-path:hover {
