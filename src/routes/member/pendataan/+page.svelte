@@ -1,23 +1,26 @@
 <script lang="ts">
-	import { run, stopPropagation } from 'svelte/legacy';
+	import { run } from 'svelte/legacy';
 
 	import { tick } from 'svelte';
 	import type { PageData } from './$types';
 	import { invalidateAll } from '$app/navigation';
-	import { SuperTable } from '$lib/components/SuperTable';
 	import type { ColumnDef, SortConfig, FilterState } from '$lib/components/SuperTable';
 	import { goto } from '$app/navigation';
-	import { Pen, Trash, PlusCircle, Clock, RefreshCw, ChevronRight, List, Map as MapIcon } from 'lucide-svelte';
+	import { PlusCircle, List, Map as MapIcon } from 'lucide-svelte';
 	import { onMount } from 'svelte';
-	import type { DatabaseUserAttributes } from '$lib/server/auth';
 	import { api } from '$lib/utils/api';
 	import { error as toastError, success as toastSuccess } from '$lib/components/toast';
 	import { formatDateShort } from '$lib/utils/date';
 	import IndonesiaMap from '$lib/components/charts/IndonesiaMap.svelte';
 	import { fade } from 'svelte/transition';
 
+	// Local Components
+	import MuridTableSection from './components/MuridTableSection.svelte';
+	import MuridInsightPanel from './components/MuridInsightPanel.svelte';
+	import RecentActivityCards from './components/RecentActivityCards.svelte';
+	import MuridPrintReport from './components/MuridPrintReport.svelte';
+
 	// --- Type Definitions ---
-	// Use a type intersection (&) to extend PageData, which is the correct approach.
 	type ExtendedPageData = PageData & {
 		dbError: boolean;
 		message?: string;
@@ -29,7 +32,7 @@
 		updaterId: string;
 		nama: string;
 		namaArab: string | null;
-		gender: boolean; // true for pria, false for wanita
+		gender: boolean;
 		deskelId: number | null;
 		alamat: string | null;
 		nomorTelepon: string | null;
@@ -43,8 +46,6 @@
 		aktif: boolean;
 		partisipasi: boolean;
 		nik: string | null;
-		foto: Uint8Array | null; // Assuming blob is Uint8Array in JS
-		// Joined fields from territory tables
 		deskelName: string | null;
 		kecamatanName: string | null;
 		kokabName: string | null;
@@ -78,40 +79,28 @@
 	let currentPage = $state(1);
 	let currentSort: SortConfig[] = $state([]);
 	let currentFilters: FilterState = $state({ columns: {} });
-	let selectedMuridIds: number[] = [];
+	let selectedMuridIds = $state<number[]>([]);
+	let isGeneratingPDF = $state(false);
+	let mapSvgHtml = $state('');
+	let mapPaths = $state<any[]>([]);
 
 	// --- Reactive Data from Props ---
 	let canReadMurid = $derived(data.canReadMurid);
 	let canWriteMurid = $derived(data.canWriteMurid);
 
 	async function handleProvinceClick(id: number, name: string) {
-		// Switch to table tab
 		activeTab = 'table';
-		
-		console.log('Before update:', JSON.stringify(currentFilters));
-
-		// 1. Update filter state secara langsung
 		if (!currentFilters.columns) {
 			currentFilters.columns = {};
 		}
 		currentFilters.columns.propinsiName = { value: name, operator: 'contains' };
-		
-		console.log('After update:', JSON.stringify(currentFilters));
-		
-		// 2. Beri waktu sejenak agar Svelte mendeteksi perubahan state
 		await tick();
-		
-		// 3. Trigger fetch
 		await fetchTableData(currentSort, currentFilters, 1, pageSize);
-		
-		// Scroll to top
 		window.scrollTo({ top: 0, behavior: 'smooth' });
 	}
 
 	async function resetFilter() {
-		// Reset filter state
 		currentFilters = { columns: {} };
-		// Trigger fetch
 		await fetchTableData(currentSort, currentFilters, 1, pageSize);
 	}
 
@@ -152,14 +141,7 @@
 		wanita: (data.sebaranMurid || []).reduce((acc: number, curr: any) => acc + (curr.wanita || 0), 0)
 	});
 
-	const topColors = [
-		'#6366f1', // Indigo
-		'#ec4899', // Pink
-		'#10b981', // Emerald
-		'#f59e0b', // Amber
-		'#3b82f6', // Blue
-		'#94a3b8'  // Others (Slate)
-	];
+	const topColors = ['#6366f1', '#ec4899', '#10b981', '#f59e0b', '#3b82f6', '#94a3b8'];
 
 	let modeTotal = $derived(
 		(data.sebaranMurid || []).reduce((acc: number, curr: any) => acc + (Number(curr[mapViewMode]) || 0), 0)
@@ -168,6 +150,67 @@
 	let othersCount = $derived(
 		modeTotal - topProvinces.reduce((acc, curr) => acc + (Number(curr[mapViewMode]) || 0), 0)
 	);
+
+	async function downloadPDF() {
+		isGeneratingPDF = true;
+		await tick();
+
+		// Wait for the report component to be rendered in the hidden div
+		const element = document.getElementById('murid-pdf-report');
+		if (!element) {
+			toastError('Gagal menyiapkan dokumen laporan.');
+			isGeneratingPDF = false;
+			return;
+		}
+
+		// Dynamically import html2pdf
+		const html2pdf = (await import('html2pdf.js')).default;
+
+		const opt = {
+			margin: 10,
+			filename: `Laporan-Sebaran-TDMI-${mapViewMode}-${new Date().getTime()}.pdf`,
+			image: { type: 'jpeg', quality: 0.98 },
+			html2canvas: { 
+				scale: 2, 
+				useCORS: true, 
+				logging: false,
+                onclone: (clonedDoc: Document) => {
+                    const styles2 = clonedDoc.querySelectorAll('style');
+                    styles2.forEach(s => {
+                        if (s.textContent && s.textContent.includes('oklch')) {
+                            s.textContent = s.textContent.replace(/oklch\([^)]*\)/g, '#3b82f6');
+                            s.textContent = s.textContent.replace(/color-mix\(in oklch,\s*[^,]+,\s*[^)]+\)/g, '#94a3b8');
+                        }
+                    });
+                    const allElements = clonedDoc.querySelectorAll('[style]');
+                    allElements.forEach(el => {
+                        const style = el.getAttribute('style');
+                        if (style && style.includes('oklch')) {
+                            el.setAttribute('style', style.replace(/oklch\([^)]*\)/g, '#3b82f6').replace(/color-mix\(in oklch,\s*[^,]+,\s*[^)]+\)/g, '#94a3b8'));
+                        }
+                    });
+                    const paths = clonedDoc.querySelectorAll('path');
+                    paths.forEach(path => {
+                        let d = path.getAttribute('d');
+                        if (d && d.includes('NaN')) {
+                            path.setAttribute('d', d.replace(/NaN\w*/g, '0'));
+                        }
+                    });
+                }
+			},
+			jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+		};
+
+		try {
+			await html2pdf().set(opt).from(element).save();
+			toastSuccess('Laporan PDF berhasil diunduh.');
+		} catch (err) {
+			console.error('PDF Generation Error:', err);
+			toastError('Terjadi kesalahan saat membuat PDF.');
+		} finally {
+			isGeneratingPDF = false;
+		}
+	}
 
 	function calculateAge(tglLahir: string | null): number | null {
 		if (!tglLahir) return null;
@@ -339,7 +382,7 @@
 	}
 
 	async function handleFilter(filters: FilterState) {
-		currentFilters = filters; // Save the entire filter state
+		currentFilters = filters;
 		currentPage = 1;
 		await fetchTableData(currentSort, currentFilters, currentPage, pageSize);
 	}
@@ -355,15 +398,9 @@
 	}
 
 	async function handleDeleteMurid(muridId: number, nama: string) {
-		if (
-			confirm(
-				`Are you sure you want to delete murid "${nama}" (ID: ${muridId})? This action cannot be undone.`
-			)
-		) {
+		if (confirm(`Are you sure you want to delete murid "${nama}" (ID: ${muridId})? This action cannot be undone.`)) {
 			try {
-				const response = await api(`/member/pendataan/${muridId}/delete`, {
-					method: 'POST'
-				});
+				const response = await api(`/member/pendataan/${muridId}/delete`, { method: 'POST' });
 				if (response.ok) {
 					toastSuccess('Murid berhasil dihapus.');
 					invalidateAll();
@@ -379,7 +416,6 @@
 	}
 
 	function handleSelectionChange(selectedIds: number[]) {
-		console.log('Selection changed:', selectedIds);
 		selectedMuridIds = selectedIds;
 	}
 
@@ -389,7 +425,6 @@
 		}
 	}
 
-	// --- Reactive Statements ---
 	run(() => {
 		if (form?.success) {
 			alert(form.message);
@@ -399,14 +434,20 @@
 		}
 	});
 
-	// Initial data fetch on component mount
 	onMount(async () => {
+		// Fetch map paths for sharing with PDF component
+		try {
+			const res = await fetch('/indonesia-paths.json');
+			mapPaths = await res.json();
+		} catch (e) {
+			console.error('Failed to pre-load map paths:', e);
+		}
+
 		if (data.dbError) {
 			toastError(data.message || 'Gagal memuat halaman. Coba muat ulang.');
 			return;
 		}
 		if (canReadMurid) {
-			// Use tick to ensure SuperTable onMount has run and restored state
 			await tick();
 			await fetchTableData(currentSort, currentFilters, currentPage, pageSize);
 		}
@@ -417,16 +458,10 @@
 	<h1 class="card-title text-2xl">Manajemen Data Murid</h1>
 	<div class="flex items-center gap-2">
 		<div class="tabs tabs-boxed mr-4">
-			<button 
-				class="tab tab-sm gap-2 {activeTab === 'table' ? 'tab-active' : ''}" 
-				onclick={() => activeTab = 'table'}
-			>
+			<button class="tab tab-sm gap-2 {activeTab === 'table' ? 'tab-active' : ''}" onclick={() => (activeTab = 'table')}>
 				<List class="h-4 w-4" /> Daftar
 			</button>
-			<button 
-				class="tab tab-sm gap-2 {activeTab === 'map' ? 'tab-active' : ''}" 
-				onclick={() => activeTab = 'map'}
-			>
+			<button class="tab tab-sm gap-2 {activeTab === 'map' ? 'tab-active' : ''}" onclick={() => (activeTab = 'map')}>
 				<MapIcon class="h-4 w-4" /> Peta Sebaran
 			</button>
 		</div>
@@ -438,98 +473,48 @@
 	</div>
 </div>
 
-
-
 {#if activeTab === 'table'}
 	{#if currentFilters.columns.propinsiName}
-		<div class="alert alert-warning shadow-sm mb-4 py-2 px-4 flex items-center gap-2">
-			<span class="font-medium text-warning-content flex-grow">
+		<div class="alert alert-warning mb-4 flex items-center gap-2 py-2 px-4 shadow-sm">
+			<span class="flex-grow font-medium text-warning-content">
 				Filter Propinsi: <strong>{currentFilters.columns.propinsiName.value}</strong>
 			</span>
-			<button 
-                class="cursor-pointer hover:scale-125 transition-transform text-warning-content font-bold text-xl leading-none" 
-                onclick={resetFilter}
-                aria-label="Reset Filter"
-            >
+			<button class="cursor-pointer text-xl font-bold leading-none text-warning-content transition-transform hover:scale-125" onclick={resetFilter} aria-label="Reset Filter">
 				&times;
 			</button>
 		</div>
 	{/if}
 
-	<div in:fade={{ duration: 200 }}>
-		<SuperTable
-				data={muridData}
-				{columns}
-				rowKey="id"
-				bind:itemsPerPageProp={pageSize}
-				bind:currentPageProp={currentPage}
-				totalItemsProp={totalItems}
-				isLoadingProp={loading}
-				bind:sort={currentSort}
-				serverSide={true}
-				bind:filterStateProp={currentFilters}
-				onsort={handleSort}
-				onfilter={handleFilter}
-				onpageChange={handlePageChange}
-				onitemsPerPageChange={handleItemsPerPageChange}
-				onrowClick={(row) => {
-					isNavigating = true;
-					goto(`/member/pendataan/${row.id}`);
-				}}
-				onselectionChange={handleSelectionChange}
-				tableClass={isNavigating ? 'blur-sm grayscale opacity-50 pointer-events-none transition-all duration-300' : 'transition-all duration-300'}
-			>
-				{#snippet bulkActions({ selectedIds })}
-					{#if canWriteMurid && selectedIds.length === 1}
-						<button class="btn btn-secondary btn-sm" onclick={handleEditSelected}>
-							<Pen class="h-4 w-4" />
-							Edit Selected
-						</button>
-					{/if}
-				{/snippet}
-				
-				{#snippet loadingState()}
-					<div class="p-8 text-center">
-						<span class="loading loading-spinner mb-4"></span>
-						<p class="text-lg font-semibold">Memuat data...</p>
-						<p class="text-sm text-base-content/70">Harap tunggu sebentar.</p>
-					</div>
-				{/snippet}
-
-				{#snippet rowActions({ row })}
-					{#if canWriteMurid}
-						<div class="flex gap-2">
-							<a
-								href={`/member/pendataan/${row.id}/edit?from=table`}
-								class="btn btn-ghost btn-sm"
-								onclick={stopPropagation(() => {})}
-							>
-								<Pen class="h-4 w-4" />
-							</a>
-							<button
-								class="btn btn-ghost btn-sm text-error"
-								onclick={stopPropagation(() => handleDeleteMurid(row.id, row.nama))}
-							>
-								<Trash class="h-4 w-4" />
-							</button>
-						</div>
-					{/if}
-				{/snippet}
-			</SuperTable>
-	</div>
+	<MuridTableSection
+		{muridData}
+		{columns}
+		bind:pageSize
+		bind:currentPage
+		{totalItems}
+		loading={loading}
+		bind:currentSort
+		bind:currentFilters
+		{canWriteMurid}
+		{isNavigating}
+		onsort={handleSort}
+		onfilter={handleFilter}
+		onpageChange={handlePageChange}
+		onitemsPerPageChange={handleItemsPerPageChange}
+		ondelete={handleDeleteMurid}
+		oneditSelected={handleEditSelected}
+		{selectedMuridIds}
+		onselectionChange={handleSelectionChange}
+	/>
 {:else}
 	<div in:fade={{ duration: 200 }} class="space-y-4">
-		<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-			<div class="alert alert-info shadow-sm py-2 px-4 flex items-center gap-2 flex-1">
+		<div class="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+			<div class="alert alert-info flex flex-1 items-center gap-2 py-2 px-4 shadow-sm">
 				<MapIcon class="h-5 w-5" />
 				<span class="text-sm">Klik wilayah untuk melihat detail di tabel.</span>
 			</div>
 
-			<div class="join shadow-sm border border-base-200">
-				<select 
-					class="select select-sm select-bordered join-item font-bold"
-					bind:value={mapViewMode}
-				>
+			<div class="join border border-base-200 shadow-sm">
+				<select class="join-item select select-bordered select-sm font-bold" bind:value={mapViewMode}>
 					<optgroup label="Demografi">
 						<option value="total">Total Murid</option>
 						<option value="pria">Pria</option>
@@ -541,188 +526,61 @@
 						<option value="marhalah3">Marhalah 3</option>
 					</optgroup>
 				</select>
-				<div class="bg-base-200 px-4 py-1 flex items-center join-item text-xs font-black uppercase opacity-50">
+				<div class="join-item flex items-center bg-base-200 px-4 py-1 text-xs font-black uppercase opacity-50">
 					Mode View
 				</div>
 			</div>
 		</div>
 
-		<div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-			<!-- Map Section -->
-			<div class="lg:col-span-3 space-y-4">
-				<IndonesiaMap 
-					data={mapData} 
+		<div class="grid grid-cols-1 gap-6 lg:grid-cols-4">
+			<div class="space-y-4 lg:col-span-3">
+				<IndonesiaMap data={mapData} onProvinceClick={handleProvinceClick} paths={mapPaths} />
+			</div>
+			<div class="lg:col-span-1">
+				<MuridInsightPanel
+					{nationalStats}
+					{topProvinces}
+					{modeTotal}
+					{othersCount}
+					{mapViewMode}
+					{mapLabels}
+					{topColors}
 					onProvinceClick={handleProvinceClick}
+					onDownloadPDF={downloadPDF}
+					{isGeneratingPDF}
 				/>
 			</div>
-
-			<!-- Insight Panel -->
-			<div class="lg:col-span-1 space-y-3">
-				<!-- National Summary (Compact) -->
-				<div class="card bg-base-200 shadow-sm border border-base-300">
-					<div class="card-body p-3">
-						<div class="flex justify-between items-center mb-2">
-							<span class="text-[10px] font-black uppercase opacity-40 tracking-widest">Nasional</span>
-							<div class="badge badge-neutral badge-xs font-mono">{nationalStats.total} Murid</div>
-						</div>
-						<div class="flex justify-between items-center text-xs">
-							<div class="flex flex-col">
-								<span class="opacity-50 text-[9px] uppercase font-bold">Rasio Gender</span>
-								<span class="font-black text-primary">
-									{nationalStats.pria} <span class="opacity-30 mx-0.5">/</span> {nationalStats.wanita}
-									<span class="text-[10px] opacity-60 font-medium ml-1">({(nationalStats.pria / (nationalStats.wanita || 1)).toFixed(1)})</span>
-								</span>
-							</div>
-							<div class="flex gap-0.5 h-4 w-12 rounded-sm overflow-hidden bg-base-300">
-								<div class="bg-blue-500" style="width: {(nationalStats.pria / (nationalStats.total || 1)) * 100}%"></div>
-								<div class="bg-pink-500" style="width: {(nationalStats.wanita / (nationalStats.total || 1)) * 100}%"></div>
-							</div>
-						</div>
-					</div>
-				</div>
-
-				<!-- Marhalah Distribution -->
-				<div class="card bg-base-100 shadow-sm border border-base-200">
-					<div class="card-body p-3">
-						<h3 class="card-title text-[10px] font-black uppercase opacity-40 tracking-widest mb-1">Distribusi Marhalah</h3>
-						<div class="flex h-1.5 w-full rounded-full overflow-hidden bg-base-300 my-1.5">
-							<div class="bg-info" style="width: {(nationalStats.m1 / (nationalStats.total || 1)) * 100}%"></div>
-							<div class="bg-warning" style="width: {(nationalStats.m2 / (nationalStats.total || 1)) * 100}%"></div>
-							<div class="bg-success" style="width: {(nationalStats.m3 / (nationalStats.total || 1)) * 100}%"></div>
-						</div>
-						<div class="grid grid-cols-3 gap-1 text-center">
-							<div class="flex flex-col">
-								<span class="text-[8px] font-bold opacity-50">M1</span>
-								<span class="text-[10px] font-black">{((nationalStats.m1 / (nationalStats.total || 1)) * 100).toFixed(0)}%</span>
-							</div>
-							<div class="flex flex-col border-x border-base-content/10">
-								<span class="text-[8px] font-bold opacity-50">M2</span>
-								<span class="text-[10px] font-black">{((nationalStats.m2 / (nationalStats.total || 1)) * 100).toFixed(0)}%</span>
-							</div>
-							<div class="flex flex-col">
-								<span class="text-[8px] font-bold opacity-50">M3</span>
-								<span class="text-[10px] font-black">{((nationalStats.m3 / (nationalStats.total || 1)) * 100).toFixed(0)}%</span>
-							</div>
-						</div>
-					</div>
-				</div>
-
-				<!-- Top Regions -->
-				<div class="card bg-base-100 border border-base-200 shadow-md">
-					<div class="card-body p-3">
-						<h3 class="card-title text-[10px] font-black uppercase tracking-tighter mb-1">
-							Top 5 Wilayah
-						</h3>
-						
-						<!-- Stacked Distribution Bar with Tooltips -->
-						<div class="flex h-2 w-full rounded-sm overflow-hidden bg-base-300 mb-3">
-							{#each topProvinces as p, i}
-								{@const pct = ((p[mapViewMode] / (modeTotal || 1)) * 100).toFixed(1)}
-								<div 
-									class="tooltip tooltip-bottom h-full" 
-									data-tip="{p.propinsi}: {pct}%"
-									style="width: {pct}%; background-color: {topColors[i]}"
-								></div>
-							{/each}
-							{#if othersCount > 0}
-								{@const otherPct = ((othersCount / (modeTotal || 1)) * 100).toFixed(1)}
-								<div 
-									class="tooltip tooltip-bottom h-full opacity-50" 
-									data-tip="Lainnya: {otherPct}%"
-									style="width: {otherPct}%; background-color: {topColors[5]}"
-								></div>
-							{/if}
-						</div>
-
-						<div class="flex flex-col gap-1.5">
-							{#if topProvinces.length === 0}
-								<p class="text-[10px] opacity-50 italic py-2 text-center">Tidak ada data.</p>
-							{:else}
-								{#each topProvinces as p, i}
-									{@const pct = ((p[mapViewMode] / (modeTotal || 1)) * 100).toFixed(1)}
-									<button 
-										class="flex items-center justify-between p-1.5 rounded bg-base-200/50 hover:bg-primary hover:text-primary-content transition-all group text-left border-l-4 tooltip tooltip-left w-full"
-										style="border-left-color: {topColors[i]}"
-										data-tip="Porsi: {pct}% dari total"
-										onclick={() => handleProvinceClick(p.id, p.propinsi)}
-									>
-										<div class="flex items-center gap-2 overflow-hidden pl-1">
-											<span class="text-xs font-bold truncate">{p.propinsi}</span>
-										</div>
-										<span class="text-[10px] font-mono font-black">{p[mapViewMode]}</span>
-									</button>
-								{/each}
-								{#if othersCount > 0}
-									<div class="flex items-center justify-between p-1.5 rounded opacity-40 text-left border-l-4 border-base-content/20 bg-base-200/30">
-										<span class="text-[9px] font-bold pl-1 uppercase">Lainnya</span>
-										<span class="text-[10px] font-mono">{othersCount}</span>
-									</div>
-								{/if}
-							{/if}
-						</div>
-					</div>
-				</div>
-
-				<!-- Action -->
-				<button class="btn btn-primary btn-sm no-animation hover:brightness-110 border-none w-full gap-2 shadow-lg shadow-primary/20">
-					<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-					<span class="font-black uppercase tracking-tighter text-[10px]">Cetak Laporan PDF</span>
-				</button>
-			</div>
 		</div>
 	</div>
 {/if}
 
-	{#if isNavigating}
-		<div class="fixed inset-0 z-[100] flex items-center justify-center bg-base-100/10 backdrop-blur-[2px]">
-			<div class="flex flex-col items-center gap-4 p-8 bg-base-100 rounded-2xl shadow-2xl border border-base-200">
-				<span class="loading loading-spinner loading-lg text-primary"></span>
-				<p class="text-lg font-bold animate-pulse">Memuat detail murid...</p>
-			</div>
+{#if isNavigating}
+	<div class="fixed inset-0 z-[100] flex items-center justify-center bg-base-100/10 backdrop-blur-[2px]">
+		<div class="flex flex-col items-center gap-4 rounded-2xl border border-base-200 bg-base-100 p-8 shadow-2xl">
+			<span class="loading loading-spinner loading-lg text-primary"></span>
+			<p class="animate-pulse text-lg font-bold">Memuat detail murid...</p>
 		</div>
-	{/if}
+	</div>
+{/if}
 
 {#if canReadMurid && !data.dbError}
-	<div class="mb-6 mt-8 grid grid-cols-1 gap-4 md:grid-cols-2">
-		<div class="card border border-base-200 bg-base-100 shadow-sm transition-shadow hover:shadow-md">
-			<div class="card-body p-4">
-				<h3 class="card-title flex items-center gap-2 text-xs font-bold uppercase tracking-widest opacity-60">
-					<Clock class="h-3.5 w-3.5" /> Murid Baru
-				</h3>
-				<div class="mt-2 flex flex-col divide-y divide-base-200">
-					{#each data.recentlyAdded || [] as m}
-						<a
-							href="/member/pendataan/{m.id}"
-							class="flex items-center justify-between py-2 transition-colors hover:text-primary"
-						>
-							<span class="truncate text-sm font-semibold">{m.nama}</span>
-							<ChevronRight class="h-4 w-4 opacity-20" />
-						</a>
-					{/each}
-				</div>
-			</div>
-		</div>
-
-		<div class="card border border-base-200 bg-base-100 shadow-sm transition-shadow hover:shadow-md">
-			<div class="card-body p-4">
-				<h3 class="card-title flex items-center gap-2 text-xs font-bold uppercase tracking-widest opacity-60">
-					<RefreshCw class="h-3.5 w-3.5" /> Baru Diperbarui
-				</h3>
-				<div class="mt-2 flex flex-col divide-y divide-base-200">
-					{#each data.recentlyUpdated || [] as m}
-						<a
-							href="/member/pendataan/{m.id}"
-							class="flex items-center justify-between py-2 transition-colors hover:text-primary"
-						>
-							<div class="flex min-w-0 flex-col">
-								<span class="truncate text-sm font-semibold">{m.nama}</span>
-								<span class="text-[10px] opacity-50">{formatDateShort(m.updatedAt)}</span>
-							</div>
-							<ChevronRight class="h-4 w-4 opacity-20" />
-						</a>
-					{/each}
-				</div>
-			</div>
-		</div>
-	</div>
+	<RecentActivityCards recentlyAdded={data.recentlyAdded} recentlyUpdated={data.recentlyUpdated} />
 {/if}
+
+<!-- HIDDEN PDF REPORT TEMPLATE -->
+<div class="hidden">
+	{#if isGeneratingPDF}
+		<MuridPrintReport
+			{nationalStats}
+			{topProvinces}
+			{modeTotal}
+			{othersCount}
+			{mapViewMode}
+			{mapLabels}
+			{topColors}
+			paths={mapPaths.map(p => ({ ...p, d: p.d.replace(/NaN/g, '0') }))}
+			{mapData}
+		/>
+	{/if}
+</div>
+

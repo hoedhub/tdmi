@@ -17,25 +17,35 @@
 	interface Props {
 		data: ProvinceData[];
 		onProvinceClick?: (id: number, name: string) => void;
+		paths?: PathData[];
 	}
 
-	let { data, onProvinceClick }: Props = $props();
+	let { data, onProvinceClick, paths: externalPaths }: Props = $props();
 
-	let paths: PathData[] = $state([]);
+	let internalPaths: PathData[] = $state([]);
 	let loaded = $state(false);
 
 	onMount(async () => {
+		if (externalPaths && externalPaths.length > 0) {
+			internalPaths = externalPaths;
+			loaded = true;
+			return;
+		}
+
 		try {
 			const response = await fetch('/indonesia-paths.json');
 			const allPaths = await response.json();
 			// Filter to ensure only Indonesian provinces are shown (already cleaned, but safety check)
-			paths = allPaths;
+			internalPaths = allPaths;
 		} catch (e) {
 			console.error('Failed to load map paths:', e);
 		} finally {
 			loaded = true;
 		}
 	});
+
+	// Use external paths if provided, otherwise internal
+	let activePaths = $derived(externalPaths && externalPaths.length > 0 ? externalPaths : internalPaths);
 
 	const maxCount = $derived(Math.max(...data.map((p) => p.count), 1));
 	
@@ -77,23 +87,23 @@
 	}
 </script>
 
-<div class="relative w-full h-full min-h-[450px] flex items-center justify-center bg-base-100 rounded-3xl border border-base-200 overflow-hidden shadow-sm map-container">
+<div class="relative w-full bg-base-100 rounded-3xl border border-base-200 overflow-hidden shadow-sm map-container aspect-[850/380] sm:min-h-[400px]">
 	{#if !loaded}
-		<div class="flex flex-col items-center gap-2">
+		<div class="flex flex-col items-center justify-center h-full gap-2">
 			<span class="loading loading-spinner loading-lg text-primary"></span>
 			<span class="text-xs font-bold opacity-40 uppercase tracking-widest">Memuat Peta...</span>
 		</div>
 	{:else}
 		<svg 
 			viewBox="0 0 850 380" 
-			class="w-full h-auto max-h-[700px] p-2 sm:p-6"
+			class="w-full h-full p-2 sm:p-6"
 			xmlns="http://www.w3.org/2000/svg"
 		>
 			<!-- SEA LAYER -->
 			<rect width="850" height="380" fill="var(--map-sea)" rx="24" />
 			
 			<g class="provinces" transform="translate(30, 20)">
-				{#each paths as p}
+				{#each activePaths as p}
 					{@const count = getCount(p.name)}
 					{@const id = getId(p.name)}
 					<path
@@ -130,23 +140,22 @@
 	{/if}
 
 	<!-- LEGEND -->
-	<div class="absolute bottom-6 right-6 flex flex-col gap-3 p-4 bg-base-100/80 backdrop-blur-xl rounded-2xl border border-base-200 shadow-xl">
-		<div class="text-[10px] font-black uppercase opacity-40 tracking-widest text-center">Kepadatan</div>
-		<div class="flex items-center gap-2">
-			<div class="flex flex-col items-center gap-1">
-				<div class="w-4 h-4 rounded shadow-inner" style="background-color: var(--map-land-empty); border: 1px solid var(--map-border)"></div>
-				<span class="text-[9px] font-bold opacity-50">0</span>
+	<div class="absolute bottom-2 left-2 sm:bottom-12 sm:left-12 flex flex-row sm:flex-col items-center sm:items-stretch gap-2 sm:gap-3 p-1.5 sm:p-4 bg-base-100/70 backdrop-blur-xl rounded-lg sm:rounded-2xl border border-base-200 shadow-xl origin-bottom-left transition-all">
+		<div class="text-[8px] sm:text-[10px] font-black uppercase opacity-40 tracking-widest text-center">Kepadatan</div>
+		<div class="flex items-center gap-2 sm:gap-3">
+			<div class="flex flex-col items-center gap-0.5 sm:gap-1">
+				<div class="w-2.5 h-2.5 sm:w-4 sm:h-4 rounded shadow-inner border border-base-content/10" style="background-color: var(--map-land-empty)"></div>
+				<span class="text-[7px] sm:text-[9px] font-bold opacity-50">0</span>
 			</div>
-			<div class="flex gap-1 items-end">
-				<div class="w-3 h-4 rounded-t" style="background-color: var(--map-p-1)"></div>
-				<div class="w-3 h-6 rounded-t" style="background-color: var(--map-p-2)"></div>
-				<div class="w-3 h-8 rounded-t" style="background-color: var(--map-p-3)"></div>
-				<div class="w-3 h-10 rounded-t" style="background-color: var(--map-p-4)"></div>
-				<div class="w-3 h-12 rounded-t bg-primary"></div>
+			<div class="flex gap-0.5 items-end h-5 sm:h-12">
+				<div class="w-1.5 sm:w-3 h-1/4 rounded-t-[1px] sm:rounded-t" style="background-color: var(--map-p-1)"></div>
+				<div class="w-1.5 sm:w-3 h-2/4 rounded-t-[1px] sm:rounded-t" style="background-color: var(--map-p-2)"></div>
+				<div class="w-1.5 sm:w-3 h-3/4 rounded-t-[1px] sm:rounded-t" style="background-color: var(--map-p-3)"></div>
+				<div class="w-1.5 sm:w-3 h-full rounded-t-[1px] sm:rounded-t bg-primary"></div>
 			</div>
-			<div class="flex flex-col items-center gap-1">
-				<div class="w-4 h-4"></div>
-				<span class="text-[9px] font-bold">{maxCount}</span>
+			<div class="flex flex-col items-center gap-0.5 sm:gap-1">
+				<div class="w-2.5 h-2.5 sm:w-4 sm:h-4"></div>
+				<span class="text-[7px] sm:text-[9px] font-bold">{maxCount}</span>
 			</div>
 		</div>
 	</div>

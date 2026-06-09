@@ -91,9 +91,15 @@ export const load: PageServerLoad = async ({ locals }) => {
 		}
 		console.error('Database error in /member/pendataan load:', e);
 		return {
-			user: locals.user, // Still return user data if available
+			user: locals.user,
 			dbError: true,
-			message: 'Gagal memuat data halaman: Tidak dapat terhubung ke server.'
+			message: 'Gagal memuat data halaman: Tidak dapat terhubung ke server.',
+			canReadMurid: false,
+			canWriteMurid: false,
+			recentlyAdded: [],
+			recentlyUpdated: [],
+			sebaranMurid: [],
+			totalItems: 0
 		};
 	}
 };
