@@ -5,6 +5,7 @@
 	import { enhance, applyAction } from '$app/forms';
 	import type { ActionResult } from '@sveltejs/kit';
 	import { success, error } from '$lib/components/toast';
+	import RelatedMurid from '$lib/components/data-entry/RelatedMurid.svelte';
 	import { Save, RefreshCw } from 'lucide-svelte';
 
 	type FormActionData = {
@@ -48,8 +49,12 @@
 	let username: string = $state(form?.username || '');
 	let selectedRoles: string[] = $state(form?.selectedRoles || []);
 	let isActive: boolean | null = $state(form?.active ?? true); // Defaultnya aktif
-	let muridId: string = $state(form?.muridIdStr || '');
+	let muridId: number | null = $state(form?.muridIdStr ? parseInt(form.muridIdStr) : null);
 	let password: string = $state('123456'); // Password field
+
+	let selectedMuridInitial = $derived(
+		muridId ? data.allMurids.find((m) => m.id === muridId) : undefined
+	);
 
 	async function handleSubmit() {
 		if (isLoading) return;
@@ -80,7 +85,7 @@
 			if (form.username !== undefined) username = form.username;
 			if (form.selectedRoles !== undefined) selectedRoles = form.selectedRoles;
 			if (form.active !== undefined) isActive = form.active;
-			if (form.muridIdStr !== undefined) muridId = form.muridIdStr;
+			if (form.muridIdStr !== undefined) muridId = form.muridIdStr ? parseInt(form.muridIdStr) : null;
 		}
 	});
 	// Buat daftar nama peran yang dipilih saat ini (akan berubah-ubah)
@@ -257,17 +262,17 @@
 					<label class="label" for="muridId">
 						<span class="label-text">Murid (optional)</span>
 					</label>
-					<select
-						id="muridId"
-						name="muridId"
-						class="select select-bordered w-full"
-						bind:value={muridId}
-					>
-						<option value="">Select Murid</option>
-						{#each data.allMurids as muridOption}
-							<option value={muridOption.id}>{muridOption.nama}</option>
-						{/each}
-					</select>
+					<RelatedMurid
+						placeholder="Cari nama murid..."
+						initialData={selectedMuridInitial}
+						on:change={({ detail }) => {
+							muridId = detail.selectedId;
+						}}
+						on:clear={() => {
+							muridId = null;
+						}}
+					/>
+					<input type="hidden" name="muridId" value={muridId || ''} />
 				</div>
 				<div class="form-control">
 					<label class="label cursor-pointer justify-start gap-2">
