@@ -62,12 +62,12 @@
 		foto: undefined
 	};
 
-	let originalFormData: FormData;
+	let originalFormData: FormData = formData ? { ...formData } : { ...defaultFormData };
 	let originalSelectedPropinsi: Propinsi | null = null;
 	let originalSelectedKokab: Kokab | null = null;
 	let originalSelectedKecamatan: Kecamatan | null = null;
 
-	let internalFormData: FormData = $state({ ...defaultFormData });
+	let internalFormData: FormData = $state(formData ? { ...formData } : { ...defaultFormData });
 	let selectedPropinsi: Propinsi | null = $state(null);
 	let selectedKokab: Kokab | null = $state(null);
 	let selectedKecamatan: Kecamatan | null = $state(null);
@@ -86,14 +86,11 @@
 
 	// --- SIKLUS HIDUP (LIFECYCLE) ---
 	onMount(() => {
-		if (formData) {
-			internalFormData = { ...formData };
-			originalFormData = { ...formData };
-		} else {
-			internalFormData = $muridFormStore.isModified
-				? $muridFormStore.formData
-				: { ...defaultFormData };
-			originalFormData = { ...defaultFormData };
+		if (!formData) {
+			if ($muridFormStore.isModified) {
+				internalFormData = { ...$muridFormStore.formData };
+				originalFormData = { ...$muridFormStore.formData };
+			}
 			selectedPropinsi = $muridFormStore.isModified ? $muridFormStore.selectedPropinsi : null;
 			selectedKokab = $muridFormStore.isModified ? $muridFormStore.selectedKokab : null;
 			selectedKecamatan = $muridFormStore.isModified ? $muridFormStore.selectedKecamatan : null;
