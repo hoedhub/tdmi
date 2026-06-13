@@ -6,12 +6,12 @@
 	import { invalidateAll } from '$app/navigation';
 	import type { ColumnDef, SortConfig, FilterState } from '$lib/components/SuperTable';
 	import { goto } from '$app/navigation';
-	import { PlusCircle, List, Map as MapIcon } from 'lucide-svelte';
+	import { PlusCircle, List, Map as MapIcon, Printer } from 'lucide-svelte';
 	import { onMount } from 'svelte';
 	import { api } from '$lib/utils/api';
 	import { page } from '$app/stores';
 	import { tablePersistence } from '$lib/stores/tablePersistence.svelte';
-	import { error as toastError, success as toastSuccess } from '$lib/components/toast';
+	import { error as toastError, success as toastSuccess, loading as showLoadingToast, update as updateToast } from '$lib/components/toast';
 	import { formatDateShort } from '$lib/utils/date';
 	import IndonesiaMap from '$lib/components/charts/IndonesiaMap.svelte';
 	import { fade } from 'svelte/transition';
@@ -93,6 +93,7 @@
 	const PROVINCE_PAGE_SIZE = 5;
 	let lastFetchedProvinceName: string | null = null;
 	let tableNeedsRefresh = $state(false);
+	let loadingPrint = $state(false);
 
 	// --- Reactive Data from Props ---
 	let canReadMurid = $derived(data.canReadMurid);
@@ -300,6 +301,15 @@
                             path.setAttribute('d', d.replace(/NaN\w*/g, '0'));
                         }
                     });
+                    // Fix relative CSS hrefs to absolute URLs so the iframe can load them
+                    // (SvelteKit generates relative paths like ./_app/... which break in html2pdf's cloned iframe)
+                    const cssLinks = clonedDoc.querySelectorAll('link[rel="stylesheet"]');
+                    cssLinks.forEach(link => {
+                        const href = link.getAttribute('href');
+                        if (href && !href.startsWith('http://') && !href.startsWith('https://') && !href.startsWith('//')) {
+                            link.setAttribute('href', new URL(href, window.location.origin).href);
+                        }
+                    });
                 }
 			},
 			jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
@@ -313,6 +323,105 @@
 			toastError('Terjadi kesalahan saat membuat PDF.');
 		} finally {
 			isGeneratingPDF = false;
+		}
+	}
+
+	async function printTable() {
+		loadingPrint = true;
+		const toastId = showLoadingToast('Memuat semua data untuk dicetak...', { duration: 0 });
+		try {
+			const response = await api('/member/pendataan/table', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					sort: currentSort,
+					filters: currentFilters,
+					page: 1,
+					pageSize: 100000
+				})
+			});
+			if (!response.ok) throw new Error('Gagal mengambil data');
+			const result = await response.json();
+			const data = result.murid;
+			updateToast(toastId, { type: 'success', message: `${result.totalItems} data dimuat.`, duration: 1500 });
+
+			await tick();
+
+			const printWindow = window.open('', '_blank');
+			if (!printWindow) {
+				toastError('Pop-up terblokir. Izinkan pop-up untuk mencetak.');
+				return;
+			}
+
+			const visibleColumns = columns.filter(c => !c.hidden);
+			let tableRows = '';
+			data.forEach((row: Murid) => {
+				tableRows += '<tr>';
+				visibleColumns.forEach(col => {
+					let val = (row as any)[col.key];
+					if (col.key === 'gender') val = val ? 'Pria' : 'Wanita';
+					else if (col.key === 'marhalah') val = `M${val}`;
+					else if (col.key === 'aktif') val = val ? 'Aktif' : 'Tidak Aktif';
+					else if (col.key === 'partisipasi') val = val ? 'Ya' : 'Tidak';
+					else if (col.key === 'qari') val = val ? 'Ya' : 'Tidak';
+					else if (col.key === 'tglLahir') {
+						const age = calculateAge(val);
+						val = age !== null ? `${age} tahun` : '-';
+					} else if (col.key === 'alamat') {
+						val = [row.alamat, row.deskelName, row.kecamatanName, row.kokabName, row.propinsiName].filter(Boolean).join(', ');
+					} else if (col.key === 'updatedAt') {
+						val = formatDateShort(val);
+					} else if (val === null || val === undefined) {
+						val = '-';
+					}
+					tableRows += `<td>${String(val).replace(/</g, '&lt;').replace(/>/g, '&gt;')}</td>`;
+				});
+				tableRows += '</tr>';
+			});
+
+			let filterInfo = '';
+			if (currentFilters?.columns) {
+				const active = Object.entries(currentFilters.columns).filter(([, v]: any) => v?.value);
+				if (active.length > 0) {
+					filterInfo = `<p class="filter-info">Filter: ${active.map(([k, v]: any) => `${k}: ${v.value}`).join(' | ')}</p>`;
+				}
+			}
+
+			const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>Cetak Data Murid - TDMI</title>
+<style>
+body{font-family:Arial,sans-serif;padding:20px;color:#333;}
+h1{font-size:18px;margin:0 0 4px;}
+.meta{font-size:12px;color:#666;margin-bottom:12px;}
+.filter-info{font-size:11px;color:#888;margin-bottom:12px;}
+table{width:100%;border-collapse:collapse;font-size:10px;}
+th,td{border:1px solid #ccc;padding:3px 5px;text-align:left;white-space:nowrap;}
+th{background:#f0f0f0;font-weight:700;}
+tr:nth-child(even){background:#f8f8f8;}
+.footer{font-size:10px;color:#999;margin-top:12px;text-align:center;}
+@media print{@page{margin:10mm;}}
+</style>
+</head>
+<body>
+<h1>Data Murid - TDMI</h1>
+<div class="meta">Tanggal Cetak: ${new Date().toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' })} &mdash; Total: ${result.totalItems} murid</div>
+${filterInfo}
+<table>
+<thead><tr>${visibleColumns.map(c => `<th>${c.label}</th>`).join('')}</tr></thead>
+<tbody>${tableRows}</tbody>
+</table>
+<div class="footer">Dicetak dari Sistem Manajemen TDMI</div>
+<script>window.onload=function(){setTimeout(function(){window.print();window.close()},300)};<\/script>
+</body></html>`;
+
+			printWindow.document.write(html);
+			printWindow.document.close();
+		} catch (err) {
+			const error = err as Error;
+			updateToast(toastId, { type: 'error', message: `Gagal: ${error.message}`, duration: 5000 });
+		} finally {
+			loadingPrint = false;
 		}
 	}
 
@@ -558,21 +667,26 @@
 	});
 </script>
 
-<div class="mb-6 flex flex-wrap items-center justify-between space-y-2">
+<div class="mb-6 flex flex-wrap items-center justify-between gap-2">
 	<h1 class="card-title text-2xl">Manajemen Data Murid</h1>
-	<div class="flex items-center gap-2">
-		<div class="tabs tabs-boxed mr-4">
-			<button class="tab tab-sm gap-2 {activeTab === 'table' ? 'tab-active' : ''}" onclick={switchToTable}>
-				<List class="h-4 w-4" /> Daftar
+	<div class="flex items-center gap-1 sm:gap-2">
+		<div class="tabs tabs-boxed mr-0 sm:mr-4">
+			<button class="tab tab-sm gap-1 sm:gap-2 {activeTab === 'table' ? 'tab-active' : ''}" onclick={switchToTable}>
+				<List class="h-4 w-4 hidden sm:inline" /> <span class="text-[0.7rem] sm:text-sm">Daftar</span>
 			</button>
-			<button class="tab tab-sm gap-2 {activeTab === 'map' ? 'tab-active' : ''}" onclick={() => (activeTab = 'map')}>
-				<MapIcon class="h-4 w-4" /> Peta Sebaran
+			<button class="tab tab-sm gap-1 sm:gap-2 {activeTab === 'map' ? 'tab-active' : ''}" onclick={() => (activeTab = 'map')}>
+				<MapIcon class="h-4 w-4 hidden sm:inline" /> <span class="text-[0.7rem] sm:text-sm">Peta Sebaran</span>
 			</button>
 		</div>
 		{#if canWriteMurid}
 			<a href="/member/pendataan/new" class="btn btn-primary btn-sm">
 				<PlusCircle class="h-4 w-4" /> Tambah Murid Baru
 			</a>
+		{/if}
+		{#if activeTab === 'table'}
+			<button class="btn btn-ghost btn-sm" onclick={printTable} disabled={loadingPrint} title="Cetak Tabel">
+				<Printer class="h-4 w-4" />
+			</button>
 		{/if}
 	</div>
 </div>
