@@ -326,24 +326,6 @@
 		}
 	}
 
-	function formatRowValue(row: Murid, colKey: string): string {
-		const raw = (row as any)[colKey];
-		if (colKey === 'gender') return raw ? 'Pria' : 'Wanita';
-		if (colKey === 'marhalah') return `M${raw}`;
-		if (colKey === 'aktif') return raw ? 'Aktif' : 'Tidak Aktif';
-		if (colKey === 'partisipasi' || colKey === 'qari') return raw ? 'Ya' : 'Tidak';
-		if (colKey === 'tglLahir') {
-			const age = calculateAge(raw);
-			return age !== null ? `${age} tahun` : '-';
-		}
-		if (colKey === 'alamat') {
-			return [row.alamat, row.deskelName, row.kecamatanName, row.kokabName, row.propinsiName].filter(Boolean).join(', ');
-		}
-		if (colKey === 'updatedAt') return formatDateShort(raw);
-		if (raw === null || raw === undefined) return '-';
-		return String(raw).replace(/</g, '&lt;').replace(/>/g, '&gt;');
-	}
-
 	async function printTable() {
 		loadingPrint = true;
 		const toastId = showLoadingToast('Memuat semua data untuk dicetak...', { duration: 0 });
@@ -360,22 +342,44 @@
 			});
 			if (!response.ok) throw new Error('Gagal mengambil data');
 			const result = await response.json();
-			updateToast(toastId, { type: 'success', message: `${result.totalItems} data dimuat.`, duration: 1500 });
 
-			await tick();
+			updateToast(toastId, { type: 'success', message: `${result.totalItems} data dimuat.`, duration: 300 });
 
 			const visibleColumns = columns.filter(c => !c.hidden);
 			let filterHtml = '';
 			if (currentFilters?.columns) {
 				const active = Object.entries(currentFilters.columns).filter(([, v]: any) => v?.value);
 				if (active.length > 0) {
-					filterHtml = `<p class="filter-info">Filter: ${active.map(([k, v]: any) => `${k}: ${v.value}`).join(' | ')}</p>`;
+					filterHtml = `<p class="print-fi">Filter: ${active.map(([k, v]: any) => `${k}: ${v.value}`).join(' | ')}</p>`;
 				}
 			}
 
-			const rowsHtml = result.murid.map((row: Murid) =>
-				`<tr>${visibleColumns.map(col => `<td>${formatRowValue(row, col.key)}</td>`).join('')}</tr>`
-			).join('\n');
+			let rowsHtml = '';
+			for (const row of result.murid) {
+				rowsHtml += '<tr>';
+				for (const col of visibleColumns) {
+					const raw = (row as any)[col.key];
+					let val: string;
+					if (col.key === 'gender') val = raw ? 'Pria' : 'Wanita';
+					else if (col.key === 'marhalah') val = `M${raw}`;
+					else if (col.key === 'aktif') val = raw ? 'Aktif' : 'Tidak Aktif';
+					else if (col.key === 'partisipasi' || col.key === 'qari') val = raw ? 'Ya' : 'Tidak';
+					else if (col.key === 'tglLahir') {
+						const age = calculateAge(raw);
+						val = age !== null ? `${age} tahun` : '-';
+					} else if (col.key === 'alamat') {
+						val = [row.alamat, row.deskelName, row.kecamatanName, row.kokabName, row.propinsiName].filter(Boolean).join(', ');
+					} else if (col.key === 'updatedAt') val = formatDateShort(raw);
+					else if (raw === null || raw === undefined) val = '-';
+					else val = String(raw).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+					rowsHtml += `<td>${val}</td>`;
+				}
+				rowsHtml += '</tr>';
+			}
+
+			const dateStr = new Date().toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' });
+			const totalItems = result.totalItems;
+			const theadHtml = visibleColumns.map(c => `<th>${c.label}</th>`).join('');
 
 			const html = `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><title>Data Murid - TDMI</title>
@@ -383,51 +387,61 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:Arial,sans-serif;padding:15px 20px;color:#1e293b;font-size:10px}
 h1{font-size:16px;margin:0 0 2px;font-weight:800}
-.meta{font-size:11px;color:#64748b;margin-bottom:10px}
-.filter-info{font-size:10px;color:#94a3b8;margin-bottom:10px}
+.print-meta{font-size:11px;color:#64748b;margin-bottom:10px}
+.print-fi{font-size:10px;color:#94a3b8;margin-bottom:10px}
 table{width:100%;border-collapse:collapse}
 th,td{border:1px solid #cbd5e1;padding:3px 5px;text-align:left}
 th{background:#f1f5f9;font-weight:700;color:#1e293b}
 tr:nth-child(even) td{background:#f8fafc}
-.footer{font-size:9px;color:#94a3b8;margin-top:10px;text-align:center;font-style:italic}
+.print-foot{font-size:9px;color:#94a3b8;margin-top:10px;text-align:center;font-style:italic}
 @media print{@page{margin:10mm}}
 </style></head>
 <body>
 <h1>Data Murid - TDMI</h1>
-<p class="meta">${new Date().toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' })} &mdash; Total: ${result.totalItems} murid</p>
+<p class="print-meta">${dateStr} &mdash; Total: ${totalItems} murid</p>
 ${filterHtml}
-<table><thead><tr>${visibleColumns.map(c => `<th>${c.label}</th>`).join('')}</tr></thead>
+<table><thead><tr>${theadHtml}</tr></thead>
 <tbody>${rowsHtml}</tbody></table>
-<p class="footer">Dicetak dari Sistem Manajemen TDMI</p>
+<p class="print-foot">Dicetak dari Sistem Manajemen TDMI</p>
 </body></html>`;
 
-			const iframe = document.createElement('iframe');
-			iframe.style.cssText = 'position:fixed;width:0;height:0;border:0;opacity:0';
-			document.body.appendChild(iframe);
+			const prevTitle = document.title;
+			document.title = 'Data Murid - TDMI';
 
-			const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
-			if (!iframeDoc) throw new Error('Gagal membuat frame cetak');
+			const container = document.createElement('div');
+			container.id = 'print-container';
+			container.innerHTML = html;
+			Object.assign(container.style, {
+				position: 'fixed', left: '-9999px', top: '0', width: '1px', height: '1px', overflow: 'hidden', zIndex: '-1'
+			});
+			document.body.appendChild(container);
 
-			iframeDoc.open();
-			iframeDoc.write(html);
-			iframeDoc.close();
+			const styleEl = document.createElement('style');
+			styleEl.id = 'print-style';
+			styleEl.textContent = `
+				@media screen { #print-container { display: none !important; } }
+				@media print {
+					body > :not(#print-container) { display: none !important; }
+					#print-container { display: block !important; position: static !important; width: auto !important; height: auto !important; overflow: visible !important; z-index: auto !important; left: auto !important; top: auto !important; }
+				}
+			`;
+			document.head.appendChild(styleEl);
 
-			iframe.contentWindow?.focus();
-			await new Promise(r => setTimeout(r, 400));
+			await tick();
+			await new Promise(r => setTimeout(r, 100));
 
 			const cleanup = () => {
-				if (document.body.contains(iframe)) document.body.removeChild(iframe);
+				document.title = prevTitle;
+				const c = document.getElementById('print-container');
+				if (c) c.remove();
+				const s = document.getElementById('print-style');
+				if (s) s.remove();
 				loadingPrint = false;
+				window.removeEventListener('afterprint', cleanup);
 			};
-			iframe.contentWindow?.addEventListener('afterprint', cleanup, { once: true });
-			iframe.contentWindow?.print();
-
-			setTimeout(() => {
-				if (document.body.contains(iframe)) {
-					document.body.removeChild(iframe);
-					loadingPrint = false;
-				}
-			}, 60000);
+			window.addEventListener('afterprint', cleanup);
+			setTimeout(() => { if (loadingPrint) cleanup(); }, 60000);
+			window.print();
 		} catch (err) {
 			const error = err as Error;
 			updateToast(toastId, { type: 'error', message: `Gagal: ${error.message}`, duration: 5000 });
