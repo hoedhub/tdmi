@@ -416,26 +416,24 @@ ${filterHtml}
 			});
 			document.body.appendChild(container);
 
-			const styleEl = document.createElement('style');
-			styleEl.id = 'print-style';
-			styleEl.textContent = `
-				@media screen { #print-container { display: none !important; } }
-				@media print {
-					body > :not(#print-container) { display: none !important; }
-					#print-container { display: block !important; position: static !important; width: auto !important; height: auto !important; overflow: visible !important; z-index: auto !important; left: auto !important; top: auto !important; }
-				}
-			`;
-			document.head.appendChild(styleEl);
-
 			await tick();
-			await new Promise(r => setTimeout(r, 100));
+			await new Promise(r => setTimeout(r, 200));
+
+			const hiddenNodes: { el: HTMLElement; orig: string | null }[] = [];
+			for (const child of Array.from(document.body.children)) {
+				if (child.id !== 'print-container' && child instanceof HTMLElement) {
+					hiddenNodes.push({ el: child, orig: child.style.display });
+					child.style.display = 'none';
+				}
+			}
+			Object.assign(container.style, {
+				position: 'static', left: '', top: '', width: 'auto', height: 'auto', overflow: 'visible', zIndex: 'auto', display: 'block'
+			});
 
 			const cleanup = () => {
 				document.title = prevTitle;
-				const c = document.getElementById('print-container');
-				if (c) c.remove();
-				const s = document.getElementById('print-style');
-				if (s) s.remove();
+				hiddenNodes.forEach(({ el, orig }) => { el.style.display = orig; });
+				container.remove();
 				loadingPrint = false;
 				window.removeEventListener('afterprint', cleanup);
 			};
