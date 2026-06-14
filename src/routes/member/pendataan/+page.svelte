@@ -94,8 +94,6 @@
 	let lastFetchedProvinceName: string | null = null;
 	let tableNeedsRefresh = $state(false);
 	let loadingPrint = $state(false);
-	let printData = $state<Murid[] | null>(null);
-	let printTotal = $state(0);
 
 	// --- Reactive Data from Props ---
 	let canReadMurid = $derived(data.canReadMurid);
@@ -328,6 +326,24 @@
 		}
 	}
 
+	function formatRowValue(row: Murid, colKey: string): string {
+		const raw = (row as any)[colKey];
+		if (colKey === 'gender') return raw ? 'Pria' : 'Wanita';
+		if (colKey === 'marhalah') return `M${raw}`;
+		if (colKey === 'aktif') return raw ? 'Aktif' : 'Tidak Aktif';
+		if (colKey === 'partisipasi' || colKey === 'qari') return raw ? 'Ya' : 'Tidak';
+		if (colKey === 'tglLahir') {
+			const age = calculateAge(raw);
+			return age !== null ? `${age} tahun` : '-';
+		}
+		if (colKey === 'alamat') {
+			return [row.alamat, row.deskelName, row.kecamatanName, row.kokabName, row.propinsiName].filter(Boolean).join(', ');
+		}
+		if (colKey === 'updatedAt') return formatDateShort(raw);
+		if (raw === null || raw === undefined) return '-';
+		return String(raw).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+	}
+
 	async function printTable() {
 		loadingPrint = true;
 		const toastId = showLoadingToast('Memuat semua data untuk dicetak...', { duration: 0 });
@@ -344,28 +360,74 @@
 			});
 			if (!response.ok) throw new Error('Gagal mengambil data');
 			const result = await response.json();
-			printData = result.murid;
-			printTotal = result.totalItems;
 			updateToast(toastId, { type: 'success', message: `${result.totalItems} data dimuat.`, duration: 1500 });
 
 			await tick();
 
-			const afterPrint = () => {
-				printData = null;
-				printTotal = 0;
+			const visibleColumns = columns.filter(c => !c.hidden);
+			let filterHtml = '';
+			if (currentFilters?.columns) {
+				const active = Object.entries(currentFilters.columns).filter(([, v]: any) => v?.value);
+				if (active.length > 0) {
+					filterHtml = `<p class="filter-info">Filter: ${active.map(([k, v]: any) => `${k}: ${v.value}`).join(' | ')}</p>`;
+				}
+			}
+
+			const rowsHtml = result.murid.map((row: Murid) =>
+				`<tr>${visibleColumns.map(col => `<td>${formatRowValue(row, col.key)}</td>`).join('')}</tr>`
+			).join('\n');
+
+			const html = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Data Murid - TDMI</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;padding:15px 20px;color:#1e293b;font-size:10px}
+h1{font-size:16px;margin:0 0 2px;font-weight:800}
+.meta{font-size:11px;color:#64748b;margin-bottom:10px}
+.filter-info{font-size:10px;color:#94a3b8;margin-bottom:10px}
+table{width:100%;border-collapse:collapse}
+th,td{border:1px solid #cbd5e1;padding:3px 5px;text-align:left}
+th{background:#f1f5f9;font-weight:700;color:#1e293b}
+tr:nth-child(even) td{background:#f8fafc}
+.footer{font-size:9px;color:#94a3b8;margin-top:10px;text-align:center;font-style:italic}
+@media print{@page{margin:10mm}}
+</style></head>
+<body>
+<h1>Data Murid - TDMI</h1>
+<p class="meta">${new Date().toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' })} &mdash; Total: ${result.totalItems} murid</p>
+${filterHtml}
+<table><thead><tr>${visibleColumns.map(c => `<th>${c.label}</th>`).join('')}</tr></thead>
+<tbody>${rowsHtml}</tbody></table>
+<p class="footer">Dicetak dari Sistem Manajemen TDMI</p>
+</body></html>`;
+
+			const iframe = document.createElement('iframe');
+			iframe.style.cssText = 'position:fixed;width:0;height:0;border:0;opacity:0';
+			document.body.appendChild(iframe);
+
+			const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+			if (!iframeDoc) throw new Error('Gagal membuat frame cetak');
+
+			iframeDoc.open();
+			iframeDoc.write(html);
+			iframeDoc.close();
+
+			iframe.contentWindow?.focus();
+			await new Promise(r => setTimeout(r, 400));
+
+			const cleanup = () => {
+				if (document.body.contains(iframe)) document.body.removeChild(iframe);
 				loadingPrint = false;
-				window.removeEventListener('afterprint', afterPrint);
 			};
-			window.addEventListener('afterprint', afterPrint);
+			iframe.contentWindow?.addEventListener('afterprint', cleanup, { once: true });
+			iframe.contentWindow?.print();
+
 			setTimeout(() => {
-				if (printData) {
-					printData = null;
-					printTotal = 0;
+				if (document.body.contains(iframe)) {
+					document.body.removeChild(iframe);
 					loadingPrint = false;
-					window.removeEventListener('afterprint', afterPrint);
 				}
 			}, 60000);
-			window.print();
 		} catch (err) {
 			const error = err as Error;
 			updateToast(toastId, { type: 'error', message: `Gagal: ${error.message}`, duration: 5000 });
@@ -615,7 +677,6 @@
 	});
 </script>
 
-<div class="no-print">
 <div class="mb-6 flex flex-wrap items-center justify-between gap-2">
 	<h1 class="card-title text-2xl">Manajemen Data Murid</h1>
 	<div class="flex items-center gap-1 sm:gap-2">
@@ -871,123 +932,5 @@
 	{/if}
 </div>
 
-</div>
 
-<!-- PRINT TABLE TEMPLATE -->
-<div class="print-table-container">
-	{#if printData && printData.length > 0}
-		<div class="print-header">
-			<h1>Data Murid - TDMI</h1>
-			<p class="print-meta">Tanggal Cetak: {new Date().toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' })} &mdash; Total: {printTotal} murid</p>
-			{#if currentFilters?.columns}
-				{@const active = Object.entries(currentFilters.columns).filter(([, v]: any) => v?.value)}
-				{#if active.length > 0}
-					<p class="print-filter">Filter: {active.map(([k, v]: any) => `${k}: ${v.value}`).join(' | ')}</p>
-				{/if}
-			{/if}
-		</div>
-		<table>
-			<thead>
-				<tr>
-					{#each columns.filter(c => !c.hidden) as col}
-						<th>{col.label}</th>
-					{/each}
-				</tr>
-			</thead>
-			<tbody>
-				{#each printData as row}
-					<tr>
-						{#each columns.filter(c => !c.hidden) as col}
-							{@const raw = (row as any)[col.key]}
-							<td>
-								{#if col.key === 'gender'}
-									{raw ? 'Pria' : 'Wanita'}
-								{:else if col.key === 'marhalah'}
-									M{raw}
-								{:else if col.key === 'aktif'}
-									{raw ? 'Aktif' : 'Tidak Aktif'}
-								{:else if col.key === 'partisipasi' || col.key === 'qari'}
-									{raw ? 'Ya' : 'Tidak'}
-								{:else if col.key === 'tglLahir'}
-									{calculateAge(raw) !== null ? `${calculateAge(raw)} tahun` : '-'}
-								{:else if col.key === 'alamat'}
-									{[row.alamat, row.deskelName, row.kecamatanName, row.kokabName, row.propinsiName].filter(Boolean).join(', ')}
-								{:else if col.key === 'updatedAt'}
-									{formatDateShort(raw)}
-								{:else if raw === null || raw === undefined}
-									-
-								{:else}
-									{raw}
-								{/if}
-							</td>
-						{/each}
-					</tr>
-				{/each}
-			</tbody>
-		</table>
-		<p class="print-footer">Dicetak dari Sistem Manajemen TDMI</p>
-	{/if}
-</div>
-
-<style>
-	@media screen {
-		:global(.print-table-container) {
-			display: none !important;
-		}
-	}
-	@media print {
-		:global(.no-print) {
-			display: none !important;
-		}
-		:global(.print-table-container) {
-			display: block !important;
-			padding: 0;
-			margin: 0;
-		}
-		:global(.print-table-container) h1 {
-			font-size: 18px;
-			margin: 0 0 4px;
-			color: #1e293b;
-		}
-		:global(.print-table-container) .print-meta {
-			font-size: 12px;
-			color: #64748b;
-			margin: 0 0 12px;
-		}
-		:global(.print-table-container) .print-filter {
-			font-size: 11px;
-			color: #94a3b8;
-			margin: 0 0 12px;
-		}
-		:global(.print-table-container) table {
-			width: 100%;
-			border-collapse: collapse;
-			font-size: 9px;
-		}
-		:global(.print-table-container) th,
-		:global(.print-table-container) td {
-			border: 1px solid #cbd5e1;
-			padding: 3px 4px;
-			text-align: left;
-		}
-		:global(.print-table-container) th {
-			background: #f1f5f9;
-			font-weight: 700;
-			color: #1e293b;
-		}
-		:global(.print-table-container) tr:nth-child(even) td {
-			background: #f8fafc;
-		}
-		:global(.print-table-container) .print-footer {
-			font-size: 10px;
-			color: #94a3b8;
-			margin-top: 12px;
-			text-align: center;
-			font-style: italic;
-		}
-		@page {
-			margin: 12mm;
-		}
-	}
-</style>
 
