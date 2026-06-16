@@ -61,7 +61,7 @@
 	<input type="hidden" name="alamat" bind:value={formData.alamat} />
 	{#if formData.gender}
 		<div in:fade>
-			<label for="nomor-telepon">Nomor Telepon</label>
+			<label for="nomorTelepon">Nomor Telepon</label>
 			<PhoneInput
 				bind:countryId
 				bind:countryCode

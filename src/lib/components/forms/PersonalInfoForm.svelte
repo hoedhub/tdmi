@@ -272,9 +272,9 @@
 
 	{#if formData.gender === true}
 		<div transition:scale={{ duration: 300 }} class="space-y-2">
-			<div class="label">
+			<label for="foto" class="label">
 				<span class="label-text">Foto:</span>
-			</div>
+			</label>
 
 			<div class="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
 				<div
@@ -330,7 +330,7 @@
 	{/if}
 
 	<div>
-		<label for="tglLahir" class="label">
+		<label for="tglLahirDisplay" class="label">
 			<span class="label-text">Tanggal Lahir (dd/mm/yyyy):</span>
 		</label>
 		<div class="relative">

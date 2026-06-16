@@ -5,6 +5,7 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
+	import Breadcrumb from '$lib/components/navigation/Breadcrumb.svelte';
 	import { ChartNoAxesGantt, User, ChevronsLeft, BookOpen } from 'lucide-svelte';
 	import logo from '$lib/assets/TDMI-Logo-0002.jpg';
 	import { absoluteDropdownStore } from '$lib/stores/absoluteDropdown';
@@ -136,6 +137,7 @@
 
 		<!-- Main content area -->
 		<main class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+			<Breadcrumb />
 			{@render children?.()}
 		</main>
 

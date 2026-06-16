@@ -379,6 +379,7 @@
 					placeholder="Cari propinsi..."
 					bind:value={propinsiSearchTerm}
 					class="input input-sm input-bordered sticky top-0 w-full"
+					aria-label="Cari propinsi"
 				/>
 				<ul class="menu menu-sm mt-2 max-h-60 flex-nowrap overflow-y-auto">
 					{#if loadingPropinsi}
@@ -444,6 +445,7 @@
 					placeholder="Cari kota/kabupaten..."
 					bind:value={kokabSearchTerm}
 					class="input input-sm input-bordered sticky top-0 w-full"
+					aria-label="Cari kota/kabupaten"
 				/>
 				<ul class="menu menu-sm mt-2 max-h-60 flex-nowrap overflow-y-auto">
 					{#if loadingKokab}
@@ -511,6 +513,7 @@
 					placeholder="Cari kecamatan..."
 					bind:value={kecamatanSearchTerm}
 					class="input input-sm input-bordered sticky top-0 w-full"
+					aria-label="Cari kecamatan"
 				/>
 				<ul class="menu menu-sm mt-2 max-h-60 flex-nowrap overflow-y-auto">
 					{#if loadingKecamatan}
@@ -578,6 +581,7 @@
 					placeholder="Cari desa/kelurahan..."
 					bind:value={deskelSearchTerm}
 					class="input input-sm input-bordered sticky top-0 w-full"
+					aria-label="Cari desa/kelurahan"
 				/>
 				<ul class="menu menu-sm mt-2 max-h-60 flex-nowrap overflow-y-auto">
 					{#if loadingDeskel}

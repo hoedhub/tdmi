@@ -80,6 +80,14 @@
 	let personalInfoFormComponent: PersonalInfoForm | undefined = $state();
 	let contactFormComponent: ContactForm | undefined = $state();
 
+	let currentStep = $state(0);
+	const steps = [
+		{ label: 'Informasi Pribadi', icon: '👤' },
+		{ label: 'Kontak & Alamat', icon: '📍' },
+		{ label: 'Irsyadiyah', icon: '🔗' },
+		{ label: 'Status Murid', icon: '✅' }
+	];
+
 	// --- State untuk Similar Murids Alert ---
 	let similarMurids: any[] = $state([]);
 	let searchTimeout: NodeJS.Timeout;
@@ -303,84 +311,141 @@
 		<input type="hidden" name="returnUrl" value={returnUrl} />
 	{/if}
 
-	<PersonalInfoForm
-		bind:this={personalInfoFormComponent}
-		bind:formData={internalFormData}
-		{handleInput}
-		{handleArabicInput}
-		{similarMurids}
-		onclose={() => (similarMurids = [])}
-	/>
-
-	<ContactForm
-		bind:this={contactFormComponent}
-		{propinsiList}
-		bind:formData={internalFormData}
-		bind:selectedPropinsi
-		bind:selectedKokab
-		bind:selectedKecamatan
-		{handleInput}
-		{handleWilayahChange}
-		bind:countryId
-		bind:countryCode
-		bind:phoneNumber
-	/>
-
-	<IrsyadiyahForm bind:formData={internalFormData} {handleInput} {editedMuridId} />
-	{#if internalFormData.muhrimData}
-		<input type="hidden" name="muhrimData" value={JSON.stringify(internalFormData.muhrimData)} />
-	{/if}
-	{#if internalFormData.mursyidData}
-		<input type="hidden" name="mursyidData" value={JSON.stringify(internalFormData.mursyidData)} />
-	{/if}
-	{#if internalFormData.baiatData}
-		<input type="hidden" name="baiatData" value={JSON.stringify(internalFormData.baiatData)} />
-	{/if}
-	{#if internalFormData.wiridData}
-		<input type="hidden" name="wiridData" value={JSON.stringify(internalFormData.wiridData)} />
-	{/if}
-	<StatusForm bind:formData={internalFormData} {handleInput} />
-
-	<div
-		class="sticky bottom-0 flex flex-wrap sm:flex-nowrap w-full gap-2 bg-white/20 p-2 backdrop-blur-xl backdrop-saturate-150 dark:bg-gray-800/20 dark:backdrop-brightness-125"
-	>
-		{#if isFormModified}
+	<!-- Step Indicator -->
+	<div class="flex items-center justify-between gap-1 px-2 py-3 sm:gap-2">
+		{#each steps as step, i}
 			<button
-				transition:scale={{ duration: 300 }}
 				type="button"
-				onclick={() => resetForm()}
-				class="rounded-lg border border-gray-300 w-full sm:w-auto bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:hover:border-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-700"
+				onclick={() => { if (i <= currentStep) currentStep = i; }}
+				class="flex flex-col items-center gap-1"
 			>
-				Reset
+				<div
+					class="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-all sm:h-10 sm:w-10 sm:text-sm {i === currentStep
+						? 'bg-primary text-primary-content shadow-md scale-110'
+						: i < currentStep
+							? 'bg-success text-success-content'
+							: 'bg-base-300 text-base-content/50'}"
+				>
+					{i < currentStep ? '✓' : i + 1}
+				</div>
+				<span class="hidden text-xs font-medium sm:block {i === currentStep ? 'text-primary' : 'text-base-content/50'}">{step.label}</span>
 			</button>
+			{#if i < steps.length - 1}
+				<div class="h-px flex-1 bg-base-300 {i < currentStep ? 'bg-success' : ''}"></div>
+			{/if}
+		{/each}
+	</div>
+
+	<!-- Step Content -->
+	<div class="transition-opacity duration-300">
+		{#if currentStep === 0}
+			<PersonalInfoForm
+				bind:this={personalInfoFormComponent}
+				bind:formData={internalFormData}
+				{handleInput}
+				{handleArabicInput}
+				{similarMurids}
+				onclose={() => (similarMurids = [])}
+			/>
+		{:else if currentStep === 1}
+			<ContactForm
+				bind:this={contactFormComponent}
+				{propinsiList}
+				bind:formData={internalFormData}
+				bind:selectedPropinsi
+				bind:selectedKokab
+				bind:selectedKecamatan
+				{handleInput}
+				{handleWilayahChange}
+				bind:countryId
+				bind:countryCode
+				bind:phoneNumber
+			/>
+		{:else if currentStep === 2}
+			<IrsyadiyahForm bind:formData={internalFormData} {handleInput} {editedMuridId} />
+			{#if internalFormData.muhrimData}
+				<input type="hidden" name="muhrimData" value={JSON.stringify(internalFormData.muhrimData)} />
+			{/if}
+			{#if internalFormData.mursyidData}
+				<input type="hidden" name="mursyidData" value={JSON.stringify(internalFormData.mursyidData)} />
+			{/if}
+			{#if internalFormData.baiatData}
+				<input type="hidden" name="baiatData" value={JSON.stringify(internalFormData.baiatData)} />
+			{/if}
+			{#if internalFormData.wiridData}
+				<input type="hidden" name="wiridData" value={JSON.stringify(internalFormData.wiridData)} />
+			{/if}
+		{:else if currentStep === 3}
+			<StatusForm bind:formData={internalFormData} {handleInput} />
 		{/if}
-		<button
-			type="button"
-			disabled={isSubmitting}
-			onclick={handleBatal}
-			class="btn btn-warning grow w-full sm:w-auto rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
+	</div>
+
+	<!-- Navigation & Action Buttons -->
+	<div class="flex flex-col gap-3">
+		<!-- Step Navigation -->
+		<div class="flex gap-2">
+			{#if currentStep > 0}
+				<button
+					type="button"
+					onclick={() => currentStep--}
+					class="btn btn-outline w-full rounded-lg px-4 py-2 text-sm font-medium sm:w-auto"
+				>
+					← Sebelumnya
+				</button>
+			{/if}
+			{#if currentStep < steps.length - 1}
+				<button
+					type="button"
+					onclick={() => currentStep++}
+					class="btn btn-primary w-full rounded-lg px-4 py-2 text-sm font-medium sm:w-auto"
+				>
+					Selanjutnya →
+				</button>
+			{/if}
+		</div>
+
+		<!-- Submit Actions (shown on all steps) -->
+		<div
+			class="sticky bottom-0 flex flex-wrap sm:flex-nowrap w-full gap-2 bg-white/20 p-2 backdrop-blur-xl backdrop-saturate-150 dark:bg-gray-800/20 dark:backdrop-brightness-125"
 		>
-			Batal
-		</button>
-		<button
-			type="submit"
-			name="action"
-			value="save-and-close"
-			disabled={isSubmitting}
-			class="btn btn-primary grow w-full sm:w-auto rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
-		>
-			{isSubmitting && submittingAction === 'save-and-close' ? 'Menyimpan...' : (formData ? 'Simpan' : 'Simpan & Tutup')}
-		</button>
-		{#if !formData}
+			{#if isFormModified}
+				<button
+					transition:scale={{ duration: 300 }}
+					type="button"
+					onclick={() => resetForm()}
+					class="rounded-lg border border-gray-300 w-full sm:w-auto bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:hover:border-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-700"
+				>
+					Reset
+				</button>
+			{/if}
+			<button
+				type="button"
+				disabled={isSubmitting}
+				onclick={handleBatal}
+				class="btn btn-warning grow w-full sm:w-auto rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
+			>
+				Batal
+			</button>
 			<button
 				type="submit"
 				name="action"
-				value="save-and-add"
+				value="save-and-close"
 				disabled={isSubmitting}
-				class="btn btn-secondary grow w-full sm:w-auto rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
+				class="btn btn-primary grow w-full sm:w-auto rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
 			>
-				{isSubmitting && submittingAction === 'save-and-add' ? 'Menyimpan...' : 'Simpan & Tambah Lagi'}
+				{isSubmitting && submittingAction === 'save-and-close' ? 'Menyimpan...' : (formData ? 'Simpan' : 'Simpan & Tutup')}
 			</button>
-		{/if}
+			{#if !formData}
+				<button
+					type="submit"
+					name="action"
+					value="save-and-add"
+					disabled={isSubmitting}
+					class="btn btn-secondary grow w-full sm:w-auto rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
+				>
+					{isSubmitting && submittingAction === 'save-and-add' ? 'Menyimpan...' : 'Simpan & Tambah Lagi'}
+				</button>
+			{/if}
+		</div>
 	</div>
 </form>

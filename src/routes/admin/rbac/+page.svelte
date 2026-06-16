@@ -60,19 +60,19 @@
 	// Inisialisasi ulang dan deteksi perubahan saat peran atau data berubah
 	$effect(() => {
 		if (selectedRole) {
-			// Inisialisasi untuk tab Izin
-			initialPermissions = data.rolePermissionMap
+			const perms = data.rolePermissionMap
 				.filter((rpm) => rpm.roleId === selectedRole.id)
 				.map((rpm) => rpm.permissionId);
-			currentPermissions = [...initialPermissions];
-
-			// Inisialisasi untuk tab Pengguna
-			initialUsers = data.userRoleMap
+			const usrs = data.userRoleMap
 				.filter((ur) => ur.roleId === selectedRole.id)
 				.map((ur) => ur.userId);
-			currentUsers = [...initialUsers];
+
+			initialPermissions = perms;
+			currentPermissions = [...perms];
+
+			initialUsers = usrs;
+			currentUsers = [...usrs];
 		} else {
-			// Jika tidak ada peran yang dipilih (misalnya setelah penghapusan), kosongkan state
 			initialPermissions = [];
 			currentPermissions = [];
 			initialUsers = [];

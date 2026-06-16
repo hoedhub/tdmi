@@ -1,6 +1,7 @@
 <script lang="ts">
 	import AdminHeader from '$lib/components/layout/AdminHeader.svelte';
 	import SidebarNav from '$lib/components/navigation/SidebarNav.svelte';
+	import Breadcrumb from '$lib/components/navigation/Breadcrumb.svelte';
 	interface Props {
 		children?: import('svelte').Snippet;
 	}
@@ -21,6 +22,9 @@
 	<div class="drawer-content flex flex-col">
 		<!-- Page content here -->
 		<AdminHeader />
+		<div class="px-4 pt-3">
+			<Breadcrumb />
+		</div>
 		<main class="flex-grow p-4">
 			{@render children?.()}
 		</main>

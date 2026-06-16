@@ -92,6 +92,7 @@
 				{disabled}
 				class="input input-bordered w-full join-item focus:input-primary transition-all"
 				autocomplete="off"
+				aria-label={placeholder || 'Cari murid'}
 			/>
 			{#if loading}
 				<div class="absolute right-3 top-1/2 -translate-y-1/2">

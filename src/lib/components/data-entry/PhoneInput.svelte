@@ -187,6 +187,7 @@
 				bind:value={searchTerm}
 				placeholder="Search country or code..."
 				class="input input-sm input-bordered sticky top-0 w-full"
+				aria-label="Cari negara atau kode telepon"
 			/>
 			<ul class="menu menu-sm mt-2 max-h-60 flex-nowrap overflow-y-auto">
 				{#if filteredCountryCodes.length === 0}
@@ -225,6 +226,7 @@
 
 	<!-- Phone Number Input -->
 	<input
+		id="nomorTelepon"
 		type="tel"
 		bind:value={phoneNumber}
 		{disabled}

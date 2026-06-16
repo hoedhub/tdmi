@@ -15,7 +15,7 @@
 	<legend class="px-2 font-semibold">Irsyadiyah</legend>
 	{#if formData.gender === false}
 		<div>
-			<label for="muhrim">Muhrim</label>
+			<span class="label label-text" id="muhrim-label">Muhrim</span>
 			<RelatedMurid
 				placeholder="Pilih murid terkait"
 				initialData={formData.muhrimId && formData.muhrimData
@@ -27,7 +27,7 @@
 					formData.muhrimData = {
 						id: detail.selectedId,
 						nama: detail.selectedName,
-						nomorTelepon: '' // nomorTelepon is not available in the new setup
+						nomorTelepon: ''
 					};
 					handleInput();
 				}}
@@ -40,7 +40,7 @@
 		</div>
 	{/if}
 	<div>
-		<label for="mursyid">Mursyid{formData.gender ? '' : 'ah'}</label>
+		<span class="label label-text" id="mursyid-label">Mursyid{formData.gender ? '' : 'ah'}</span>
 		<RelatedMurid
 			placeholder="Pilih murid terkait"
 			initialData={formData.mursyidId && formData.mursyidData
@@ -64,7 +64,7 @@
 		/>
 	</div>
 	<div>
-		<label for="baiat">Baiat</label>
+		<span class="label label-text" id="baiat-label">Baiat</span>
 		<RelatedMurid
 			placeholder="Pilih murid terkait"
 			initialData={formData.baiatId && formData.baiatData
@@ -88,7 +88,7 @@
 		/>
 	</div>
 	<div>
-		<label for="wirid">Wirid</label>
+		<span class="label label-text" id="wirid-label">Wirid</span>
 		<RelatedMurid
 			placeholder="Pilih murid terkait"
 			initialData={formData.wiridId && formData.wiridData
