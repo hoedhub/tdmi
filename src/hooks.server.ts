@@ -1,6 +1,7 @@
 // src/hooks.server.ts
 import { lucia } from '$lib/server/auth';
 import { error, type Handle } from '@sveltejs/kit';
+import { reportError } from '$lib/server/errorReporter';
 
 export const handle: Handle = async ({ event, resolve }) => {
 	const sessionId = event.cookies.get(lucia.sessionCookieName);
@@ -29,8 +30,11 @@ export const handle: Handle = async ({ event, resolve }) => {
 		event.locals.user = user;
 		event.locals.session = session;
 	} catch (e) {
-		// If database connection fails, throw a controlled error
 		console.error('Database connection failed during session validation:', e);
+		reportError({
+			message: 'Database connection failed during session validation',
+			stack: e instanceof Error ? e.stack : String(e)
+		});
 		throw error(503, 'Gagal memvalidasi sesi: Tidak dapat terhubung ke server.');
 	}
 

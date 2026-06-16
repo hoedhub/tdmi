@@ -9,12 +9,13 @@ import {
 	propTable
 } from '$lib/drizzle/schema';
 import { eq, sql, asc } from 'drizzle-orm';
+import type { InferInsertModel } from 'drizzle-orm';
 import { userHasPermission } from '$lib/server/accessControl';
 import { getPublicFileUrl, uploadFile, deleteFile } from '$lib/server/cloudinary';
 
-export const load: PageServerLoad = async ({ locals, params }) => {
+export const load: PageServerLoad = async ({ locals, params, url }) => {
 	if (!locals.user) {
-		throw redirect(302, '/login');
+		throw redirect(302, `/login?redirectTo=${url.pathname}`);
 	}
 
 	const muridId = parseInt(params.muridId);
@@ -131,7 +132,7 @@ export const actions: Actions = {
 		}
 
 		try {
-			const updatedValues: Record<string, any> = {
+			const updatedValues: InferInsertModel<typeof muridTable> = {
 				updaterId: locals.user.id,
 				updatedAt: sql`CURRENT_TIMESTAMP`,
 				nama: nama,

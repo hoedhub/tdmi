@@ -43,6 +43,13 @@
       "when": 1777681991932,
       "tag": "0005_empty_gabe_jones",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1781530306292,
+      "tag": "0006_large_the_fury",
+      "breakpoints": true
     }
   ]
 }

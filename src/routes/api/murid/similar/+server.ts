@@ -16,7 +16,9 @@ function calculateSimilarity(str1: string, str2: string): number {
 	return maxLength > 0 ? 1 - distance / maxLength : 0;
 }
 
-export async function GET({ url }) {
+export async function GET({ url, locals }) {
+	const userId = locals.user?.id;
+	if (!userId) return json({ error: 'Unauthorized' }, { status: 401 });
 	const nameToSearch = url.searchParams.get('nama');
 	if (!nameToSearch) {
 		return json({ error: 'Nama parameter is required' }, { status: 400 });

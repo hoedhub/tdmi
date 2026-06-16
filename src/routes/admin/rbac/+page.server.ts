@@ -1,4 +1,4 @@
-import { fail, error } from '@sveltejs/kit';
+import { fail, error, redirect } from '@sveltejs/kit';
 import { userHasPermission } from '$lib/server/accessControl';
 import {
 	getAllUsers,
@@ -18,7 +18,7 @@ import type { Actions, PageServerLoad } from './$types';
 export const load: PageServerLoad = async ({ locals }) => {
 	try {
 		if (!locals.user) {
-			throw error(401, 'Unauthorized');
+			throw redirect(302, '/login');
 		}
 
 		const canAccess = await userHasPermission(locals.user.id, 'perm-admin-access');
@@ -68,7 +68,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 export const actions: Actions = {
 	updateUserRoles: async ({ request, locals }) => {
 		if (!locals.user) {
-			throw error(401, 'Unauthorized');
+			return fail(401, { message: 'Unauthorized' });
 		}
 		const canWrite = await userHasPermission(locals.user.id, 'perm-user-write');
 		if (!canWrite) {
@@ -95,7 +95,7 @@ export const actions: Actions = {
 	},
 
 	createRole: async ({ request, locals }) => {
-		if (!locals.user) throw error(401);
+		if (!locals.user) return fail(401, { message: 'Unauthorized' });
 		const canWrite = await userHasPermission(locals.user.id, 'perm-role-write');
 		if (!canWrite) return fail(403, { message: 'Akses ditolak.' });
 
@@ -123,7 +123,7 @@ export const actions: Actions = {
 	},
 
 	updateRole: async ({ request, locals }) => {
-		if (!locals.user) throw error(401);
+		if (!locals.user) return fail(401, { message: 'Unauthorized' });
 		const canWrite = await userHasPermission(locals.user.id, 'perm-role-write');
 		if (!canWrite) return fail(403, { message: 'Akses ditolak.' });
 
@@ -145,7 +145,7 @@ export const actions: Actions = {
 	},
 
 	deleteRole: async ({ request, locals }) => {
-		if (!locals.user) throw error(401);
+		if (!locals.user) return fail(401, { message: 'Unauthorized' });
 		const canWrite = await userHasPermission(locals.user.id, 'perm-role-write');
 		if (!canWrite) return fail(403, { message: 'Akses ditolak.' });
 
@@ -167,7 +167,7 @@ export const actions: Actions = {
 
 	updateRolePermissions: async ({ request, locals }) => {
 		if (!locals.user) {
-			throw error(401, 'Unauthorized');
+			return fail(401, { message: 'Unauthorized' });
 		}
 		const canWrite = await userHasPermission(locals.user.id, 'perm-role-write');
 		if (!canWrite) {
@@ -194,7 +194,7 @@ export const actions: Actions = {
 	},
 
 	updateUsersForRole: async ({ request, locals }) => {
-		if (!locals.user) throw error(401);
+		if (!locals.user) return fail(401, { message: 'Unauthorized' });
 		const canWrite = await userHasPermission(locals.user.id, 'perm-user-write');
 		if (!canWrite) return fail(403, { message: 'Akses ditolak.' });
 

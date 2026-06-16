@@ -70,7 +70,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
 export const actions: Actions = {
 	movePeriod: async ({ request, locals }) => {
-		if (!locals.user) throw redirect(302, '/login');
+		if (!locals.user) return fail(401, { message: 'Unauthorized' });
 
 		const canAccess = await userHasPermission(locals.user.id, 'perm-ayyu-sual-access');
 		if (!canAccess) return fail(403, { msg: 'Akses ditolak.' });
@@ -98,7 +98,7 @@ export const actions: Actions = {
 	},
 
 	updateStatus: async ({ request, locals }) => {
-		if (!locals.user) throw redirect(302, '/login');
+		if (!locals.user) return fail(401, { message: 'Unauthorized' });
 
 		const canAccess = await userHasPermission(locals.user.id, 'perm-ayyu-sual-access');
 		if (!canAccess) return fail(403, { msg: 'Akses ditolak.' });

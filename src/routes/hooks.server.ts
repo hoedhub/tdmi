@@ -1,6 +1,7 @@
 // src/hooks.server.ts
 import { lucia } from '$lib/server/auth';
 import { type Handle, redirect } from '@sveltejs/kit';
+import { reportError } from '$lib/server/errorReporter';
 
 // Helper function to check if an error object looks like a SvelteKit redirect
 function isSKRedirect(error: any): error is { status: number; location: string } {
@@ -68,6 +69,11 @@ export const handle: Handle = async ({ event, resolve }) => {
 			event.locals.session = session;
 		} catch (e) {
 			console.error('[HOOKS] Error during lucia.validateSession:', e);
+			reportError({
+				message: 'Session validation failed',
+				stack: e instanceof Error ? e.stack : String(e),
+				url: url.pathname
+			});
 			event.locals.user = null;
 			event.locals.session = null;
 			const blankCookie = lucia.createBlankSessionCookie();
@@ -107,6 +113,12 @@ export const handle: Handle = async ({ event, resolve }) => {
 			throw error;
 		}
 		console.error(`[HOOKS] Error during resolve for ${url.pathname} (not a redirect):`, error);
+		reportError({
+			message: `Resolve error: ${error instanceof Error ? error.message : String(error)}`,
+			stack: error instanceof Error ? error.stack : undefined,
+			url: url.pathname,
+			userId: event.locals.user?.id
+		});
 		return new Response('An unexpected error occurred.', { status: 500 });
 	}
 };

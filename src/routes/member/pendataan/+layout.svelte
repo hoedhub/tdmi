@@ -5,7 +5,7 @@
 	import { scale, fade } from 'svelte/transition';
 	import { page } from '$app/stores';
 
-	let { children } = $props();
+	let { children }: { children?: import('svelte').Snippet } = $props();
 
 	let isSyncing = $state(false);
 
@@ -27,7 +27,7 @@
 </script>
 
 <!-- Slot for children (the actual pages) -->
-{@render children()}
+{@render children?.()}
 
 <!-- Floating Sync Button -->
 <div class="fixed bottom-6 right-6 z-[80] flex flex-col items-end gap-2 pointer-events-none">

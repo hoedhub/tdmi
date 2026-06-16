@@ -3,8 +3,13 @@ import type { RequestEvent } from './$types';
 import { db } from '$lib/drizzle';
 import { muridTable } from '$lib/drizzle/schema';
 import { eq, inArray } from 'drizzle-orm';
+import { userHasPermission } from '$lib/server/accessControl';
 
-export async function DELETE({ request }: RequestEvent) {
+export async function DELETE({ request, locals }: RequestEvent) {
+	const userId = locals.user?.id;
+	if (!userId) return json({ error: 'Unauthorized' }, { status: 401 });
+	const canWrite = await userHasPermission(userId, 'perm-pendataan-write');
+	if (!canWrite) return json({ error: 'Forbidden' }, { status: 403 });
 	try {
 		const { ids } = await request.json();
 

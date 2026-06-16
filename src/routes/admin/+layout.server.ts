@@ -1,18 +1,6 @@
 import { redirect, error } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
-import { userHasPermission } from '$lib/server/accessControl'; // <-- Impor fungsi RBAC kita
-import { afterNavigate } from '$app/navigation';
-import { retryCount } from '$lib/stores';
-
-// afterNavigate berjalan setiap kali navigasi selesai.
-afterNavigate(({ from, to }) => {
-	// Kita hanya ingin mereset jika ini adalah navigasi ke halaman baru,
-	// BUKAN saat halaman error yang sama dimuat ulang.
-	// Halaman error tidak memiliki 'route.id' yang sama dengan halaman tujuan.
-	if (to?.route.id !== from?.route.id) {
-		retryCount.set(0);
-	}
-});
+import { userHasPermission } from '$lib/server/accessControl';
 
 export const load: LayoutServerLoad = async ({ locals, url }) => {
 	if (!locals.user) {

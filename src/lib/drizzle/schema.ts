@@ -288,7 +288,41 @@ export const pertanyaanAhbabTable = sqliteTable(
 );
 
 // ==================================================================
-// BAGIAN 7: RELATIONS (DEFINISIKAN SEMUA DI AKHIR)
+// BAGIAN 7: TABEL ERROR LOG
+// ==================================================================
+export type ErrorLevel = 'error' | 'warning' | 'info';
+export type ErrorSource = 'client' | 'server';
+
+export const errorLogTable = sqliteTable(
+	'error_log',
+	{
+		id: text('id').primaryKey(),
+		level: text('level').$type<ErrorLevel>().notNull().default('error'),
+		source: text('source').$type<ErrorSource>().notNull(),
+		message: text('message').notNull(),
+		stack: text('stack'),
+		url: text('url'),
+		userId: text('user_id').references(() => usersTable.id, { onDelete: 'set null' }),
+		userAgent: text('user_agent'),
+		metadata: text('metadata'),
+		resolved: integer('resolved', { mode: 'boolean' }).notNull().default(false),
+		resolvedAt: text('resolved_at'),
+		resolvedBy: text('resolved_by').references(() => usersTable.id, { onDelete: 'set null' }),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`CURRENT_TIMESTAMP`)
+	},
+	(table) => [
+		index('error_log_level_idx').on(table.level),
+		index('error_log_source_idx').on(table.source),
+		index('error_log_resolved_idx').on(table.resolved),
+		index('error_log_created_at_idx').on(table.createdAt),
+		index('error_log_user_idx').on(table.userId)
+	]
+);
+
+// ==================================================================
+// BAGIAN 8: RELATIONS (DEFINISIKAN SEMUA DI AKHIR)
 // ==================================================================
 
 // 6.1 Relasi untuk Tabel PENGHUBUNG (One-to-Many)

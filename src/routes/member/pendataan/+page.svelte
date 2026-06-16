@@ -4,7 +4,7 @@
 	import { tick } from 'svelte';
 	import type { PageData } from './$types';
 	import { invalidateAll } from '$app/navigation';
-	import type { ColumnDef, SortConfig, FilterState } from '$lib/components/SuperTable';
+	import type { SortConfig, FilterState } from '$lib/components/SuperTable';
 	import { goto } from '$app/navigation';
 	import { PlusCircle, List, Map as MapIcon, Printer } from 'lucide-svelte';
 	import { onMount } from 'svelte';
@@ -12,7 +12,7 @@
 	import { page } from '$app/stores';
 	import { tablePersistence } from '$lib/stores/tablePersistence.svelte';
 	import { error as toastError, success as toastSuccess, loading as showLoadingToast, update as updateToast } from '$lib/components/toast';
-	import { formatDateShort } from '$lib/utils/date';
+
 	import IndonesiaMap from '$lib/components/charts/IndonesiaMap.svelte';
 	import { fade } from 'svelte/transition';
 
@@ -22,46 +22,17 @@
 	import RecentActivityCards from './components/RecentActivityCards.svelte';
 	import MuridPrintReport from './components/MuridPrintReport.svelte';
 
+	// Config & Actions
+	import { MURID_COLUMNS, type Murid } from './config/columns';
+	import { MAP_LABELS, TOP_COLORS, PROVINCE_PAGE_SIZE, type MapViewMode } from './config/constants';
+	import { printMuridTable } from './actions/printTable';
+	import { downloadMuridPDF } from './actions/downloadPDF';
+
 	// --- Type Definitions ---
 	type ExtendedPageData = PageData & {
 		dbError: boolean;
 		message?: string;
 	};
-
-	interface Murid {
-		id: number;
-		updatedAt: string;
-		updaterId: string;
-		nama: string;
-		namaArab: string | null;
-		gender: boolean;
-		deskelId: number | null;
-		alamat: string | null;
-		nomorTelepon: string | null;
-		muhrimId: number | null;
-		mursyidId: number | null;
-		baiatId: number | null;
-		wiridId: number | null;
-		qari: boolean;
-		marhalah: 1 | 2 | 3;
-		tglLahir: string | null;
-		aktif: boolean;
-		partisipasi: boolean;
-		nik: string | null;
-		deskelName: string | null;
-		kecamatanName: string | null;
-		kokabName: string | null;
-		propinsiName: string | null;
-		mursyidName: string | null;
-		baiatName: string | null;
-		wiridName: string | null;
-		mursyidMarhalah: number | null;
-		baiatMarhalah: number | null;
-		wiridMarhalah: number | null;
-		mursyidQari: boolean | null;
-		baiatQari: boolean | null;
-		wiridQari: boolean | null;
-	}
 
 	interface Props {
 		data: ExtendedPageData;
@@ -74,7 +45,7 @@
 	let totalItems = $state(data.totalItems);
 	let isNavigating = $state(false);
 	let activeTab = $state<'table' | 'map'>('table');
-	let mapViewMode = $state<'total' | 'marhalah1' | 'marhalah2' | 'marhalah3' | 'pria' | 'wanita'>('total');
+	let mapViewMode = $state<MapViewMode>('total');
 
 	let loading = $state(false);
 	let pageSize = $state(10);
@@ -90,7 +61,6 @@
 	let provinceLoading = $state(false);
 	let provinceTotalItems = $state(0);
 	let provincePage = $state(1);
-	const PROVINCE_PAGE_SIZE = 5;
 	let lastFetchedProvinceName: string | null = null;
 	let tableNeedsRefresh = $state(false);
 	let loadingPrint = $state(false);
@@ -221,15 +191,6 @@
 		})
 	);
 
-	const mapLabels: Record<string, string> = {
-		total: 'Total Murid',
-		marhalah1: 'Murid Marhalah 1',
-		marhalah2: 'Murid Marhalah 2',
-		marhalah3: 'Murid Marhalah 3',
-		pria: 'Murid Pria',
-		wanita: 'Murid Wanita'
-	};
-
 	// --- Insights Logic ---
 	let sortedProvinces = $derived(
 		[...(data.sebaranMurid || [])].sort((a, b) => (b[mapViewMode] || 0) - (a[mapViewMode] || 0))
@@ -246,8 +207,6 @@
 		wanita: (data.sebaranMurid || []).reduce((acc: number, curr: any) => acc + (curr.wanita || 0), 0)
 	});
 
-	const topColors = ['#6366f1', '#ec4899', '#10b981', '#f59e0b', '#3b82f6', '#94a3b8'];
-
 	let modeTotal = $derived(
 		(data.sebaranMurid || []).reduce((acc: number, curr: any) => acc + (Number(curr[mapViewMode]) || 0), 0)
 	);
@@ -259,64 +218,14 @@
 	async function downloadPDF() {
 		isGeneratingPDF = true;
 		await tick();
-
-		// Wait for the report component to be rendered in the hidden div
 		const element = document.getElementById('murid-pdf-report');
 		if (!element) {
 			toastError('Gagal menyiapkan dokumen laporan.');
 			isGeneratingPDF = false;
 			return;
 		}
-
-		// Dynamically import html2pdf
-		const html2pdf = (await import('html2pdf.js')).default;
-
-		const opt = {
-			margin: 10,
-			filename: `Laporan-Sebaran-TDMI-${mapViewMode}-${new Date().getTime()}.pdf`,
-			image: { type: 'jpeg', quality: 0.98 },
-			html2canvas: { 
-				scale: 2, 
-				useCORS: true, 
-				logging: false,
-                onclone: (clonedDoc: Document) => {
-                    const styles2 = clonedDoc.querySelectorAll('style');
-                    styles2.forEach(s => {
-                        if (s.textContent && s.textContent.includes('oklch')) {
-                            s.textContent = s.textContent.replace(/oklch\([^)]*\)/g, '#3b82f6');
-                            s.textContent = s.textContent.replace(/color-mix\(in oklch,\s*[^,]+,\s*[^)]+\)/g, '#94a3b8');
-                        }
-                    });
-                    const allElements = clonedDoc.querySelectorAll('[style]');
-                    allElements.forEach(el => {
-                        const style = el.getAttribute('style');
-                        if (style && style.includes('oklch')) {
-                            el.setAttribute('style', style.replace(/oklch\([^)]*\)/g, '#3b82f6').replace(/color-mix\(in oklch,\s*[^,]+,\s*[^)]+\)/g, '#94a3b8'));
-                        }
-                    });
-                    const paths = clonedDoc.querySelectorAll('path');
-                    paths.forEach(path => {
-                        let d = path.getAttribute('d');
-                        if (d && d.includes('NaN')) {
-                            path.setAttribute('d', d.replace(/NaN\w*/g, '0'));
-                        }
-                    });
-                    // Fix relative CSS hrefs to absolute URLs so the iframe can load them
-                    // (SvelteKit generates relative paths like ./_app/... which break in html2pdf's cloned iframe)
-                    const cssLinks = clonedDoc.querySelectorAll('link[rel="stylesheet"]');
-                    cssLinks.forEach(link => {
-                        const href = link.getAttribute('href');
-                        if (href && !href.startsWith('http://') && !href.startsWith('https://') && !href.startsWith('//')) {
-                            link.setAttribute('href', new URL(href, window.location.origin).href);
-                        }
-                    });
-                }
-			},
-			jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-		};
-
 		try {
-			await html2pdf().set(opt).from(element).save();
+			await downloadMuridPDF(element, `Laporan-Sebaran-TDMI-${mapViewMode}`);
 			toastSuccess('Laporan PDF berhasil diunduh.');
 		} catch (err) {
 			console.error('PDF Generation Error:', err);
@@ -330,255 +239,15 @@
 		loadingPrint = true;
 		const toastId = showLoadingToast('Memuat semua data untuk dicetak...', { duration: 0 });
 		try {
-			const response = await api('/member/pendataan/table', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					sort: currentSort,
-					filters: currentFilters,
-					page: 1,
-					pageSize: 100000
-				})
-			});
-			if (!response.ok) throw new Error('Gagal mengambil data');
-			const result = await response.json();
-
-			updateToast(toastId, { type: 'success', message: `${result.totalItems} data dimuat.`, duration: 300 });
-
-			const visibleColumns = columns.filter(c => !c.hidden);
-			let filterHtml = '';
-			if (currentFilters?.columns) {
-				const active = Object.entries(currentFilters.columns).filter(([, v]: any) => v?.value);
-				if (active.length > 0) {
-					filterHtml = `<p class="print-fi">Filter: ${active.map(([k, v]: any) => `${k}: ${v.value}`).join(' | ')}</p>`;
-				}
-			}
-
-			let rowsHtml = '';
-			for (const row of result.murid) {
-				rowsHtml += '<tr>';
-				for (const col of visibleColumns) {
-					const raw = (row as any)[col.key];
-					let val: string;
-					if (col.key === 'gender') val = raw ? 'Pria' : 'Wanita';
-					else if (col.key === 'marhalah') val = `M${raw}`;
-					else if (col.key === 'aktif') val = raw ? 'Aktif' : 'Tidak Aktif';
-					else if (col.key === 'partisipasi' || col.key === 'qari') val = raw ? 'Ya' : 'Tidak';
-					else if (col.key === 'tglLahir') {
-						const age = calculateAge(raw);
-						val = age !== null ? `${age} tahun` : '-';
-					} else if (col.key === 'alamat') {
-						val = [row.alamat, row.deskelName, row.kecamatanName, row.kokabName, row.propinsiName].filter(Boolean).join(', ');
-					} else if (col.key === 'updatedAt') val = formatDateShort(raw);
-					else if (raw === null || raw === undefined) val = '-';
-					else val = String(raw).replace(/</g, '&lt;').replace(/>/g, '&gt;');
-					rowsHtml += `<td>${val}</td>`;
-				}
-				rowsHtml += '</tr>';
-			}
-
-			const dateStr = new Date().toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' });
-			const totalItems = result.totalItems;
-			const theadHtml = visibleColumns.map(c => `<th>${c.label}</th>`).join('');
-
-			const html = `<!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>Data Murid - TDMI</title>
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:Arial,sans-serif;padding:15px 20px;color:#1e293b;font-size:10px}
-h1{font-size:16px;margin:0 0 2px;font-weight:800}
-.print-meta{font-size:11px;color:#64748b;margin-bottom:10px}
-.print-fi{font-size:10px;color:#94a3b8;margin-bottom:10px}
-table{width:100%;border-collapse:collapse}
-th,td{border:1px solid #cbd5e1;padding:3px 5px;text-align:left}
-th{background:#f1f5f9;font-weight:700;color:#1e293b}
-tr:nth-child(even) td{background:#f8fafc}
-.print-foot{font-size:9px;color:#94a3b8;margin-top:10px;text-align:center;font-style:italic}
-@media print{@page{margin:10mm}}
-</style></head>
-<body>
-<h1>Data Murid - TDMI</h1>
-<p class="print-meta">${dateStr} &mdash; Total: ${totalItems} murid</p>
-${filterHtml}
-<table><thead><tr>${theadHtml}</tr></thead>
-<tbody>${rowsHtml}</tbody></table>
-<p class="print-foot">Dicetak dari Sistem Manajemen TDMI</p>
-</body></html>`;
-
-			const prevTitle = document.title;
-			document.title = 'Data Murid - TDMI';
-
-			const container = document.createElement('div');
-			container.id = 'print-container';
-			container.innerHTML = html;
-			Object.assign(container.style, {
-				position: 'fixed', left: '-9999px', top: '0', width: '1px', height: '1px', overflow: 'hidden', zIndex: '-1'
-			});
-			document.body.appendChild(container);
-
-			await tick();
-			await new Promise(r => setTimeout(r, 200));
-
-			const hiddenNodes: { el: HTMLElement; orig: string | null }[] = [];
-			for (const child of Array.from(document.body.children)) {
-				if (child.id !== 'print-container' && child instanceof HTMLElement) {
-					hiddenNodes.push({ el: child, orig: child.style.display });
-					child.style.display = 'none';
-				}
-			}
-			Object.assign(container.style, {
-				position: 'static', left: '', top: '', width: 'auto', height: 'auto', overflow: 'visible', zIndex: 'auto', display: 'block'
-			});
-
-			const cleanup = () => {
-				document.title = prevTitle;
-				hiddenNodes.forEach(({ el, orig }) => { el.style.display = orig; });
-				container.remove();
-				loadingPrint = false;
-				window.removeEventListener('afterprint', cleanup);
-			};
-			window.addEventListener('afterprint', cleanup);
-			setTimeout(() => { if (loadingPrint) cleanup(); }, 60000);
-			window.print();
+			await printMuridTable({ sort: currentSort, filters: currentFilters, columns: MURID_COLUMNS, api });
+			updateToast(toastId, { type: 'success', message: 'Data siap dicetak.', duration: 300 });
 		} catch (err) {
 			const error = err as Error;
 			updateToast(toastId, { type: 'error', message: `Gagal: ${error.message}`, duration: 5000 });
+		} finally {
 			loadingPrint = false;
 		}
 	}
-
-	function calculateAge(tglLahir: string | null): number | null {
-		if (!tglLahir) return null;
-		const birthDate = new Date(tglLahir);
-		const today = new Date();
-		let age = today.getFullYear() - birthDate.getFullYear();
-		const m = today.getMonth() - birthDate.getMonth();
-		if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-			age--;
-		}
-		return age;
-	}
-	
-	function renderReferencedMurid(name: string | null, marhalah: number | null, qari: boolean | null) {
-		if (!name) return '-';
-		const isLowMarhalah = marhalah !== null && marhalah < 3;
-		const isGhoiruQari = qari === false;
-		
-		if (isLowMarhalah || isGhoiruQari) {
-			let tip = "Peringatan:";
-			if (isLowMarhalah) tip += " Belum Marhalah 3.";
-			if (isGhoiruQari) tip += " Ghoiru Qari.";
-			
-			return `
-				<div class="tooltip tooltip-warning" data-tip="${tip}">
-					<span class="inline-flex items-center gap-1 text-warning font-medium">
-						<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
-						${name}
-					</span>
-				</div>
-			`.trim();
-		}
-		return name;
-	}
-
-	let columns: ColumnDef<Murid>[] = [
-		{ key: 'nama', label: 'Nama', sortable: true, filterable: 'text' },
-		{ key: 'namaArab', label: 'Nama Arab', sortable: true, filterable: 'text', hidden: true },
-		{
-			key: 'gender',
-			label: 'Gender',
-			sortable: true,
-			filterable: 'select',
-			filterOptions: ['Pria', 'Wanita'],
-			formatter: (value: boolean) => (value ? 'Pria' : 'Wanita')
-		},
-		{
-			key: 'tglLahir',
-			label: 'Umur',
-			sortable: true,
-			formatter: (value) => {
-				const age = calculateAge(value);
-				return age !== null ? `${age} tahun` : '-';
-			}
-		},
-		{
-			key: 'marhalah',
-			label: 'Marhalah',
-			sortable: true,
-			filterable: 'select',
-			filterOptions: ['1', '2', '3'],
-			formatter: (value: 1 | 2 | 3) => value.toString()
-		},
-		{
-			key: 'mursyidName',
-			label: 'Mursyid',
-			sortable: true,
-			filterable: 'text',
-			formatter: (v, row) => renderReferencedMurid(v, row.mursyidMarhalah, row.mursyidQari)
-		},
-		{
-			key: 'baiatName',
-			label: 'Baiat',
-			sortable: true,
-			filterable: 'text',
-			formatter: (v, row) => renderReferencedMurid(v, row.marhalah, row.qari),
-			hidden: true
-		},
-		{
-			key: 'wiridName',
-			label: 'Wirid',
-			sortable: true,
-			filterable: 'text',
-			formatter: (v, row) => renderReferencedMurid(v, row.marhalah, row.qari),
-			hidden: true
-		},
-		{ key: 'nomorTelepon', label: 'Telepon', sortable: true, filterable: 'text' },
-		{
-			key: 'alamat',
-			label: 'Alamat',
-			sortable: true,
-			filterable: 'text',
-			formatter: (value, row) => {
-				return [value, row.deskelName, row.kecamatanName, row.kokabName, row.propinsiName]
-					.filter(Boolean)
-					.join(', ');
-			}
-		},
-		{
-			key: 'aktif',
-			label: 'Aktif',
-			sortable: true,
-			filterable: 'select',
-			filterOptions: ['Aktif', 'Tidak Aktif'],
-			formatter: (value: boolean) => (value ? 'Aktif' : 'Tidak Aktif'),
-			cellClass: (value: boolean) => (value ? 'text-success' : 'text-error')
-		},
-		{
-			key: 'partisipasi',
-			label: 'Partisipasi',
-			sortable: true,
-			filterable: 'select',
-			filterOptions: ['Ya', 'Tidak'],
-			formatter: (value: boolean) => (value ? 'Ya' : 'Tidak'),
-			cellClass: (value: boolean) => (value ? 'text-success' : 'text-error')
-		},
-		{
-			key: 'qari',
-			label: 'Qari',
-			sortable: true,
-			filterable: 'select',
-			filterOptions: ['Ya', 'Tidak'],
-			formatter: (value: boolean) => (value ? 'Ya' : 'Tidak'),
-			cellClass: (value: boolean) => (value ? 'text-success' : 'text-error')
-		},
-		{
-			key: 'updatedAt',
-			label: 'Terakhir Diperbarui',
-			sortable: true,
-			formatter: (value: string) => formatDateShort(value),
-			hidden: true
-		}
-	];
 
 	// --- Functions ---
 	async function fetchTableData(
@@ -727,7 +396,7 @@ ${filterHtml}
 
 	<MuridTableSection
 		{muridData}
-		{columns}
+		columns={MURID_COLUMNS}
 		bind:pageSize
 		bind:currentPage
 		{totalItems}
@@ -902,8 +571,8 @@ ${filterHtml}
 						{modeTotal}
 						{othersCount}
 						{mapViewMode}
-						{mapLabels}
-						{topColors}
+						mapLabels={MAP_LABELS}
+						topColors={TOP_COLORS}
 						onProvinceClick={handleProvinceClick}
 						onDownloadPDF={downloadPDF}
 						{isGeneratingPDF}
@@ -936,8 +605,8 @@ ${filterHtml}
 			{modeTotal}
 			{othersCount}
 			{mapViewMode}
-			{mapLabels}
-			{topColors}
+			mapLabels={MAP_LABELS}
+			topColors={TOP_COLORS}
 			paths={mapPaths.map(p => ({ ...p, d: p.d.replace(/NaN/g, '0') }))}
 			{mapData}
 		/>

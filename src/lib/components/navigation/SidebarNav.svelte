@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { createEventDispatcher } from 'svelte';
-	import { BadgeCheck, ShieldAlert, UsersRound, DatabaseBackup } from 'lucide-svelte'; // <-- Import ikon
+	import { BadgeCheck, ShieldAlert, UsersRound, DatabaseBackup, Bug } from 'lucide-svelte'; // <-- Import ikon
 
 	const dispatch = createEventDispatcher();
 
@@ -65,6 +65,16 @@
 			</a>
 		</li>
 	{/if}
+	<li>
+		<a
+			href="/admin/error-logs"
+			class={page.url.pathname.startsWith('/admin/error-logs') ? 'active' : ''}
+			onclick={handleNavigation}
+		>
+			<Bug class="h-5 w-5" />
+			Error Logs
+		</a>
+	</li>
 	<li>
 		<a href="/" onclick={handleNavigation}>Exit</a>
 	</li>

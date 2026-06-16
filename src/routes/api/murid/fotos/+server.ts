@@ -4,8 +4,11 @@ import { db } from '$lib/drizzle';
 import { muridTable } from '$lib/drizzle/schema';
 import { sql, eq, inArray } from 'drizzle-orm';
 import { deleteFile, getPublicFileUrl, uploadFile } from '$lib/server/cloudinary';
+import { userHasPermission } from '$lib/server/accessControl';
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async ({ request, locals }) => {
+	const userId = locals.user?.id;
+	if (!userId) return json({ error: 'Unauthorized' }, { status: 401 });
 	try {
 		const { ids } = await request.json();
 
@@ -41,7 +44,11 @@ export const POST: RequestHandler = async ({ request }) => {
 	}
 };
 
-export const PATCH: RequestHandler = async ({ request }) => {
+export const PATCH: RequestHandler = async ({ request, locals }) => {
+	const userId = locals.user?.id;
+	if (!userId) return json({ error: 'Unauthorized' }, { status: 401 });
+	const canWrite = await userHasPermission(userId, 'perm-pendataan-write');
+	if (!canWrite) return json({ error: 'Forbidden' }, { status: 403 });
 	try {
 		const formData = await request.formData();
 		const id = formData.get('id');

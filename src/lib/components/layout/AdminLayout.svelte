@@ -27,6 +27,6 @@
 	</div>
 	<div class="drawer-side">
 		<label for="my-drawer-2" aria-label="close sidebar" class="drawer-overlay"></label>
-		<SidebarNav on:navigate={closeDrawer} />
+		<SidebarNav onnavigate={closeDrawer} />
 	</div>
 </div>

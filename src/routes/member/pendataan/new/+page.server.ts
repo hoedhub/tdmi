@@ -6,9 +6,9 @@ import { muridTable, propTable } from '$lib/drizzle/schema';
 import { uploadFile } from '$lib/server/cloudinary';
 import { type InferInsertModel, eq, asc } from 'drizzle-orm';
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: PageServerLoad = async ({ locals, url }) => {
 	if (!locals.user) {
-		throw redirect(302, '/login');
+		throw redirect(302, `/login?redirectTo=${url.pathname}`);
 	}
 
 	// Hanya cek izin akses dasar untuk memuat halaman.

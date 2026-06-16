@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { run, preventDefault } from 'svelte/legacy';
-
 	import type { PageData, ActionData } from './$types';
 	import { enhance } from '$app/forms';
 	import { success, error } from '$lib/components/toast';
@@ -42,10 +40,6 @@
 	let initialUsers: string[] = $state([]);
 	let currentUsers: string[] = $state([]);
 
-	// State reaktif untuk mendeteksi perubahan
-	let permissionsChanged = $state(false);
-	let usersChanged = $state(false);
-
 	// --- Reactive Computations ---
 	let formErrors = $derived(form?.errors as Record<string, unknown> | undefined);
 	let selectedRole = $derived(data.roles.find((r) => r.id === selectedRoleId));
@@ -60,8 +54,11 @@
 		return true;
 	};
 
+	let permissionsChanged = $derived(!areArraysEqual(initialPermissions, currentPermissions));
+	let usersChanged = $derived(!areArraysEqual(initialUsers, currentUsers));
+
 	// Inisialisasi ulang dan deteksi perubahan saat peran atau data berubah
-	run(() => {
+	$effect(() => {
 		if (selectedRole) {
 			// Inisialisasi untuk tab Izin
 			initialPermissions = data.rolePermissionMap
@@ -81,14 +78,6 @@
 			initialUsers = [];
 			currentUsers = [];
 		}
-	});
-
-	// Deteksi perubahan secara reaktif
-	run(() => {
-		permissionsChanged = !areArraysEqual(initialPermissions, currentPermissions);
-	});
-	run(() => {
-		usersChanged = !areArraysEqual(initialUsers, currentUsers);
 	});
 
 	// --- Lifecycle ---
@@ -220,7 +209,7 @@
 							<a
 								href={'#'}
 								class:active={selectedRoleId === role.id}
-								onclick={preventDefault(() => selectRole(role.id))}
+								onclick={(e) => { e.preventDefault(); selectRole(role.id); }}
 							>
 								<ShieldCheck class="h-4 w-4" />
 								{role.name}
@@ -264,10 +253,11 @@
 								method="POST"
 								action="?/deleteRole"
 								use:enhance={enhanceForm(`delete-${selectedRole.id}`)}
-								onsubmit={preventDefault((e) => {
+								onsubmit={(e) => {
+									e.preventDefault();
 									if (!confirm(`Yakin ingin menghapus peran "${selectedRole.name}"?`))
 										e.preventDefault();
-								})}
+								}}
 							>
 								<input type="hidden" name="id" value={selectedRole.id} />
 								<button
@@ -472,7 +462,7 @@
 				<ul class="menu px-6">
 					{#each data.roles as role (role.id)}
 						<li>
-							<a href={'#'} onclick={preventDefault(() => selectRole(role.id))}>
+							<a href={'#'} onclick={(e) => { e.preventDefault(); selectRole(role.id); }}>
 								<ShieldCheck />
 								{role.name}
 							</a>

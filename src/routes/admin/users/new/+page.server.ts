@@ -32,7 +32,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 export const actions: Actions = {
 	default: async ({ request, locals }) => {
 		// Pengecekan izin
-		if (!locals.user) throw error(401, 'Unauthorized');
+		if (!locals.user) return fail(401, { message: 'Unauthorized' });
 		const canWriteUsers = await userHasPermission(locals.user.id, 'perm-user-write');
 		if (!canWriteUsers) {
 			return fail(403, { message: 'Akses Ditolak' });

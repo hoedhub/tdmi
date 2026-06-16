@@ -34,7 +34,9 @@ function calculateAge(birthDate: string | null): number | null {
 	return age;
 }
 
-export async function GET({ params }) {
+export async function GET({ params, locals }) {
+	const userId = locals.user?.id;
+	if (!userId) return json({ error: 'Unauthorized' }, { status: 401 });
 	try {
 		const muridId = Number(params.id);
 

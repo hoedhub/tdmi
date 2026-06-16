@@ -119,7 +119,12 @@ const permissionsData = [
 		name: 'Read Pendataan',
 		description: 'Allows reading pendataan/murid data'
 	},
-	{ id: 'perm-nasyath-read', name: 'Write Nasyath', description: 'Allows writing data to Nasyath' },
+	{ id: 'perm-nasyath-read', name: 'Read Nasyath', description: 'Allows reading nasyath data' },
+	{
+		id: 'perm-nasyath-write',
+		name: 'Write Nasyath',
+		description: 'Allows writing nasyath data'
+	},
 	{
 		id: 'perm-piket-read',
 		name: "Lihat Jadwal Ruasa'",
@@ -232,6 +237,9 @@ export async function seedRbacData() {
 			{ roleId: 'role-admin', permissionId: 'perm-data-write-scoped' },
 			{ roleId: 'role-admin', permissionId: 'perm-user-write' },
 			{ roleId: 'role-admin', permissionId: 'perm-nasyath-read' },
+			{ roleId: 'role-admin', permissionId: 'perm-nasyath-write' },
+			{ roleId: 'role-wakil-naib', permissionId: 'perm-nasyath-write' },
+			{ roleId: 'role-nasyath', permissionId: 'perm-nasyath-write' },
 			{ roleId: 'role-piket-manager', permissionId: 'perm-piket-read' },
 			{ roleId: 'role-piket-manager', permissionId: 'perm-piket-write' },
 			{ roleId: 'role-admin', permissionId: 'perm-piket-read' },

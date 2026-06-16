@@ -13,7 +13,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const today = new Date();
 	const todayISO = today.toISOString();
 	const roles = await getUserRoles(locals.user.id);
-	const isAdmin = roles.includes('admin'); // Sesuaikan dengan ID role admin Anda
+	const isAdmin = roles.includes('role-admin');
 
 	try {
 		// 1. Fetch overall counts

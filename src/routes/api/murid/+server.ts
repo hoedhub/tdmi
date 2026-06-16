@@ -1,13 +1,16 @@
-import type { RequestHandler } from '@sveltejs/kit';
 import { json } from '@sveltejs/kit';
 import { db } from '$lib/drizzle';
 import { muridTable } from '$lib/drizzle/schema';
-import { sql } from 'drizzle-orm';
-import type { RequestEvent } from './$types';
-import { inArray } from 'drizzle-orm';
+import { sql, inArray } from 'drizzle-orm';
 import { fetchMuridData } from '$lib/server/murid';
+import { userHasPermission } from '$lib/server/accessControl';
+import type { RequestEvent } from './$types';
 
-export const GET: RequestHandler = async ({ url }) => {
+export const GET: RequestHandler = async ({ url, locals }) => {
+	const userId = locals.user?.id;
+	if (!userId) return json({ error: 'Unauthorized' }, { status: 401 });
+	const canAccess = await userHasPermission(userId, 'perm-pendataan-access');
+	if (!canAccess) return json({ error: 'Forbidden' }, { status: 403 });
 	try {
 		const queryParams = url.searchParams;
 		const pageSize = Number(queryParams.get('pageSize')) || 50;
@@ -51,12 +54,10 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	try {
 		const muridData = await request.json();
 
-		// Get the current user ID from the session
 		const userId = locals.user?.id;
-
-		if (!userId) {
-			return json({ error: 'User not authenticated' }, { status: 401 });
-		}
+		if (!userId) return json({ error: 'Unauthorized' }, { status: 401 });
+		const canWrite = await userHasPermission(userId, 'perm-pendataan-write');
+		if (!canWrite) return json({ error: 'Forbidden' }, { status: 403 });
 
 		// Add updatedAt and updaterId to the murid data
 		const enrichedMuridData = {
@@ -79,8 +80,13 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	}
 };
 
-export async function DELETE({ request }: RequestEvent) {
+export async function DELETE({ request, locals }: RequestEvent) {
 	try {
+		const userId = locals.user?.id;
+		if (!userId) return json({ error: 'Unauthorized' }, { status: 401 });
+		const canWrite = await userHasPermission(userId, 'perm-pendataan-write');
+		if (!canWrite) return json({ error: 'Forbidden' }, { status: 403 });
+
 		const { ids } = await request.json();
 
 		if (!Array.isArray(ids) || ids.length === 0) {

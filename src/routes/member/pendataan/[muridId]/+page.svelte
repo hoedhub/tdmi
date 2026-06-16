@@ -17,6 +17,7 @@
 		Clock
 	} from 'lucide-svelte';
 	import { formatDateShort } from '$lib/utils/date';
+	import { calculateAge } from '$lib/utils/formatMurid';
 	interface Props {
 		data: PageData;
 	}
@@ -30,22 +31,6 @@
 	let mustarsyadPria = $derived(mustarsyadList.filter((m: any) => m.gender === true));
 	let mustarsyadWanita = $derived(mustarsyadList.filter((m: any) => m.gender === false));
 	let hasMultipleGenders = $derived(mustarsyadPria.length > 0 && mustarsyadWanita.length > 0);
-
-	function calculateAge(tglLahir: string | null): number | null {
-		if (!tglLahir) return null;
-		const birthDate = new Date(tglLahir);
-		const today = new Date();
-		let age = today.getFullYear() - birthDate.getFullYear();
-		const m = today.getMonth() - birthDate.getMonth();
-		if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-			age--;
-		}
-		return age;
-	}
-
-	function formatDate(dateString: string | null): string {
-		return formatDateShort(dateString);
-	}
 
 	let fullAddress = $derived(
 		[murid.alamat, detail.deskelName, detail.kecamatanName, detail.kokabName, detail.propinsiName]
@@ -146,7 +131,7 @@
 		<div class="bg-base-200/30 px-6 py-2 border-t border-base-200 flex justify-end">
 			<div class="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-base-content/50 font-bold">
 				<Clock class="h-3 w-3" />
-				Terakhir diperbarui: {formatDate(murid.updatedAt)}
+				Terakhir diperbarui: {formatDateShort(murid.updatedAt)}
 			</div>
 		</div>
 	</div>
@@ -167,7 +152,7 @@
 						<div>
 							<span class="text-base-content/60 block text-xs">Tanggal Lahir & Umur</span>
 							<span class="font-medium">
-								{formatDate(murid.tglLahir)} 
+								{formatDateShort(murid.tglLahir)} 
 								{#if murid.tglLahir}
 									<span class="text-base-content/60">({calculateAge(murid.tglLahir)} thn)</span>
 								{/if}
@@ -360,7 +345,7 @@
 								<tbody>
 									{#each recentNasyath as nasyath}
 										<tr class="hover">
-											<td class="whitespace-nowrap">{formatDate(nasyath.tanggalMulai)}</td>
+											<td class="whitespace-nowrap">{formatDateShort(nasyath.tanggalMulai)}</td>
 											<td class="font-medium">{nasyath.kegiatan}</td>
 											<td>{nasyath.tempat || '-'}</td>
 										</tr>
