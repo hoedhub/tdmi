@@ -289,47 +289,47 @@
 			
 			<div class="flex gap-2 border-l pl-6 border-base-300">
 				<!-- Advanced Toggles -->
-				<div class="tooltip tooltip-bottom" data-tip={isHierarchical ? "Beralih ke Tampilan Jaring" : "Beralih ke Tampilan Silsilah"}>
-					<button class="btn btn-square btn-sm btn-outline {isHierarchical ? 'btn-active' : ''}" onclick={toggleLayout}>
-						{#if isHierarchical}
-							<ListTree class="h-4 w-4" />
-						{:else}
-							<GitMerge class="h-4 w-4" />
-						{/if}
-					</button>
-				</div>
+<div class="tooltip tooltip-bottom" data-tip={isHierarchical ? "Beralih ke Tampilan Jaring" : "Beralih ke Tampilan Silsilah"}>
+			<button class="btn btn-square btn-sm btn-outline {isHierarchical ? 'btn-active' : ''}" onclick={toggleLayout} aria-label={isHierarchical ? "Beralih ke Tampilan Jaring" : "Beralih ke Tampilan Silsilah"}>
 				{#if isHierarchical}
-				<div class="tooltip tooltip-bottom" data-tip={layoutDirection === 'DU' ? "Ubah ke Atas-Bawah" : "Ubah ke Bawah-Atas"}>
-					<button class="btn btn-square btn-sm btn-outline" onclick={toggleDirection}>
-						{#if layoutDirection === 'DU'}
-							<ArrowUpToLine class="h-4 w-4" />
-						{:else}
-							<ArrowDownToLine class="h-4 w-4" />
-						{/if}
-					</button>
-				</div>
+					<ListTree class="h-4 w-4" />
+				{:else}
+					<GitMerge class="h-4 w-4" />
 				{/if}
-				<div class="tooltip tooltip-bottom" data-tip={isPhysicsEnabled ? "Bekukan Animasi" : "Jalankan Animasi"}>
-					<button class="btn btn-square btn-sm btn-outline {isPhysicsEnabled ? 'btn-active' : ''}" onclick={togglePhysics}>
-						{#if isPhysicsEnabled}
-							<Pause class="h-4 w-4" />
-						{:else}
-							<Play class="h-4 w-4" />
-						{/if}
-					</button>
-				</div>
-				<div class="tooltip tooltip-bottom" data-tip="Simpan sebagai Gambar (PNG)">
-					<button class="btn btn-square btn-sm btn-outline" onclick={exportPNG}>
-						<Download class="h-4 w-4" />
-					</button>
-				</div>
-			</div>
+			</button>
+		</div>
+		{#if isHierarchical}
+		<div class="tooltip tooltip-bottom" data-tip={layoutDirection === 'DU' ? "Ubah ke Atas-Bawah" : "Ubah ke Bawah-Atas"}>
+			<button class="btn btn-square btn-sm btn-outline" onclick={toggleDirection} aria-label={layoutDirection === 'DU' ? "Ubah ke Atas-Bawah" : "Ubah ke Bawah-Atas"}>
+				{#if layoutDirection === 'DU'}
+					<ArrowUpToLine class="h-4 w-4" />
+				{:else}
+					<ArrowDownToLine class="h-4 w-4" />
+				{/if}
+			</button>
+		</div>
+		{/if}
+		<div class="tooltip tooltip-bottom" data-tip={isPhysicsEnabled ? "Bekukan Animasi" : "Jalankan Animasi"}>
+			<button class="btn btn-square btn-sm btn-outline {isPhysicsEnabled ? 'btn-active' : ''}" onclick={togglePhysics} aria-label={isPhysicsEnabled ? "Bekukan Animasi" : "Jalankan Animasi"}>
+				{#if isPhysicsEnabled}
+					<Pause class="h-4 w-4" />
+				{:else}
+					<Play class="h-4 w-4" />
+				{/if}
+			</button>
+		</div>
+		<div class="tooltip tooltip-bottom" data-tip="Simpan sebagai Gambar (PNG)">
+			<button class="btn btn-square btn-sm btn-outline" onclick={exportPNG} aria-label="Simpan sebagai Gambar (PNG)">
+				<Download class="h-4 w-4" />
+			</button>
+		</div>
+	</div>
 
-			<div class="flex gap-2 border-l pl-6 border-base-300">
-				<button class="btn btn-square btn-sm btn-outline" onclick={zoomIn} title="Zoom In"><ZoomIn class="h-4 w-4" /></button>
-				<button class="btn btn-square btn-sm btn-outline" onclick={zoomOut} title="Zoom Out"><ZoomOut class="h-4 w-4" /></button>
-				<button class="btn btn-square btn-sm btn-outline" onclick={fitGraph} title="Fit to Screen"><Maximize class="h-4 w-4" /></button>
-				<button class="btn btn-square btn-sm btn-primary" onclick={fetchAndDraw} title="Refresh"><RefreshCw class="h-4 w-4 {isLoading ? 'animate-spin' : ''}" /></button>
+	<div class="flex gap-2 border-l pl-6 border-base-300">
+		<button class="btn btn-square btn-sm btn-outline" onclick={zoomIn} aria-label="Zoom In"><ZoomIn class="h-4 w-4" /></button>
+		<button class="btn btn-square btn-sm btn-outline" onclick={zoomOut} aria-label="Zoom Out"><ZoomOut class="h-4 w-4" /></button>
+		<button class="btn btn-square btn-sm btn-outline" onclick={fitGraph} aria-label="Fit to Screen"><Maximize class="h-4 w-4" /></button>
+		<button class="btn btn-square btn-sm btn-primary" onclick={fetchAndDraw} aria-label="Refresh"><RefreshCw class="h-4 w-4 {isLoading ? 'animate-spin' : ''}" /></button>
 			</div>
 		</div>
 	</div>
@@ -338,7 +338,7 @@
 	<div class="flex-1 relative bg-base-100 rounded-xl shadow-inner border border-base-200 overflow-hidden">
 		<!-- Legend & Filters -->
 		<div class="absolute top-4 left-4 z-10 bg-base-100/90 backdrop-blur-sm rounded-xl shadow-lg border border-base-200 text-sm pointer-events-auto overflow-hidden transition-all duration-300 whitespace-nowrap {isFilterOpen ? 'w-56' : 'w-[46px]'}">
-			<button class="w-full flex items-center justify-between p-3 font-bold bg-base-200/50 hover:bg-base-200 cursor-pointer {isFilterOpen ? 'border-b border-base-300' : ''}" onclick={() => isFilterOpen = !isFilterOpen}>
+			<button class="w-full flex items-center justify-between p-3 font-bold bg-base-200/50 hover:bg-base-200 cursor-pointer {isFilterOpen ? 'border-b border-base-300' : ''}" onclick={() => isFilterOpen = !isFilterOpen} aria-label={isFilterOpen ? "Tutup filter relasi" : "Buka filter relasi"}>
 				<div class="flex items-center gap-2">
 					<Filter class="h-4 w-4" />
 					{#if isFilterOpen}<span>Filter Relasi</span>{/if}

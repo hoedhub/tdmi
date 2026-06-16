@@ -190,10 +190,10 @@
 
 	run(() => {
 		if (form?.success) {
-			alert(form.message);
+			toastSuccess(form.message);
 			invalidateAll();
 		} else if (form?.message && !form?.success) {
-			alert(form.message);
+			toastError(form.message);
 		}
 	});
 </script>
@@ -234,6 +234,7 @@
 					href={`/admin/users/${row.id}/edit`}
 					class="btn btn-ghost btn-sm"
 					onclick={stopPropagation(() => {})}
+					aria-label="Edit user"
 				>
 					<Pen class="h-4 w-4" />
 				</a>
@@ -241,11 +242,12 @@
 					<button
 						class="btn btn-ghost btn-sm text-error"
 						onclick={stopPropagation(() => handleDeleteUser(row.id, row.username))}
+						aria-label="Hapus user"
 					>
 						<Trash class="h-4 w-4" />
 					</button>
 				{:else}
-					<button class="btn btn-disabled btn-sm"><Trash class="h-4 w-4" /></button>
+					<button class="btn btn-disabled btn-sm" aria-label="Hapus user (disabled)"><Trash class="h-4 w-4" /></button>
 				{/if}
 			</div>
 		{/snippet}

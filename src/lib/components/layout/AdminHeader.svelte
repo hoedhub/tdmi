@@ -4,7 +4,7 @@
 
 <header class="navbar bg-base-100">
 	<div class="flex-none lg:hidden">
-		<label for="my-drawer-2" class="btn btn-square btn-ghost">
+		<label for="my-drawer-2" aria-label="open sidebar" class="btn btn-square btn-ghost">
 			<svg
 				xmlns="http://www.w3.org/2000/svg"
 				fill="none"

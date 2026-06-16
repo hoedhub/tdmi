@@ -409,9 +409,9 @@
 							<div class="form-control">
 								<label class="label pb-1" for="month-select"><span class="label-text">تحديد الشهر</span></label>
 								<div class="join">
-									<button class="btn join-item btn-sm" onclick={previousMonth}><ChevronRight class="h-4 w-4" /></button>
-									<button class="btn join-item btn-sm w-36 font-normal" onclick={showMonthPicker}>{monthYearDisplay}</button>
-									<button class="btn join-item btn-sm" onclick={nextMonth}><ChevronLeft class="h-4 w-4" /></button>
+									<button class="btn join-item btn-sm" onclick={previousMonth} aria-label="Bulan sebelumnya"><ChevronRight class="h-4 w-4" /></button>
+									<button class="btn join-item btn-sm w-36 font-normal" onclick={showMonthPicker} aria-label="Pilih bulan">{monthYearDisplay}</button>
+									<button class="btn join-item btn-sm" onclick={nextMonth} aria-label="Bulan berikutnya"><ChevronLeft class="h-4 w-4" /></button>
 								</div>
 							</div>
 						{:else if periodType === 'rentang'}
@@ -434,9 +434,9 @@
 
 				{#snippet rowActions({ row })}
 					<div class="flex items-center gap-1">
-						<button class="btn btn-ghost btn-xs" aria-label="Edit item" onclick={() => handleEdit(row.id)}><Edit class="h-4 w-4" /></button>
+						<button class="btn btn-ghost btn-sm" aria-label="Edit item" onclick={() => handleEdit(row.id)}><Edit class="h-4 w-4" /></button>
 						<form method="POST" action={`/member/nasyath_mun/${row.id}/delete`} use:enhance={handleDeleteSubmit} onsubmit={handleSubmit}>
-							<button type="submit" class="btn btn-ghost btn-xs text-error" aria-label="Delete item"><Trash2 class="h-4 w-4" /></button>
+							<button type="submit" class="btn btn-ghost btn-sm text-error" aria-label="Delete item"><Trash2 class="h-4 w-4" /></button>
 						</form>
 					</div>
 				{/snippet}

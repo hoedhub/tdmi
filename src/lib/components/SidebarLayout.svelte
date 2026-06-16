@@ -135,8 +135,12 @@
 			</div>
 		</div>
 
+		<!-- Skip to content link -->
+		<a href="#member-main-content" class="sr-only focus:not-sr-only focus:fixed focus:z-[100] focus:p-2 focus:bg-primary focus:text-primary-content">
+			Lompat ke konten utama
+		</a>
 		<!-- Main content area -->
-		<main class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+		<main id="member-main-content" class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
 			<Breadcrumb />
 			{@render children?.()}
 		</main>
@@ -280,6 +284,7 @@
 						class:md:btn-circle={isSidebarCollapsed}
 						onmouseenter={(e) => showTooltip(e, 'Kecilkan UI')}
 						onmouseleave={hideTooltip}
+						aria-label="Ukuran UI"
 					>
 						<Type size={24} />
 						<span class:md:hidden={isSidebarCollapsed} class="truncate sidebar-label">Ukuran UI: {uiScale}%</span>
@@ -297,6 +302,7 @@
 						class:md:btn-circle={isSidebarCollapsed}
 						onmouseenter={(e) => showTooltip(e, 'Change Theme')}
 						onmouseleave={hideTooltip}
+						aria-label="Change Theme"
 					>
 						<Palette size={24} />
 						<span class:md:hidden={isSidebarCollapsed} class="truncate sidebar-label">Theme: {$themeStore}</span>
@@ -315,6 +321,7 @@
 							class:md:btn-circle={isSidebarCollapsed}
 							onmouseenter={(e) => showTooltip(e, 'User Options')}
 							onmouseleave={hideTooltip}
+							aria-label="User Options"
 						>
 							<UserCircle size={24} />
 							<span class:md:hidden={isSidebarCollapsed} class="truncate sidebar-label"

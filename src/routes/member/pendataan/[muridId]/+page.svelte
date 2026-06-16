@@ -104,9 +104,9 @@
 					<h1 class="text-3xl font-bold flex items-center gap-2">
 						{murid.nama}
 						{#if murid.gender}
-							<span class="text-blue-500" title="Pria">♂</span>
+							<span class="text-blue-500" title="Pria" role="img" aria-label="Pria">♂</span>
 						{:else}
-							<span class="text-pink-500" title="Wanita">♀</span>
+							<span class="text-pink-500" title="Wanita" role="img" aria-label="Wanita">♀</span>
 						{/if}
 					</h1>
 					{#if murid.namaArab}

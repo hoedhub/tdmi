@@ -169,6 +169,7 @@
 			<button
 				type="button"
 				tabindex="0"
+				aria-haspopup="listbox"
 				class="select select-bordered w-[7rem] justify-between py-2 font-normal"
 			>
 				<span>{countryId.toUpperCase()}</span>

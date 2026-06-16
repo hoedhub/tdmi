@@ -200,12 +200,12 @@
 							<td onclick={(e) => e.stopPropagation()}>
 								<div class="flex gap-1">
 									{#if !log.resolved}
-										<button class="btn btn-ghost btn-xs" onclick={() => handleResolve(log.id)} title="Tandai resolved">
-											<Check class="h-3 w-3 text-success" />
+										<button class="btn btn-ghost btn-sm" onclick={() => handleResolve(log.id)} aria-label="Tandai resolved">
+											<Check class="h-4 w-4 text-success" />
 										</button>
 									{/if}
-									<button class="btn btn-ghost btn-xs" onclick={() => handleDelete(log.id)} title="Hapus">
-										<Trash2 class="h-3 w-3 text-error" />
+									<button class="btn btn-ghost btn-sm" onclick={() => handleDelete(log.id)} aria-label="Hapus error">
+										<Trash2 class="h-4 w-4 text-error" />
 									</button>
 								</div>
 							</td>
@@ -248,17 +248,17 @@
 	{#if totalPages() > 1}
 		<div class="flex justify-center gap-2 mt-4">
 			<button
-				class="btn btn-ghost btn-xs"
+				class="btn btn-ghost btn-sm"
 				disabled={currentPage <= 1}
 				onclick={() => { currentPage--; fetchLogs(); }}
 			>
 				Sebelumnya
 			</button>
-			<span class="text-xs self-center opacity-50">
+			<span class="text-sm self-center opacity-50">
 				Halaman {currentPage} dari {totalPages()}
 			</span>
 			<button
-				class="btn btn-ghost btn-xs"
+				class="btn btn-ghost btn-sm"
 				disabled={currentPage >= totalPages()}
 				onclick={() => { currentPage++; fetchLogs(); }}
 			>

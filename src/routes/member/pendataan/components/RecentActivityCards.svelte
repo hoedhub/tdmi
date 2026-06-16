@@ -25,6 +25,8 @@
 						<span class="truncate text-sm font-semibold">{m.nama}</span>
 						<ChevronRight class="h-4 w-4 opacity-20" />
 					</a>
+				{:else}
+					<p class="py-4 text-center text-sm opacity-50">Belum ada murid baru.</p>
 				{/each}
 			</div>
 		</div>
@@ -47,6 +49,8 @@
 						</div>
 						<ChevronRight class="h-4 w-4 opacity-20" />
 					</a>
+				{:else}
+					<p class="py-4 text-center text-sm opacity-50">Belum ada data terbarui.</p>
 				{/each}
 			</div>
 		</div>

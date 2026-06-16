@@ -331,10 +331,10 @@
 
 	run(() => {
 		if (form?.success) {
-			alert(form.message);
+			toastSuccess(form.message);
 			invalidateAll();
 		} else if (form?.message && !form?.success) {
-			alert(form.message);
+			toastError(form.message);
 		}
 	});
 
@@ -530,6 +530,8 @@
 											<td class="hidden md:table-cell">M{m.marhalah}</td>
 											<td class="hidden lg:table-cell text-xs opacity-60">{m.kokabName ?? '-'}</td>
 										</tr>
+									{:else}
+										<tr><td colspan="4" class="text-center text-sm opacity-50 py-8">Tidak ada data murid di provinsi ini.</td></tr>
 									{/each}
 								</tbody>
 							</table>

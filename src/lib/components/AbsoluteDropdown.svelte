@@ -25,11 +25,11 @@
 </script>
 
 {#if $absoluteDropdownStore.isOpen && $absoluteDropdownStore.component}
-	<!-- svelte-ignore a11y_click_events_have_key_events -->
 	<div
 		class="fixed inset-0 z-[80]"
 		aria-hidden="true"
 		onclick={self(absoluteDropdownStore.close)}
+		onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { absoluteDropdownStore.close(); } }}
 	></div>
 	{@const SvelteComponent = $absoluteDropdownStore.component}
 	<div

@@ -607,7 +607,7 @@
 						<h3 class="text-lg font-bold">Pindah Periode</h3>
 						<p class="text-sm text-base-content/60 font-mono">{fmtTicket(selectedPertanyaan.id)}</p>
 					</div>
-					<button onclick={closeMoveModal} class="btn btn-ghost btn-sm btn-circle">
+					<button onclick={closeMoveModal} class="btn btn-ghost btn-sm btn-circle" aria-label="Tutup">
 						<X size={18} />
 					</button>
 				</div>

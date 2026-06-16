@@ -3,9 +3,9 @@
 
 	import type { PageData } from './$types';
 	import { error } from '$lib/components/toast';
+	import { afterNavigate } from '$app/navigation';
 	import AddMuridForm from '$lib/components/data-entry/AddMuridForm.svelte';
 
-	// Define ActionData explicitly to include all possible fields returned on failure
 	interface ActionData {
 		success?: boolean;
 		message?: string;
@@ -25,7 +25,6 @@
 		aktif?: boolean;
 		partisipasi?: boolean;
 		nik?: string | null;
-		// foto?: Uint8Array | null; // Add if foto is ever returned
 	}
 
 	interface Props {
@@ -34,18 +33,20 @@
 	}
 
 	let { data, form }: Props = $props();
+	let formKey = $state(0);
 
-	// Handle form submission success/error
+	afterNavigate(({ from }) => {
+		if (from) formKey++;
+	});
+
 	run(() => {
 		if (form?.message && !form?.success) {
 			error(form.message);
 		}
 	});
 
-	// Show success message when form is submitted successfully
 	run(() => {
 		if (form?.success && form?.message) {
-			// Message will be shown by the form component itself
 		}
 	});
 </script>
@@ -54,6 +55,8 @@
 	<div class="card-body p-4 sm:p-8">
 		<h1 class="card-title text-2xl">Tambah Murid Baru</h1>
 
-		<AddMuridForm propinsiList={data.propinsiList} />
+		{#key formKey}
+			<AddMuridForm propinsiList={data.propinsiList} />
+		{/key}
 	</div>
 </div>

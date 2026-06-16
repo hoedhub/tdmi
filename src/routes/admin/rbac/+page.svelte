@@ -215,6 +215,8 @@
 								{role.name}
 							</a>
 						</li>
+					{:else}
+						<li class="menu-title"><span class="text-base-content/50">Belum ada role.</span></li>
 					{/each}
 				</ul>
 			</div>
@@ -352,6 +354,8 @@
 												<span class="text-xs opacity-60">{perm.description}</span>
 											</span>
 										</label>
+									{:else}
+										<p class="col-span-full text-center text-sm opacity-50 py-8">Belum ada permission.</p>
 									{/each}
 								</div>
 								<div class="card-actions mt-6 justify-end">
@@ -417,6 +421,8 @@
 											/>
 											<span class="label-text">{user.username}</span>
 										</label>
+									{:else}
+										<p class="col-span-full text-center text-sm opacity-50 py-8">Belum ada user dalam role ini.</p>
 									{/each}
 								</div>
 								<div class="card-actions mt-6 justify-end">

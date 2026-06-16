@@ -358,6 +358,7 @@
 			<button
 				type="button"
 				tabindex="0"
+				aria-haspopup="listbox"
 				class="select select-bordered w-full justify-between py-2 font-normal normal-case {!selectedPropinsi
 					? 'text-base-content/60'
 					: ''}"
@@ -424,6 +425,7 @@
 			<button
 				type="button"
 				tabindex="0"
+				aria-haspopup="listbox"
 				disabled={!selectedPropinsi || initialLoading}
 				class="select select-bordered w-full justify-between py-2 font-normal normal-case {!selectedKokab
 					? 'text-base-content/60'
@@ -492,6 +494,7 @@
 			<button
 				type="button"
 				tabindex="0"
+				aria-haspopup="listbox"
 				disabled={!selectedKokab || initialLoading}
 				class="select select-bordered w-full justify-between py-2 font-normal normal-case {!selectedKecamatan
 					? 'text-base-content/60'
@@ -560,6 +563,7 @@
 			<button
 				type="button"
 				tabindex="0"
+				aria-haspopup="listbox"
 				disabled={!selectedKecamatan || initialLoading}
 				class="select select-bordered w-full justify-between py-2 font-normal normal-case {!deskelId
 					? 'text-base-content/60'

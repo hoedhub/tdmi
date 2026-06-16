@@ -20,12 +20,16 @@
 <div class="drawer lg:drawer-open">
 	<input id="my-drawer-2" type="checkbox" class="drawer-toggle" bind:this={drawerToggle} />
 	<div class="drawer-content flex flex-col">
+		<!-- Skip to content link -->
+		<a href="#admin-main-content" class="sr-only focus:not-sr-only focus:fixed focus:z-[100] focus:p-2 focus:bg-primary focus:text-primary-content">
+			Lompat ke konten utama
+		</a>
 		<!-- Page content here -->
 		<AdminHeader />
 		<div class="px-4 pt-3">
 			<Breadcrumb />
 		</div>
-		<main class="flex-grow p-4">
+		<main id="admin-main-content" class="flex-grow p-4">
 			{@render children?.()}
 		</main>
 	</div>

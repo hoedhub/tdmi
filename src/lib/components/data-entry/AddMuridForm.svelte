@@ -2,8 +2,8 @@
 	import { run } from 'svelte/legacy';
 
 	import { scale } from 'svelte/transition';
-	import { onMount } from 'svelte';
-	import { goto } from '$app/navigation';
+	import { onMount, onDestroy } from 'svelte';
+	import { goto, beforeNavigate } from '$app/navigation';
 	import { enhance } from '$app/forms';
 	import type { ActionResult } from '@sveltejs/kit';
 	import { muridFormStore, type FormData } from '$lib/stores/muridForm';
@@ -76,6 +76,7 @@
 	let isSubmitting = $state(false);
 	let submittingAction = $state<string | null>(null);
 	let mounted = $state(false);
+	let handleBeforeUnload = (_e: BeforeUnloadEvent) => {};
 
 	let personalInfoFormComponent: PersonalInfoForm | undefined = $state();
 	let contactFormComponent: ContactForm | undefined = $state();
@@ -94,14 +95,13 @@
 
 	// --- SIKLUS HIDUP (LIFECYCLE) ---
 	onMount(() => {
+		muridFormStore.reset();
 		if (!formData) {
-			if ($muridFormStore.isModified) {
-				internalFormData = { ...$muridFormStore.formData };
-				originalFormData = { ...$muridFormStore.formData };
-			}
-			selectedPropinsi = $muridFormStore.isModified ? $muridFormStore.selectedPropinsi : null;
-			selectedKokab = $muridFormStore.isModified ? $muridFormStore.selectedKokab : null;
-			selectedKecamatan = $muridFormStore.isModified ? $muridFormStore.selectedKecamatan : null;
+			internalFormData = { ...defaultFormData };
+			originalFormData = { ...defaultFormData };
+			selectedPropinsi = null;
+			selectedKokab = null;
+			selectedKecamatan = null;
 		}
 
 		originalSelectedPropinsi = selectedPropinsi;
@@ -110,6 +110,28 @@
 
 		mounted = true;
 		handleInput();
+
+		handleBeforeUnload = (e: BeforeUnloadEvent) => {
+			if (isFormModified) {
+				e.preventDefault();
+			}
+		};
+		window.addEventListener('beforeunload', handleBeforeUnload);
+	});
+
+	onDestroy(() => {
+		window.removeEventListener('beforeunload', handleBeforeUnload);
+	});
+
+	beforeNavigate(({ cancel }) => {
+		if (isFormModified) {
+			if (!confirm('Ada perubahan yang belum disimpan. Yakin ingin meninggalkan halaman ini?')) {
+				cancel();
+			} else {
+				muridFormStore.reset();
+				isFormModified = false;
+			}
+		}
 	});
 
 	// --- FUNGSI-FUNGSI ---
@@ -225,9 +247,9 @@
 			phoneNumber = '';
 		}
 
+		isFormModified = false;
 		setTimeout(() => {
 			handleInput();
-			isFormModified = false;
 		}, 100);
 	}
 
@@ -235,6 +257,8 @@
 		if (isFormModified && !confirm('Ada perubahan yang belum disimpan. Yakin ingin batal?')) {
 			return;
 		}
+		muridFormStore.reset();
+		isFormModified = false;
 		resetForm(false);
 		if (returnUrl) {
 			goto(returnUrl);
