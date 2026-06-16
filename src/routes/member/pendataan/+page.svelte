@@ -330,7 +330,7 @@
 	}
 
 	run(() => {
-		if (form?.success) {
+		if (form?.success && form.message) {
 			toastSuccess(form.message);
 			invalidateAll();
 		} else if (form?.message && !form?.success) {

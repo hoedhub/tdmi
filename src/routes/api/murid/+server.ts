@@ -4,7 +4,7 @@ import { muridTable } from '$lib/drizzle/schema';
 import { sql, inArray } from 'drizzle-orm';
 import { fetchMuridData } from '$lib/server/murid';
 import { userHasPermission } from '$lib/server/accessControl';
-import type { RequestEvent } from './$types';
+import type { RequestEvent, RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ url, locals }) => {
 	const userId = locals.user?.id;

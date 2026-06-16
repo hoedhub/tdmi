@@ -76,6 +76,7 @@
 	let isSubmitting = $state(false);
 	let submittingAction = $state<string | null>(null);
 	let mounted = $state(false);
+	let serverErrors = $state<Record<string, string[]>>({});
 	let handleBeforeUnload = (_e: BeforeUnloadEvent) => {};
 
 	let personalInfoFormComponent: PersonalInfoForm | undefined = $state();
@@ -278,6 +279,7 @@
 			submittingAction = null;
 
 			if (result.type === 'success') {
+				serverErrors = {};
 				const successMessage = result.data?.message || 'Data berhasil disimpan.';
 				success(successMessage);
 				resetForm(false);
@@ -293,7 +295,9 @@
 					}
 				}
 			} else if (result.type === 'failure') {
-				error(result.data?.message ? `${result.data.message}` : 'Gagal menyimpan data murid');
+				serverErrors = result.data?.errors || {};
+				const formMsg = result.data?.errors?._form?.[0] || result.data?.message;
+				if (formMsg) error(formMsg);
 			}
 		};
 	}
@@ -370,6 +374,7 @@
 				{handleArabicInput}
 				{similarMurids}
 				onclose={() => (similarMurids = [])}
+				errors={serverErrors}
 			/>
 		{:else if currentStep === 1}
 			<ContactForm
@@ -384,9 +389,10 @@
 				bind:countryId
 				bind:countryCode
 				bind:phoneNumber
+				errors={serverErrors}
 			/>
 		{:else if currentStep === 2}
-			<IrsyadiyahForm bind:formData={internalFormData} {handleInput} {editedMuridId} />
+			<IrsyadiyahForm bind:formData={internalFormData} {handleInput} {editedMuridId} errors={serverErrors} />
 			{#if internalFormData.muhrimData}
 				<input type="hidden" name="muhrimData" value={JSON.stringify(internalFormData.muhrimData)} />
 			{/if}
@@ -400,7 +406,7 @@
 				<input type="hidden" name="wiridData" value={JSON.stringify(internalFormData.wiridData)} />
 			{/if}
 		{:else if currentStep === 3}
-			<StatusForm bind:formData={internalFormData} {handleInput} />
+			<StatusForm bind:formData={internalFormData} {handleInput} errors={serverErrors} />
 		{/if}
 	</div>
 

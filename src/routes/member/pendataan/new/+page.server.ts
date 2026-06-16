@@ -25,16 +25,48 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	};
 };
 
+type FormErrors = Record<string, string[]>;
+
+function validateForm(formData: FormData): FormErrors | null {
+	const errors: FormErrors = {};
+	const nama = formData.get('nama')?.toString();
+	const deskelId = parseInt(formData.get('deskelId')?.toString() || '0');
+	const nik = formData.get('nik')?.toString();
+	const tglLahir = formData.get('tglLahir')?.toString();
+	const nomorTelepon = formData.get('nomorTelepon')?.toString();
+	const marhalah = parseInt(formData.get('marhalah')?.toString() || '1');
+
+	if (!nama || nama.trim().length < 2) {
+		errors.nama = ['Nama wajib diisi (minimal 2 karakter).'];
+	}
+	if (!deskelId || isNaN(deskelId)) {
+		errors.deskelId = ['Desa/Kelurahan wajib dipilih.'];
+	}
+	if (nik && nik.length !== 16) {
+		errors.nik = ['NIK harus 16 digit angka.'];
+	}
+	if (tglLahir && !/^\d{4}-\d{2}-\d{2}$/.test(tglLahir)) {
+		errors.tglLahir = ['Format tanggal lahir tidak valid (YYYY-MM-DD).'];
+	}
+	if (nomorTelepon && nomorTelepon.length < 8) {
+		errors.nomorTelepon = ['Nomor telepon minimal 8 digit.'];
+	}
+	if (marhalah < 1 || marhalah > 3) {
+		errors.marhalah = ['Marhalah harus 1, 2, atau 3.'];
+	}
+	return Object.keys(errors).length > 0 ? errors : null;
+}
+
 export const actions: Actions = {
 	default: async ({ request, locals }) => {
 		if (!locals.user) {
-			return fail(401, { message: 'Unauthorized' });
+			return fail(401, { errors: { _form: ['Unauthorized'] } });
 		}
 
 		const formData = await request.formData();
 		const action = formData.get('action');
 
-		const nama = formData.get('nama')?.toString();
+		const nama = formData.get('nama')?.toString() || '';
 		const namaArab = formData.get('namaArab')?.toString() || null;
 		const gender = formData.get('gender')?.toString() === 'true';
 		const deskelId = parseInt(formData.get('deskelId')?.toString() || '0');
@@ -53,8 +85,9 @@ export const actions: Actions = {
 
 		const fotoFile = formData.get('foto') as File | null;
 
-		if (!nama || !deskelId) {
-			return fail(400, { message: 'Nama dan Desa/Kelurahan wajib diisi.', nama, deskelId });
+		const errors = validateForm(formData);
+		if (errors) {
+			return fail(400, { errors });
 		}
 
 		// Cek izin menulis dengan batasan wilayah (territory scope)
@@ -64,13 +97,13 @@ export const actions: Actions = {
 
 		if (!canWriteMurid) {
 			return fail(403, {
-				message: 'Akses Ditolak. Anda tidak memiliki izin untuk membuat data murid di wilayah ini.'
+				errors: { _form: ['Akses Ditolak. Anda tidak memiliki izin untuk membuat data murid di wilayah ini.'] }
 			});
 		}
 
 		try {
 			const newMuridData: InferInsertModel<typeof muridTable> = {
-				updaterId: locals.user.id,
+				updaterId: locals.user.id as string,
 				nama,
 				namaArab,
 				gender,
@@ -117,9 +150,9 @@ export const actions: Actions = {
 		} catch (e: any) {
 			console.error('Error creating new murid:', e);
 			if (e.message && e.message.includes('UNIQUE constraint failed: murid.nik')) {
-				return fail(409, { message: 'NIK sudah terdaftar. Harap gunakan NIK yang berbeda.', nik });
+				return fail(409, { errors: { nik: ['NIK sudah terdaftar.'] } });
 			}
-			return fail(500, { message: 'Gagal menambahkan murid baru karena kesalahan server.' });
+			return fail(500, { errors: { _form: ['Gagal menambahkan murid baru karena kesalahan server.'] } });
 		}
 	}
 };

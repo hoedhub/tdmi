@@ -1,12 +1,15 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { createEventDispatcher } from 'svelte';
 	import { BadgeCheck, ShieldAlert, UsersRound, DatabaseBackup, Bug } from 'lucide-svelte'; // <-- Import ikon
 
-	const dispatch = createEventDispatcher();
+	interface Props {
+		onnavigate?: () => void;
+	}
+
+	let { onnavigate }: Props = $props();
 
 	function handleNavigation() {
-		dispatch('navigate');
+		onnavigate?.();
 	}
 </script>
 

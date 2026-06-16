@@ -15,6 +15,7 @@
 		handleArabicInput: (event: Event) => void;
 		similarMurids?: any[];
 		onclose: () => void;
+		errors?: Record<string, string[]>;
 	}
 
 	let {
@@ -22,8 +23,13 @@
 		handleInput,
 		handleArabicInput,
 		similarMurids = [],
-		onclose
+		onclose,
+		errors = {}
 	}: Props = $props();
+
+	let namaError = $derived(errors.nama?.[0]);
+	let nikError = $derived(errors.nik?.[0]);
+	let tglLahirError = $derived(errors.tglLahir?.[0]);
 
 	// State
 	let compressedFile: File | null = null;
@@ -173,8 +179,10 @@
 					formData.nama = formData.nama.trim();
 					handleInput();
 				}}
-				class="input input-bordered w-full {hoveredName ? 'text-transparent' : ''}"
+				class="input input-bordered w-full {hoveredName ? 'text-transparent' : ''} {namaError ? 'input-error' : ''}"
 				required
+				aria-invalid={namaError ? 'true' : undefined}
+				aria-describedby={namaError ? 'nama-error' : undefined}
 			/>
 			{#if hoveredName}
 				<div
@@ -184,6 +192,9 @@
 				</div>
 			{/if}
 		</div>
+		{#if namaError}
+			<div id="nama-error" class="mt-1 text-xs text-error">{namaError}</div>
+		{/if}
 		<div class="mt-2">
 			<SimilarMuridsAlert
 				{similarMurids}
@@ -266,8 +277,13 @@
 			bind:value={formData.nik}
 			oninput={handleInput}
 			maxlength={16}
-			class="input input-bordered w-full"
+			class="input input-bordered w-full {nikError ? 'input-error' : ''}"
+			aria-invalid={nikError ? 'true' : undefined}
+			aria-describedby={nikError ? 'nik-error' : undefined}
 		/>
+		{#if nikError}
+			<div id="nik-error" class="mt-1 text-xs text-error">{nikError}</div>
+		{/if}
 	</div>
 
 	{#if formData.gender === true}
@@ -340,8 +356,10 @@
 				placeholder="dd/mm/yyyy"
 				value={displayDate}
 				oninput={handleDateTextInput}
-				class="input input-bordered w-full pr-10"
+				class="input input-bordered w-full pr-10 {tglLahirError ? 'input-error' : ''}"
 				required
+				aria-invalid={tglLahirError ? 'true' : undefined}
+				aria-describedby={tglLahirError ? 'tglLahir-error' : undefined}
 			/>
 			<button
 				type="button"
@@ -362,5 +380,8 @@
 				tabindex="-1"
 			/>
 		</div>
+		{#if tglLahirError}
+			<div id="tglLahir-error" class="mt-1 text-xs text-error">{tglLahirError}</div>
+		{/if}
 	</div>
 </fieldset>

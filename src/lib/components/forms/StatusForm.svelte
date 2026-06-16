@@ -4,9 +4,12 @@
 	interface Props {
 		formData: FormData;
 		handleInput: () => void;
+		errors?: Record<string, string[]>;
 	}
 
-	let { formData = $bindable(), handleInput }: Props = $props();
+	let { formData = $bindable(), handleInput, errors = {} }: Props = $props();
+
+	let marhalahError = $derived(errors.marhalah?.[0]);
 </script>
 
 <fieldset class="space-y-4 rounded-lg border border-base-300 p-4">
@@ -65,13 +68,18 @@
 			name="marhalah"
 			oninput={handleInput}
 			bind:value={formData.marhalah}
-			class="select select-bordered w-full"
+			class="select select-bordered w-full {marhalahError ? 'select-error' : ''}"
 			required
+			aria-invalid={marhalahError ? 'true' : undefined}
+			aria-describedby={marhalahError ? 'marhalah-error' : undefined}
 		>
 			<option value={1}>1</option>
 			<option value={2}>2</option>
 			<option value={3}>3</option>
 		</select>
+		{#if marhalahError}
+			<div id="marhalah-error" class="mt-1 text-xs text-error">{marhalahError}</div>
+		{/if}
 	</div>
 
 	<div class="form-control">

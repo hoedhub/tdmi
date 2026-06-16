@@ -21,6 +21,7 @@
 		countryCode: string | undefined;
 		phoneNumber: string | undefined;
 		propinsiList?: Propinsi[];
+		errors?: Record<string, string[]>;
 	}
 
 	let {
@@ -33,8 +34,12 @@
 		countryId = $bindable('id'),
 		countryCode = $bindable('+62'),
 		phoneNumber = $bindable(''),
-		propinsiList = []
+		propinsiList = [],
+		errors = {}
 	}: Props = $props();
+
+	let deskelError = $derived(errors.deskelId?.[0]);
+	let nomorTeleponError = $derived(errors.nomorTelepon?.[0]);
 
 	let wilayahComponent: Wilayah | undefined = $state();
 
@@ -57,6 +62,9 @@
 		bind:alamat={formData.alamat}
 		on:change={handleWilayahChange}
 	/>
+	{#if deskelError}
+		<div class="text-xs text-error">{deskelError}</div>
+	{/if}
 	<input type="hidden" name="deskelId" bind:value={formData.deskelId} />
 	<input type="hidden" name="alamat" bind:value={formData.alamat} />
 	{#if formData.gender}
@@ -70,6 +78,9 @@
 				placeholder="Nomor Telepon"
 				on:change={handleInput}
 			/>
+			{#if nomorTeleponError}
+				<div class="mt-1 text-xs text-error">{nomorTeleponError}</div>
+			{/if}
 		</div>
 		<input type="hidden" name="nomorTelepon" bind:value={formData.nomorTelepon} />
 	{/if}

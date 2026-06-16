@@ -6,9 +6,15 @@
 		formData: MuridFormData['formData'];
 		handleInput: () => void;
 		editedMuridId?: number | undefined;
+		errors?: Record<string, string[]>;
 	}
 
-	let { formData = $bindable(), handleInput, editedMuridId = undefined }: Props = $props();
+	let {
+		formData = $bindable(),
+		handleInput,
+		editedMuridId = undefined,
+		errors = {}
+	}: Props = $props();
 </script>
 
 <fieldset class="space-y-4 rounded-lg border border-base-300 p-4">

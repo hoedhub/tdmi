@@ -1,4 +1,4 @@
-import { redirect } from '@sveltejs/kit';
+import { error, redirect } from '@sveltejs/kit';
 import { userHasPermission } from '$lib/server/accessControl';
 import type { PageServerLoad } from './$types';
 
