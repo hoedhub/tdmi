@@ -344,7 +344,7 @@
 		{#each steps as step, i}
 			<button
 				type="button"
-				onclick={() => { if (i <= currentStep) currentStep = i; }}
+				onclick={() => currentStep = i}
 				class="flex flex-col items-center gap-1"
 			>
 				<div
@@ -413,12 +413,12 @@
 	<!-- Navigation & Action Buttons -->
 	<div class="flex flex-col gap-3">
 		<!-- Step Navigation -->
-		<div class="flex gap-2">
+		<div class="flex sm:justify-center gap-2">
 			{#if currentStep > 0}
 				<button
 					type="button"
 					onclick={() => currentStep--}
-					class="btn btn-outline w-full rounded-lg px-4 py-2 text-sm font-medium sm:w-auto"
+					class="btn btn-outline flex-1 rounded-lg px-4 py-2 text-sm font-medium sm:flex-none"
 				>
 					← Sebelumnya
 				</button>
@@ -427,7 +427,7 @@
 				<button
 					type="button"
 					onclick={() => currentStep++}
-					class="btn btn-primary w-full rounded-lg px-4 py-2 text-sm font-medium sm:w-auto"
+					class="btn btn-primary flex-1 rounded-lg px-4 py-2 text-sm font-medium sm:flex-none"
 				>
 					Selanjutnya →
 				</button>
@@ -438,44 +438,48 @@
 		<div
 			class="sticky bottom-0 flex flex-wrap sm:flex-nowrap w-full gap-2 bg-white/20 p-2 backdrop-blur-xl backdrop-saturate-150 dark:bg-gray-800/20 dark:backdrop-brightness-125"
 		>
-			{#if isFormModified}
+			<div class="flex w-full gap-2 sm:contents">
+				{#if isFormModified}
+					<button
+						transition:scale={{ duration: 300 }}
+						type="button"
+						onclick={() => resetForm()}
+						class="rounded-lg border border-gray-300 flex-1 sm:flex-initial bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:hover:border-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-700"
+					>
+						Reset
+					</button>
+				{/if}
 				<button
-					transition:scale={{ duration: 300 }}
 					type="button"
-					onclick={() => resetForm()}
-					class="rounded-lg border border-gray-300 w-full sm:w-auto bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:hover:border-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-700"
+					disabled={isSubmitting}
+					onclick={handleBatal}
+					class="btn btn-warning flex-1 sm:flex-initial sm:grow rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
 				>
-					Reset
+					Batal
 				</button>
-			{/if}
-			<button
-				type="button"
-				disabled={isSubmitting}
-				onclick={handleBatal}
-				class="btn btn-warning grow w-full sm:w-auto rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
-			>
-				Batal
-			</button>
-			<button
-				type="submit"
-				name="action"
-				value="save-and-close"
-				disabled={isSubmitting}
-				class="btn btn-primary grow w-full sm:w-auto rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
-			>
-				{isSubmitting && submittingAction === 'save-and-close' ? 'Menyimpan...' : (formData ? 'Simpan' : 'Simpan & Tutup')}
-			</button>
-			{#if !formData}
+			</div>
+			<div class="flex w-full gap-2 sm:contents">
 				<button
 					type="submit"
 					name="action"
-					value="save-and-add"
+					value="save-and-close"
 					disabled={isSubmitting}
-					class="btn btn-secondary grow w-full sm:w-auto rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
+					class="btn btn-primary flex-1 sm:flex-initial sm:grow rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
 				>
-					{isSubmitting && submittingAction === 'save-and-add' ? 'Menyimpan...' : 'Simpan & Tambah Lagi'}
+					{isSubmitting && submittingAction === 'save-and-close' ? 'Menyimpan...' : (formData ? 'Simpan' : 'Simpan & Tutup')}
 				</button>
-			{/if}
+				{#if !formData}
+					<button
+						type="submit"
+						name="action"
+						value="save-and-add"
+						disabled={isSubmitting}
+						class="btn btn-secondary flex-1 sm:flex-initial sm:grow rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
+					>
+						{isSubmitting && submittingAction === 'save-and-add' ? 'Menyimpan...' : 'Simpan & Tambah Lagi'}
+					</button>
+				{/if}
+			</div>
 		</div>
 	</div>
 </form>
