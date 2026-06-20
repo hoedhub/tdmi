@@ -3,7 +3,7 @@
 	import { goto } from '$app/navigation';
 	import { fade } from 'svelte/transition';
 	import {
-		Download, ArrowLeft, CheckCircle, XCircle, AlertTriangle,
+		Download, ArrowLeft, CheckCircle, XCircle, AlertTriangle, Beaker,
 		FileSpreadsheet, Upload, Table, Database
 	} from 'lucide-svelte';
 	import type { ActionData } from './$types';
@@ -367,11 +367,11 @@
 					<input type="hidden" name="dataStartRow" value={dataStartRow} />
 					<input type="hidden" name="confirmed" value="true" />
 					<div class="flex gap-2">
-						<button type="submit" disabled={previewData.validCount === 0 || isSubmitting} class="btn btn-primary">
+						<button type="submit" disabled={previewData.validCount === 0 || isSubmitting} class="btn btn-warning">
 							{#if isSubmitting}<span class="loading loading-spinner loading-sm"></span>{/if}
-							Import {previewData.validCount} Data
+							<Beaker class="h-4 w-4" /> Lihat Hasil Parsing
 						</button>
-						<button type="button" onclick={() => { validated = false; previewData = null; }} class="btn btn-ghost btn-sm">Ubah Mapping</button>
+						<button type="button" onclick={() => { validated = false; previewData = null; }} class="btn btn-ghost">Ubah Mapping</button>
 					</div>
 				</form>
 			{:else}
@@ -394,11 +394,12 @@
 	{:else if step === 'result'}
 		<div in:fade class="space-y-4">
 			{#if importResult}
-				<div class="rounded-lg border border-success/30 bg-success/5 p-6 text-center">
-					<CheckCircle class="mx-auto mb-2 h-12 w-12 text-success" />
-					<h2 class="text-xl font-semibold">Import Selesai!</h2>
+				<div class="rounded-lg border border-warning/30 bg-warning/5 p-6 text-center">
+					<Beaker class="mx-auto mb-2 h-12 w-12 text-warning" />
+					<h2 class="text-xl font-semibold">Mode Uji Coba</h2>
+					<p class="mt-1 text-sm text-warning font-medium">Data tidak disimpan ke database.</p>
 					<p class="mt-1 text-base-content/70">
-						{importResult.importedCount} data berhasil diimport.
+						{importResult.importedCount} data berhasil diparsing.
 						{#if importResult.failedCount > 0}&nbsp;{importResult.failedCount} data gagal.{/if}
 					</p>
 				</div>
