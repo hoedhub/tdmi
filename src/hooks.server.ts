@@ -42,13 +42,15 @@ export const handle: Handle = async ({ event, resolve }) => {
 		transformPageChunk: ({ html, done }) => {
 			if (done) {
 				const userId = event.locals.user?.id || 'default';
-				const script = `
+							const script = `
                     <script>
                         window.currentUserThemeId = '${userId}';
-                        const savedTheme = localStorage.getItem(window.currentUserThemeId + '-theme');
-                        if (savedTheme) {
-                            document.documentElement.setAttribute('data-theme', savedTheme);
-                        }
+                        try {
+                            const savedTheme = localStorage.getItem(window.currentUserThemeId + '-theme');
+                            if (savedTheme) {
+                                document.documentElement.setAttribute('data-theme', JSON.parse(savedTheme));
+                            }
+                        } catch(e) {}
                     </script>
                 `;
 				return html.replace('</head>', `${script}</head>`);
