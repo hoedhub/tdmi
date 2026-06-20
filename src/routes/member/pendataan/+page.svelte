@@ -6,7 +6,7 @@
 	import { invalidateAll } from '$app/navigation';
 	import type { SortConfig, FilterState } from '$lib/components/SuperTable';
 	import { goto } from '$app/navigation';
-	import { PlusCircle, List, Map as MapIcon, Printer } from 'lucide-svelte';
+	import { PlusCircle, List, Map as MapIcon, Printer, FileDown, FileUp } from 'lucide-svelte';
 	import { onMount } from 'svelte';
 	import { api } from '$lib/utils/api';
 	import { page } from '$app/stores';
@@ -27,6 +27,7 @@
 	import { MAP_LABELS, TOP_COLORS, PROVINCE_PAGE_SIZE, type MapViewMode } from './config/constants';
 	import { printMuridTable } from './actions/printTable';
 	import { downloadMuridPDF } from './actions/downloadPDF';
+	import { exportMuridToXLSX } from './actions/exportExcel';
 
 	// --- Type Definitions ---
 	type ExtendedPageData = PageData & {
@@ -375,6 +376,15 @@
 			</a>
 		{/if}
 		{#if activeTab === 'table'}
+			<div class="dropdown dropdown-end">
+				<button class="btn btn-ghost btn-sm" title="Ekspor / Impor">
+					<FileDown class="h-4 w-4" />
+				</button>
+				<ul class="dropdown-content menu bg-base-100 rounded-box z-[60] w-48 p-2 shadow-sm">
+					<li><button onclick={() => exportMuridToXLSX()} class="flex items-center gap-2"><FileDown class="h-4 w-4" /> Ekspor Excel</button></li>
+					<li><a href="/member/pendataan/import" class="flex items-center gap-2"><FileUp class="h-4 w-4" /> Import Excel</a></li>
+				</ul>
+			</div>
 			<button class="btn btn-ghost btn-sm" onclick={printTable} disabled={loadingPrint} title="Cetak Tabel">
 				<Printer class="h-4 w-4" />
 			</button>

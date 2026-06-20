@@ -410,6 +410,24 @@
 		{/if}
 	</div>
 
+	<!-- Hidden inputs for all form fields - ensures values are always submitted regardless of current step -->
+	<input type="hidden" name="nama" value={internalFormData.nama} />
+	<input type="hidden" name="namaArab" value={internalFormData.namaArab} />
+	<input type="hidden" name="gender" value={String(internalFormData.gender)} />
+	<input type="hidden" name="nik" value={internalFormData.nik} />
+	<input type="hidden" name="tglLahir" value={internalFormData.tglLahir} />
+	<input type="hidden" name="deskelId" value={internalFormData.deskelId ?? ''} />
+	<input type="hidden" name="alamat" value={internalFormData.alamat} />
+	<input type="hidden" name="nomorTelepon" value={internalFormData.nomorTelepon} />
+	<input type="hidden" name="muhrimId" value={internalFormData.muhrimId ?? ''} />
+	<input type="hidden" name="mursyidId" value={internalFormData.mursyidId ?? ''} />
+	<input type="hidden" name="baiatId" value={internalFormData.baiatId ?? ''} />
+	<input type="hidden" name="wiridId" value={internalFormData.wiridId ?? ''} />
+	<input type="hidden" name="qari" value={String(internalFormData.qari)} />
+	<input type="hidden" name="marhalah" value={internalFormData.marhalah} />
+	<input type="hidden" name="aktif" value={internalFormData.aktif ? 'on' : ''} />
+	<input type="hidden" name="partisipasi" value={internalFormData.partisipasi ? 'on' : ''} />
+
 	<!-- Navigation & Action Buttons -->
 	<div class="flex flex-col gap-3">
 		<!-- Step Navigation -->
