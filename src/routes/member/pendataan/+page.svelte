@@ -376,7 +376,7 @@
 			</a>
 		{/if}
 		{#if activeTab === 'table'}
-			<div class="dropdown dropdown-end">
+			<div class="dropdown sm:dropdown-end">
 				<button class="btn btn-ghost btn-sm" title="Ekspor / Impor">
 					<FileDown class="h-4 w-4" />
 				</button>
