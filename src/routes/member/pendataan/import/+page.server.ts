@@ -3,7 +3,7 @@ import type { PageServerLoad, Actions } from './$types';
 import { userHasPermission } from '$lib/server/accessControl';
 import { db } from '$lib/drizzle';
 import { muridTable, deskelTable, kecamatanTable, kokabTable, propTable } from '$lib/drizzle/schema';
-import { eq, like, and } from 'drizzle-orm';
+import { eq, like, and, sql } from 'drizzle-orm';
 import ExcelJS from 'exceljs';
 
 export const load: PageServerLoad = async ({ locals }) => {
@@ -334,6 +334,11 @@ export const actions: Actions = {
 			const importErrors: { row: number; message: string }[] = [];
 			let importedCount = 0;
 
+			// Backup tabel murid sebelum import
+			const ts = new Date().toISOString().replace(/[^0-9]/g, '').slice(0, 14);
+			const backupTable = `murid_backup_${ts}`;
+			await db.run(sql.raw(`CREATE TABLE IF NOT EXISTS ${backupTable} AS SELECT * FROM murid`));
+
 			for (const row of dataRows) {
 				const nama = getVal(row, 'nama');
 				if (!nama || nama.length < 2) { importErrors.push({ row: row.rowNum, message: 'Nama tidak valid.' }); continue; }
@@ -341,11 +346,15 @@ export const actions: Actions = {
 				const nik = getVal(row, 'nik');
 				if (nik && !/^\d{16}$/.test(nik)) { importErrors.push({ row: row.rowNum, message: `NIK "${nik}" tidak valid (harus 16 digit).` }); continue; }
 
-				/* TODO: Aktifkan setelah uji coba selesai
+				let marhalah: 1 | 2 | 3 = 1;
+				const mr = getVal(row, 'marhalah');
+				if (mr) { const m = parseInt(mr); if (m === 1 || m === 2 || m === 3) marhalah = m; }
+
 				if (nik) {
 					const dup = await db.select({ id: muridTable.id }).from(muridTable).where(eq(muridTable.nik, nik)).get();
 					if (dup) { importErrors.push({ row: row.rowNum, message: `NIK ${nik} sudah terdaftar (ID: ${dup.id}).` }); continue; }
 				}
+
 				try {
 					await db.insert(muridTable).values({
 						nama,
@@ -373,12 +382,15 @@ export const actions: Actions = {
 				} catch (e: any) {
 					importErrors.push({ row: row.rowNum, message: e.message || 'Gagal menyimpan.' });
 				}
-				*/
-
-				importedCount++;
 			}
 
-			return { success: true as const, trial: true as const, importedCount, failedCount: dataRows.length - importedCount, importErrors };
+			const rollbackSQL = [
+				`DELETE FROM murid;`,
+				`INSERT INTO murid SELECT * FROM ${backupTable};`,
+				`DROP TABLE IF EXISTS ${backupTable};`
+			].join('\n');
+
+			return { success: true as const, importedCount, failedCount: dataRows.length - importedCount, importErrors, backupTable, rollbackSQL };
 		} catch (e: any) {
 			return fail(400, { errors: { _form: [e.message || 'Gagal memproses file.'] } });
 		}

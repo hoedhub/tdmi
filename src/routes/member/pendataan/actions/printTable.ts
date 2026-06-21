@@ -82,47 +82,11 @@ ${filterHtml}
 <table><thead><tr>${theadHtml}</tr></thead>
 <tbody>${rowsHtml}</tbody></table>
 <p class="print-foot">Dicetak dari Sistem Manajemen TDMI</p>
+<script>window.print();window.onafterprint=function(){window.close()}<\/script>
 </body></html>`;
 
-	const prevTitle = document.title;
-	document.title = 'Data Murid - TDMI';
-
-	const container = document.createElement('div');
-	container.id = 'print-container';
-	container.innerHTML = html;
-	Object.assign(container.style, {
-		position: 'fixed', left: '-9999px', top: '0', width: '1px', height: '1px', overflow: 'hidden', zIndex: '-1'
-	});
-	document.body.appendChild(container);
-
-	await new Promise(r => setTimeout(r, 200));
-
-	const hiddenNodes: { el: HTMLElement; orig: string | null }[] = [];
-	for (const child of Array.from(document.body.children)) {
-		if (child.id !== 'print-container' && child instanceof HTMLElement) {
-			hiddenNodes.push({ el: child, orig: child.style.display });
-			child.style.display = 'none';
-		}
-	}
-	Object.assign(container.style, {
-		position: 'static', left: '', top: '', width: 'auto', height: 'auto', overflow: 'visible', zIndex: 'auto', display: 'block'
-	});
-
-	return new Promise<void>((resolve, reject) => {
-		const cleanup = () => {
-			document.title = prevTitle;
-			hiddenNodes.forEach(({ el, orig }) => { el.style.display = orig ?? ''; });
-			container.remove();
-			window.removeEventListener('afterprint', cleanup);
-			resolve();
-		};
-		window.addEventListener('afterprint', cleanup);
-		setTimeout(() => { try { cleanup(); } catch {} }, 60000);
-		try {
-			window.print();
-		} catch (e) {
-			cleanup();
-			reject(e);
-		}
-	});
+	const win = window.open('', '_blank');
+	if (!win) throw new Error('Pop-up diblokir. Izinkan pop-up untuk mencetak.');
+	win.document.write(html);
+	win.document.close();
 }

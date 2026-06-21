@@ -6,7 +6,7 @@
 	import { invalidateAll } from '$app/navigation';
 	import type { SortConfig, FilterState } from '$lib/components/SuperTable';
 	import { goto } from '$app/navigation';
-	import { PlusCircle, List, Map as MapIcon, Printer, FileDown, FileUp } from 'lucide-svelte';
+	import { PlusCircle, List, Map as MapIcon, Printer, FileDown, FileUp, FileSpreadsheet } from 'lucide-svelte';
 	import { onMount } from 'svelte';
 	import { api } from '$lib/utils/api';
 	import { page } from '$app/stores';
@@ -362,17 +362,17 @@
 <div class="mb-6 flex flex-wrap items-center justify-between gap-2">
 	<h1 class="card-title text-2xl">Manajemen Data Murid</h1>
 	<div class="flex items-center gap-1 sm:gap-2">
-		<div class="tabs tabs-boxed mr-0 sm:mr-4">
-			<button class="tab tab-sm gap-1 sm:gap-2 {activeTab === 'table' ? 'tab-active' : ''}" onclick={switchToTable}>
-				<List class="h-4 w-4 hidden sm:inline" /> <span class="text-[0.7rem] sm:text-sm">Daftar</span>
+		<div class="flex items-center gap-1 rounded-lg bg-base-200 p-1">
+			<button class="btn btn-sm btn-circle btn-ghost {activeTab === 'table' ? 'btn-active' : ''}" onclick={switchToTable} title="Daftar">
+				<List class="h-4 w-4" />
 			</button>
-			<button class="tab tab-sm gap-1 sm:gap-2 {activeTab === 'map' ? 'tab-active' : ''}" onclick={() => (activeTab = 'map')}>
-				<MapIcon class="h-4 w-4 hidden sm:inline" /> <span class="text-[0.7rem] sm:text-sm">Peta Sebaran</span>
+			<button class="btn btn-sm btn-circle btn-ghost {activeTab === 'map' ? 'btn-active' : ''}" onclick={() => (activeTab = 'map')} title="Peta Sebaran">
+				<MapIcon class="h-4 w-4" />
 			</button>
 		</div>
 		{#if canWriteMurid}
-			<a href="/member/pendataan/new" class="btn btn-primary btn-sm">
-				<PlusCircle class="h-4 w-4" /> Tambah Murid Baru
+			<a href="/member/pendataan/new" class="btn btn-primary btn-sm btn-circle" title="Tambah Murid Baru">
+				<PlusCircle class="h-4 w-4" />
 			</a>
 		{/if}
 		{#if activeTab === 'table'}
@@ -380,8 +380,10 @@
 				<button class="btn btn-ghost btn-sm" title="Ekspor / Impor">
 					<FileDown class="h-4 w-4" />
 				</button>
-				<ul class="dropdown-content menu bg-base-100 rounded-box z-[60] w-48 p-2 shadow-sm">
+				<ul class="dropdown-content menu bg-base-100 rounded-box z-[60] w-56 p-2 shadow-sm">
 					<li><button onclick={() => exportMuridToXLSX()} class="flex items-center gap-2"><FileDown class="h-4 w-4" /> Ekspor Excel</button></li>
+					<li><a href="/member/pendataan/template" class="flex items-center gap-2"><FileSpreadsheet class="h-4 w-4" /> Download Template</a></li>
+					<li class="menu-divider my-1 h-px bg-base-300"></li>
 					<li><a href="/member/pendataan/import" class="flex items-center gap-2"><FileUp class="h-4 w-4" /> Import Excel</a></li>
 				</ul>
 			</div>

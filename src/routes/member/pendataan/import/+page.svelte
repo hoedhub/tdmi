@@ -3,7 +3,7 @@
 	import { goto } from '$app/navigation';
 	import { fade } from 'svelte/transition';
 	import {
-		Download, ArrowLeft, CheckCircle, XCircle, AlertTriangle, Beaker,
+		Download, ArrowLeft, CheckCircle, XCircle, AlertTriangle,
 		FileSpreadsheet, Upload, Table, Database
 	} from 'lucide-svelte';
 	import type { ActionData } from './$types';
@@ -174,6 +174,16 @@
 		if (v === '__custom__') return '';
 		const ci = colLetterToIndex(v);
 		return (ci >= 0 && curSamples[headerOffset]?.cells[ci]) || '';
+	}
+
+	function downloadRollbackSQL(sql: string, name: string) {
+		const blob = new Blob([sql], { type: 'application/sql' });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = `${name}.sql`;
+		a.click();
+		URL.revokeObjectURL(url);
 	}
 </script>
 
@@ -367,9 +377,9 @@
 					<input type="hidden" name="dataStartRow" value={dataStartRow} />
 					<input type="hidden" name="confirmed" value="true" />
 					<div class="flex gap-2">
-						<button type="submit" disabled={previewData.validCount === 0 || isSubmitting} class="btn btn-warning">
+						<button type="submit" disabled={previewData.validCount === 0 || isSubmitting} class="btn btn-primary">
 							{#if isSubmitting}<span class="loading loading-spinner loading-sm"></span>{/if}
-							<Beaker class="h-4 w-4" /> Lihat Hasil Parsing
+							Import {previewData.validCount} Data
 						</button>
 						<button type="button" onclick={() => { validated = false; previewData = null; }} class="btn btn-ghost">Ubah Mapping</button>
 					</div>
@@ -394,12 +404,11 @@
 	{:else if step === 'result'}
 		<div in:fade class="space-y-4">
 			{#if importResult}
-				<div class="rounded-lg border border-warning/30 bg-warning/5 p-6 text-center">
-					<Beaker class="mx-auto mb-2 h-12 w-12 text-warning" />
-					<h2 class="text-xl font-semibold">Mode Uji Coba</h2>
-					<p class="mt-1 text-sm text-warning font-medium">Data tidak disimpan ke database.</p>
+				<div class="rounded-lg border border-success/30 bg-success/5 p-6 text-center">
+					<CheckCircle class="mx-auto mb-2 h-12 w-12 text-success" />
+					<h2 class="text-xl font-semibold">Import Selesai!</h2>
 					<p class="mt-1 text-base-content/70">
-						{importResult.importedCount} data berhasil diparsing.
+						{importResult.importedCount} data berhasil diimport.
 						{#if importResult.failedCount > 0}&nbsp;{importResult.failedCount} data gagal.{/if}
 					</p>
 				</div>
@@ -411,6 +420,16 @@
 								<div class="border-b border-base-300 py-1 last:border-0"><span class="font-medium text-xs">Baris {ie.row}:</span> {ie.message}</div>
 							{/each}
 						</div>
+					</div>
+				{/if}
+				{#if importResult.backupTable}
+					<div class="rounded-lg border border-info/30 bg-info/5 p-4">
+						<h3 class="mb-2 flex items-center gap-2 font-semibold text-info"><Database class="h-4 w-4" /> Backup & Rollback</h3>
+						<p class="mb-1 text-sm">Tabel <code class="rounded bg-base-300 px-1 text-xs">{importResult.backupTable}</code> telah dibuat sebagai cadangan sebelum import.</p>
+						<p class="mb-3 text-xs text-base-content/60">Klik tombol di bawah untuk mendownload file SQL rollback. Jalankan di Turso console jika terjadi kesalahan.</p>
+						<button onclick={() => downloadRollbackSQL(importResult.rollbackSQL, importResult.backupTable)} class="btn btn-outline btn-info btn-sm gap-2">
+							<Download class="h-4 w-4" /> Download Rollback SQL
+						</button>
 					</div>
 				{/if}
 				<a href="/member/pendataan" class="btn btn-primary w-full">Kembali ke Pendataan</a>
