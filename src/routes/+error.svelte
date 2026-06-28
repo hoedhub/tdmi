@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/stores';
-	import { Home, ArrowLeft, ShieldX, AlertTriangle } from 'lucide-svelte';
+	import { Home, ArrowLeft, AlertTriangle } from 'lucide-svelte';
 
 	let status = $derived($page.status);
 	let message = $derived($page.error?.message || 'Terjadi kesalahan yang tidak terduga.');
@@ -11,7 +11,7 @@
 			: status === 403
 				? 'Akses Ditolak'
 				: status === 401
-					? 'Silakan Login Terlebih Dahulu'
+					? 'Tidak Terautentikasi'
 					: status === 500
 						? 'Kesalahan Server'
 						: 'Terjadi Kesalahan'
@@ -22,11 +22,7 @@
 	<div class="text-center">
 		<div class="mb-4 flex justify-center">
 			<div class="rounded-full bg-error/10 p-6">
-				{#if status === 403}
-					<ShieldX class="h-12 w-12 text-error" />
-				{:else}
-					<AlertTriangle class="h-12 w-12 text-error" />
-				{/if}
+				<AlertTriangle class="h-12 w-12 text-error" />
 			</div>
 		</div>
 
@@ -34,30 +30,20 @@
 		<h2 class="mb-3 text-xl font-semibold text-base-content">{title}</h2>
 		<p class="mb-6 max-w-md text-base-content/60">{message}</p>
 
-		{#if status === 403}
-			<p class="mb-4 text-sm text-base-content/50">
-				Anda memerlukan izin admin untuk mengakses halaman ini.
-			</p>
-		{/if}
-
-		{#if status === 401}
-			<a href="/login" class="btn btn-primary btn-sm">Login</a>
-		{:else}
-			<div class="flex items-center justify-center gap-3">
-				<a href="/admin" class="btn btn-primary btn-sm">
-					<Home class="h-4 w-4" />
-					Admin Dashboard
-				</a>
-				<button class="btn btn-ghost btn-sm" onclick={() => history.back()}>
-					<ArrowLeft class="h-4 w-4" />
-					Kembali
-				</button>
-			</div>
-		{/if}
+		<div class="flex items-center justify-center gap-3">
+			<a href="/" class="btn btn-primary btn-sm">
+				<Home class="h-4 w-4" />
+				Beranda
+			</a>
+			<button class="btn btn-ghost btn-sm" onclick={() => history.back()}>
+				<ArrowLeft class="h-4 w-4" />
+				Kembali
+			</button>
+		</div>
 
 		{#if status === 500}
 			<p class="mt-6 text-xs text-base-content/40">
-				Jika masalah berlanjut, cek halaman Error Logs atau hubungi administrator.
+				Jika masalah berlanjut, hubungi administrator.
 			</p>
 		{/if}
 	</div>

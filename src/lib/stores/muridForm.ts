@@ -1,7 +1,6 @@
 import { writable } from 'svelte/store';
 import type { propTable, kokabTable, kecamatanTable, deskelTable } from '$lib/drizzle/schema';
 import type { InferSelectModel } from 'drizzle-orm';
-import type { Interface } from 'node:readline';
 
 type Propinsi = InferSelectModel<typeof propTable>;
 type Kokab = InferSelectModel<typeof kokabTable>;

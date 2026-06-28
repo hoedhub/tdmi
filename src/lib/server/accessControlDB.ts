@@ -148,6 +148,20 @@ export async function updateRolePermissions(
 /**
  * Memeriksa apakah childRoleId adalah turunan (sub-role) dari parentRoleId menggunakan database.
  * Ini menggunakan Recursive Common Table Expression (CTE) untuk efisiensi.
+ *
+ * MENGAPA RAW SQL? Drizzle ORM (per v0.44) belum menyediakan builder untuk recursive CTE.
+ * Tidak ada metode Drizzle yang setara, sehingga sql`` template literal adalah
+ * satu-satunya cara untuk menulis recursive CTE tanpa meninggalkan ORM sepenuhnya.
+ *
+ * APA YANG DILAKUKAN CTE INI:
+ * 1. Base case: ambil semua child langsung dari parentRoleId di role_hierarchy
+ * 2. Recursive step: untuk setiap child yang ditemukan, cari child-anaknya
+ * 3. Hasil: set semua role yang merupakan turunan (langsung/tidak langsung) dari parentRoleId
+ * 4. Cek apakah childRoleId ada di set tersebut
+ *
+ * TODO: Revisit ketika Drizzle ORM menambahkan recursive CTE builder.
+ * Ref: https://github.com/drizzle-team/drizzle-orm/discussions/1789
+ *
  * @param parentRoleId - ID peran induk.
  * @param childRoleId - ID peran anak yang diperiksa.
  * @returns Promise<boolean> - true jika merupakan sub-role.

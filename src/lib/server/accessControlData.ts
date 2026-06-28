@@ -7,9 +7,17 @@ import {
 	rolePermissionsTable,
 	roleHierarchyTable
 } from '$lib/drizzle/schema';
+import { eq } from 'drizzle-orm';
 
 // =================================================================
-// DATA MASTER RBAC - DISINKRONKAN DENGAN DATABASE AKTUAL
+// DATA MASTER RBAC - SUMBER KEBENARAN (SOURCE OF TRUTH)
+// =================================================================
+// Array di bawah ini adalah satu-satunya sumber kebenaran untuk definisi
+// role, permission, dan hierarki. Jika ada perubahan, edit di sini lalu
+// jalankan `pnpm db:sync-rbac` untuk menyinkronkan ke database.
+//
+// PERINGATAN: Jangan mengubah data RBAC langsung di database tanpa
+// memperbarui file ini, atau keduanya akan tidak sinkron.
 // =================================================================
 
 const rolesData = [
@@ -281,4 +289,128 @@ export async function assignRoleToUser(userId: string, roleId: string) {
 		console.error(`Error assigning role '${roleId}' to user '${userId}':`, error);
 		return { success: false, error };
 	}
+}
+
+/**
+ * Sinkronisasi RBAC data ke database secara IDEMPOTEN (aman dijalankan berulang).
+ * Berbeda dengan seedRbacData yang destruktif (hapus semua lalu insert ulang),
+ * fungsi ini menggunakan upsert sehingga:
+ * - Record baru akan di-insert
+ * - Record yang sudah ada akan di-update (name, description)
+ * - Record yang ada di DB tapi tidak di sini TIDAK dihapus (aman untuk data user_roles)
+ *
+ * Gunakan: `pnpm db:sync-rbac`
+ */
+export async function syncRbacToDb() {
+	try {
+		console.log('Starting RBAC sync (idempotent)...');
+
+		// 1. Sync Roles (upsert)
+		for (const role of rolesData) {
+			await db
+				.insert(rolesTable)
+				.values(role)
+				.onConflictDoUpdate({ target: rolesTable.id, set: { name: role.name, description: role.description } });
+		}
+		console.log(`Roles synced: ${rolesData.length} items`);
+
+		// 2. Sync Permissions (upsert)
+		for (const perm of permissionsData) {
+			await db
+				.insert(permissionsTable)
+				.values(perm)
+				.onConflictDoUpdate({ target: permissionsTable.id, set: { name: perm.name, description: perm.description } });
+		}
+		console.log(`Permissions synced: ${permissionsData.length} items`);
+
+		// 3. Sync Role-Permission mappings (idempotent insert)
+		const rolePermissions = buildRolePermissions();
+		let rpInserted = 0;
+		for (const rp of rolePermissions) {
+			const result = await db.insert(rolePermissionsTable).values(rp).onConflictDoNothing();
+			if (result.rowsAffected > 0) rpInserted++;
+		}
+		console.log(`Role-permissions synced: ${rpInserted} new, ${rolePermissions.length - rpInserted} existing`);
+
+		// 4. Sync Role Hierarchy (idempotent insert)
+		const hierarchy = roleHierarchyData.map((h) => ({
+			parentRoleId: h.parent,
+			childRoleId: h.child
+		}));
+		let rhInserted = 0;
+		for (const rh of hierarchy) {
+			const result = await db.insert(roleHierarchyTable).values(rh).onConflictDoNothing();
+			if (result.rowsAffected > 0) rhInserted++;
+		}
+		console.log(`Role hierarchy synced: ${rhInserted} new, ${hierarchy.length - rhInserted} existing`);
+
+		console.log('RBAC sync completed successfully.');
+		return { success: true, message: 'RBAC data synced (idempotent).' };
+	} catch (err) {
+		console.error('Error syncing RBAC data:', err);
+		return { success: false, message: 'Failed to sync RBAC data.', error: err };
+	}
+}
+
+/**
+ * Helper: build role-permission mappings from rolePermissionsData
+ * (extracted so it can be reused by both seed and sync)
+ */
+function buildRolePermissions() {
+	return [
+		{ roleId: 'role-manager', permissionId: 'perm-user-read' },
+		{ roleId: 'role-manager', permissionId: 'perm-role-read' },
+		{ roleId: 'role-manager', permissionId: 'perm-data-write-scoped' },
+		{ roleId: 'role-editor', permissionId: 'perm-user-read' },
+		{ roleId: 'role-editor', permissionId: 'perm-data-write-scoped' },
+		{ roleId: 'role-territory-manager', permissionId: 'perm-user-read' },
+		{ roleId: 'role-territory-manager', permissionId: 'perm-data-write-scoped' },
+		{ roleId: 'role-territory-editor', permissionId: 'perm-user-read' },
+		{ roleId: 'role-territory-editor', permissionId: 'perm-data-write-scoped' },
+		{ roleId: 'role-viewer', permissionId: 'perm-user-read' },
+		{ roleId: 'role-viewer', permissionId: 'perm-territory-read' },
+		{ roleId: 'role-pendataan', permissionId: 'perm-pendataan-access' },
+		{ roleId: 'role-pendataan-propinsi', permissionId: 'perm-pendataan-access' },
+		{ roleId: 'role-nasyath', permissionId: 'perm-nasyath-access' },
+		{ roleId: 'role-nasyath-propinsi', permissionId: 'perm-nasyath-access' },
+		{ roleId: 'role-pendataan', permissionId: 'perm-pendataan-write' },
+		{ roleId: 'role-pendataan', permissionId: 'perm-pendataan-read' },
+		{ roleId: 'role-wakil-naib', permissionId: 'perm-admin-access' },
+		{ roleId: 'role-wakil-naib', permissionId: 'perm-nasyath-access' },
+		{ roleId: 'role-wakil-naib', permissionId: 'perm-pendataan-access' },
+		{ roleId: 'role-wakil-naib', permissionId: 'perm-data-read-all' },
+		{ roleId: 'role-wakil-naib', permissionId: 'perm-pendataan-read' },
+		{ roleId: 'role-wakil-naib', permissionId: 'perm-role-read' },
+		{ roleId: 'role-wakil-naib', permissionId: 'perm-territory-read' },
+		{ roleId: 'role-wakil-naib', permissionId: 'perm-user-read' },
+		{ roleId: 'role-wakil-naib', permissionId: 'perm-pendataan-write' },
+		{ roleId: 'role-wakil-naib', permissionId: 'perm-role-write' },
+		{ roleId: 'role-wakil-naib', permissionId: 'perm-data-write-scoped' },
+		{ roleId: 'role-wakil-naib', permissionId: 'perm-user-write' },
+		{ roleId: 'role-admin', permissionId: 'perm-admin-access' },
+		{ roleId: 'role-admin', permissionId: 'perm-nasyath-access' },
+		{ roleId: 'role-admin', permissionId: 'perm-pendataan-access' },
+		{ roleId: 'role-admin', permissionId: 'perm-data-read-all' },
+		{ roleId: 'role-admin', permissionId: 'perm-pendataan-read' },
+		{ roleId: 'role-admin', permissionId: 'perm-role-read' },
+		{ roleId: 'role-admin', permissionId: 'perm-territory-read' },
+		{ roleId: 'role-admin', permissionId: 'perm-user-read' },
+		{ roleId: 'role-admin', permissionId: 'perm-pendataan-write' },
+		{ roleId: 'role-admin', permissionId: 'perm-role-write' },
+		{ roleId: 'role-admin', permissionId: 'perm-data-write-scoped' },
+		{ roleId: 'role-admin', permissionId: 'perm-user-write' },
+		{ roleId: 'role-admin', permissionId: 'perm-nasyath-read' },
+		{ roleId: 'role-admin', permissionId: 'perm-nasyath-write' },
+		{ roleId: 'role-wakil-naib', permissionId: 'perm-nasyath-write' },
+		{ roleId: 'role-nasyath', permissionId: 'perm-nasyath-write' },
+		{ roleId: 'role-piket-manager', permissionId: 'perm-piket-read' },
+		{ roleId: 'role-piket-manager', permissionId: 'perm-piket-write' },
+		{ roleId: 'role-admin', permissionId: 'perm-piket-read' },
+		{ roleId: 'role-admin', permissionId: 'perm-piket-write' },
+		{ roleId: 'role-admin', permissionId: 'perm-backup-create' },
+		{ roleId: 'role-lajnah-ilqo', permissionId: 'perm-ayyu-sual-access' },
+		{ roleId: 'role-admin', permissionId: 'perm-ayyu-sual-access' },
+		{ roleId: 'role-naib', permissionId: 'perm-ayyu-sual-access' },
+		{ roleId: 'role-wakil-naib', permissionId: 'perm-ayyu-sual-access' }
+	];
 }

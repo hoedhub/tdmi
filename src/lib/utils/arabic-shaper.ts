@@ -1,7 +1,5 @@
 // Berkas ini telah diperbarui agar sesuai dengan aturan TypeScript yang ketat.
 
-// @ts-check
-
 const ISOLATED = 0;
 const FINAL = 1;
 const INITIAL = 2;
@@ -10,21 +8,17 @@ const MEDIAL = 3;
 const ALEF = 0x0627;
 const LAM = 0x0644;
 
-/**
- * @typedef {Record<number, Record<number, number[]>>} LigatureMap
- * @typedef {Record<number, number[]>} LetterMap
- * @typedef {Record<number, boolean[]>} ConnectingMap
- */
+type LigatureMap = Record<number, Record<number, number[]>>;
+type LetterMap = Record<number, number[]>;
+type ConnectingMap = Record<number, boolean[]>;
 
-/** @type {LigatureMap} */
-const ligatures = {
+const ligatures: LigatureMap = {
 	[LAM]: {
 		[ALEF]: [0xfefb, 0xfefc] // Lam + Alef
 	}
 };
 
-/** @type {LetterMap} */
-const letters = {
+const letters: LetterMap = {
 	0x0621: [0xfe80, 0xfe80, 0xfe80, 0xfe80], // HAMZA
 	0x0622: [0xfe81, 0xfe82, 0xfe81, 0xfe82], // ALEF WITH MADDA ABOVE
 	0x0623: [0xfe83, 0xfe84, 0xfe83, 0xfe84], // ALEF WITH HAMZA ABOVE
@@ -64,8 +58,7 @@ const letters = {
 	0x064a: [0xfef1, 0xfef2, 0xfef3, 0xfef4] // YEH
 };
 
-/** @type {ConnectingMap} */
-const connecting = {
+const connecting: ConnectingMap = {
 	0x0621: [false, false],
 	0x0622: [true, false],
 	0x0623: [true, false],
@@ -105,10 +98,7 @@ const connecting = {
 	0x064a: [true, true]
 };
 
-/**
- * @param {string} text
- */
-function shape(text) {
+function shape(text: string): string {
 	const chars = Array.from(text);
 	let result = '';
 
@@ -125,7 +115,7 @@ function shape(text) {
 		const connectsToPrev = prevCode !== null && letters[prevCode] && connecting[prevCode]?.[1];
 		const connectsToNext = nextCode !== null && letters[nextCode] && connecting[charCode]?.[1];
 
-		let shape;
+		let shape: number;
 		if (connectsToPrev && connectsToNext) {
 			shape = MEDIAL;
 		} else if (connectsToPrev) {
@@ -147,17 +137,11 @@ function shape(text) {
 	return result;
 }
 
-/**
- * @param {string} text
- */
-function getVisual(text) {
+function getVisual(text: string): string {
 	return text;
 }
 
-/**
- * @param {string} text
- */
-export function processArabic(text) {
+export function processArabic(text: string): string {
 	if (!text) return '';
 	const shapedText = shape(text);
 	return getVisual(shapedText);

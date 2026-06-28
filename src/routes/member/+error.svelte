@@ -16,6 +16,8 @@
 						? 'Kesalahan Server'
 						: 'Terjadi Kesalahan'
 	);
+
+	let icon = $derived(status === 403 ? ShieldX : AlertTriangle);
 </script>
 
 <div class="flex min-h-[60vh] items-center justify-center px-4">
@@ -36,7 +38,7 @@
 
 		{#if status === 403}
 			<p class="mb-4 text-sm text-base-content/50">
-				Anda memerlukan izin admin untuk mengakses halaman ini.
+				Anda tidak memiliki izin untuk mengakses halaman ini. Hubungi administrator jika ini merupakan kesalahan.
 			</p>
 		{/if}
 
@@ -44,9 +46,9 @@
 			<a href="/login" class="btn btn-primary btn-sm">Login</a>
 		{:else}
 			<div class="flex items-center justify-center gap-3">
-				<a href="/admin" class="btn btn-primary btn-sm">
+				<a href="/member" class="btn btn-primary btn-sm">
 					<Home class="h-4 w-4" />
-					Admin Dashboard
+					Dashboard
 				</a>
 				<button class="btn btn-ghost btn-sm" onclick={() => history.back()}>
 					<ArrowLeft class="h-4 w-4" />
@@ -57,7 +59,7 @@
 
 		{#if status === 500}
 			<p class="mt-6 text-xs text-base-content/40">
-				Jika masalah berlanjut, cek halaman Error Logs atau hubungi administrator.
+				Jika masalah berlanjut, hubungi administrator.
 			</p>
 		{/if}
 	</div>

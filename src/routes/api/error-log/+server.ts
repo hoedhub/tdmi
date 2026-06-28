@@ -1,19 +1,25 @@
-import { json } from '@sveltejs/kit';
+import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { db } from '$lib/drizzle';
 import { errorLogTable } from '$lib/drizzle/schema';
 import { nanoid } from 'nanoid';
 import { desc, eq, like, and, sql } from 'drizzle-orm';
+import { clientErrorLogSchema } from '$lib/schemas/api';
 
 export const POST: RequestHandler = async ({ request }) => {
 	try {
-		const body = await request.json();
+		const rawBody = await request.json();
+		const parsed = clientErrorLogSchema.safeParse(rawBody);
+		if (!parsed.success) {
+			return json({ ok: false, errors: parsed.error.issues }, { status: 400 });
+		}
+		const body = parsed.data;
 		const id = nanoid(16);
 		await db.insert(errorLogTable).values({
 			id,
-			level: body.level ?? 'error',
+			level: body.level,
 			source: 'client',
-			message: body.message ?? 'Unknown client error',
+			message: body.message,
 			stack: body.stack ?? null,
 			url: body.url ?? null,
 			userAgent: body.userAgent ?? null,

@@ -10,6 +10,7 @@ import {
 	piketScheduleTable
 } from '$lib/drizzle/schema';
 import { eq, sql } from 'drizzle-orm';
+import { error } from '@sveltejs/kit';
 
 /**
  * Helper function untuk mendapatkan ID Propinsi dari deskelId.
@@ -141,4 +142,48 @@ export async function userHasPermission(
 	}
 
 	return true; // Semua pengecekan berhasil
+}
+
+/**
+ * Helper yang memastikan user sudah login. Throw 401 kalau belum.
+ * Return user object kalau sudah login.
+ */
+export function requireAuth(locals: App.Locals) {
+	if (!locals.user) {
+		throw error(401, 'Unauthorized');
+	}
+	return locals.user;
+}
+
+/**
+ * Helper yang memastikan user punya permission tertentu.
+ * Otomatis cek auth dulu, lalu cek permission. Throw 401/403 kalau gagal.
+ *
+ * @param locals - SvelteKit locals (berisi user & session)
+ * @param permissionId - ID permission, misalnya 'perm-pendataan-write'
+ * @param resource - Opsional, untuk territory/hierarchy check
+ * @returns user object (sudah pasti authenticated & authorized)
+ *
+ * @example
+ * // Sebelum (5 baris):
+ * if (!locals.user) throw error(401, 'Unauthorized');
+ * const canBackup = await userHasPermission(locals.user.id, 'perm-backup-create');
+ * if (!canBackup) throw error(403, 'Forbidden');
+ *
+ * // Sesudah (1 baris):
+ * const user = await requirePermission(locals, 'perm-backup-create');
+ */
+export async function requirePermission(
+	locals: App.Locals,
+	permissionId: string,
+	resource?: { deskelId?: number | null; targetRoleId?: string }
+) {
+	const user = requireAuth(locals);
+
+	const hasPermission = await userHasPermission(user.id, permissionId, resource);
+	if (!hasPermission) {
+		throw error(403, 'Forbidden: insufficient permissions.');
+	}
+
+	return user;
 }

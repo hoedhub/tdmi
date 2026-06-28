@@ -2,13 +2,11 @@ import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { db } from '$lib/drizzle';
 import { muridTable } from '$lib/drizzle/schema';
-import { userHasPermission } from '$lib/server/accessControl';
+import { requireAuth, requirePermission } from '$lib/server/accessControl';
 import { eq } from 'drizzle-orm';
 
 export const POST: RequestHandler = async ({ params, locals }) => {
-	if (!locals.user) {
-		throw error(401, 'Unauthorized');
-	}
+	const user = requireAuth(locals);
 
 	const muridId = parseInt(params.muridId);
 	if (isNaN(muridId)) {
@@ -27,17 +25,10 @@ export const POST: RequestHandler = async ({ params, locals }) => {
 			throw error(404, 'Murid not found.');
 		}
 
-		// Check if the user has permission to write (delete) murid data
-		// and if they are within the territory scope if applicable.
-		const canWriteMurid = await userHasPermission(
-			locals.user.id,
-			'perm-pendataan-write',
-			{ deskelId: muridToDelete.deskelId } // Pass deskelId for territory check
-		);
-
-		if (!canWriteMurid) {
-			throw error(403, 'Akses Ditolak. Anda tidak memiliki izin untuk menghapus data murid ini.');
-		}
+		// Auth + permission + territory check in one line
+		await requirePermission(locals, 'perm-pendataan-write', {
+			deskelId: muridToDelete.deskelId
+		});
 
 		// Perform the deletion
 		const result = await db.delete(muridTable).where(eq(muridTable.id, muridId)).run();
