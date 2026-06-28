@@ -631,16 +631,16 @@
 
 					<div class="grid grid-cols-2 gap-3">
 						<div class="form-control">
-							<label class="label"><span class="label-text">Bulan</span></label>
-							<select name="targetMonth" bind:value={targetMonth} class="select select-bordered w-full">
+							<label class="label" for="target-month"><span class="label-text">Bulan</span></label>
+							<select id="target-month" name="targetMonth" bind:value={targetMonth} class="select select-bordered w-full">
 								{#each MONTHS as m, i}
 									<option value={i + 1}>{m}</option>
 								{/each}
 							</select>
 						</div>
 						<div class="form-control">
-							<label class="label"><span class="label-text">Tahun</span></label>
-							<input type="number" name="targetYear" bind:value={targetYear} class="input input-bordered w-full" min="2000" max="2100" />
+							<label class="label" for="target-year"><span class="label-text">Tahun</span></label>
+							<input id="target-year" type="number" name="targetYear" bind:value={targetYear} class="input input-bordered w-full" min="2000" max="2100" />
 						</div>
 					</div>
 

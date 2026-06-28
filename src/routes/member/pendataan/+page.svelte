@@ -6,7 +6,7 @@
 	import { invalidateAll } from '$app/navigation';
 	import type { SortConfig, FilterState } from '$lib/components/SuperTable';
 	import { goto } from '$app/navigation';
-	import { PlusCircle, List, Map as MapIcon, Printer, FileDown, FileUp, FileSpreadsheet } from 'lucide-svelte';
+	import { PlusCircle, List, Map as MapIcon, Printer, FileDown, FileUp, FileSpreadsheet, BookOpen, Search } from 'lucide-svelte';
 	import { onMount } from 'svelte';
 	import { api } from '$lib/utils/api';
 	import { page } from '$app/stores';
@@ -21,6 +21,7 @@
 	import MuridInsightPanel from './components/MuridInsightPanel.svelte';
 	import RecentActivityCards from './components/RecentActivityCards.svelte';
 	import MuridPrintReport from './components/MuridPrintReport.svelte';
+	import MustarsyadView from './components/MustarsyadView.svelte';
 
 	// Config & Actions
 	import { MURID_COLUMNS, type Murid } from './config/columns';
@@ -45,7 +46,7 @@
 	let muridData: Murid[] = $state([]);
 	let totalItems = $state(data.totalItems);
 	let isNavigating = $state(false);
-	let activeTab = $state<'table' | 'map'>('table');
+	let activeTab = $state<'table' | 'map' | 'mustarsyad'>('table');
 	let mapViewMode = $state<MapViewMode>('total');
 
 	let loading = $state(false);
@@ -65,6 +66,11 @@
 	let lastFetchedProvinceName: string | null = null;
 	let tableNeedsRefresh = $state(false);
 	let loadingPrint = $state(false);
+
+	// --- Global Filters (shared across tabs) ---
+	let globalGender = $state<'all' | 'pria' | 'wanita'>('all');
+	let globalSearch = $state('');
+	let globalSearchDebounce: ReturnType<typeof setTimeout> | null = null;
 
 	// --- Reactive Data from Props ---
 	let canReadMurid = $derived(data.canReadMurid);
@@ -179,6 +185,45 @@
 		currentFilters = { columns: {} };
 		await fetchTableData(currentSort, currentFilters, 1, pageSize);
 	}
+
+	// --- Global Filter Handlers ---
+	function handleGlobalGenderChange(value: 'all' | 'pria' | 'wanita') {
+		globalGender = value;
+		// Apply to SuperTable filters
+		const newColumns = { ...currentFilters.columns };
+		if (value === 'all') {
+			delete newColumns.gender;
+		} else {
+			newColumns.gender = { value: value === 'pria' ? 'Pria' : 'Wanita', operator: 'equals' };
+		}
+		currentFilters = { ...currentFilters, columns: newColumns };
+		if (activeTab === 'table') {
+			fetchTableData(currentSort, currentFilters, 1, pageSize);
+		}
+	}
+
+	function handleGlobalSearchInput(value: string) {
+		globalSearch = value;
+		if (globalSearchDebounce) clearTimeout(globalSearchDebounce);
+		globalSearchDebounce = setTimeout(() => {
+			const newFilters = { ...currentFilters, global: globalSearch };
+			currentFilters = newFilters;
+			if (activeTab === 'table') {
+				fetchTableData(currentSort, currentFilters, 1, pageSize);
+			}
+		}, 400);
+	}
+
+	function clearGlobalFilters() {
+		globalGender = 'all';
+		globalSearch = '';
+		const newColumns = { ...currentFilters.columns };
+		delete newColumns.gender;
+		currentFilters = { columns: newColumns };
+		fetchTableData(currentSort, currentFilters, 1, pageSize);
+	}
+
+	let hasActiveGlobalFilters = $derived(globalGender !== 'all' || globalSearch.length > 0);
 
 	// Transform data based on selected view mode
 	let mapData = $derived(
@@ -361,22 +406,10 @@
 
 <div class="mb-6 flex flex-wrap items-center justify-between gap-2">
 	<h1 class="card-title text-2xl">Manajemen Data Murid</h1>
-	<div class="flex items-center gap-1 sm:gap-2">
-		<div class="flex items-center gap-1 rounded-lg bg-base-200 p-1">
-			<button class="btn btn-sm btn-circle btn-ghost {activeTab === 'table' ? 'btn-active' : ''}" onclick={switchToTable} title="Daftar">
-				<List class="h-4 w-4" />
-			</button>
-			<button class="btn btn-sm btn-circle btn-ghost {activeTab === 'map' ? 'btn-active' : ''}" onclick={() => (activeTab = 'map')} title="Peta Sebaran">
-				<MapIcon class="h-4 w-4" />
-			</button>
-		</div>
-		{#if canWriteMurid}
-			<a href="/member/pendataan/new" class="btn btn-primary btn-sm btn-circle" title="Tambah Murid Baru">
-				<PlusCircle class="h-4 w-4" />
-			</a>
-		{/if}
+	<div class="flex flex-wrap items-center gap-1 sm:gap-2">
+		<!-- Tab-specific actions: Print + Export (table only, paling kiri) -->
 		{#if activeTab === 'table'}
-			<div class="dropdown sm:dropdown-end">
+			<div class="dropdown">
 				<button class="btn btn-ghost btn-sm" title="Ekspor / Impor">
 					<FileDown class="h-4 w-4" />
 				</button>
@@ -391,8 +424,73 @@
 				<Printer class="h-4 w-4" />
 			</button>
 		{/if}
+
+		<!-- Global Gender Filter (hidden on map — map has its own view mode dropdown) -->
+		{#if activeTab !== 'map'}
+			<div class="join border border-base-300 shadow-sm">
+				<button class="btn btn-sm join-item {globalGender === 'all' ? 'btn-active' : ''}" onclick={() => handleGlobalGenderChange('all')}>
+					Semua
+				</button>
+				<button class="btn btn-sm join-item {globalGender === 'pria' ? 'btn-active' : ''}" onclick={() => handleGlobalGenderChange('pria')}>
+					Pria
+				</button>
+				<button class="btn btn-sm join-item {globalGender === 'wanita' ? 'btn-active' : ''}" onclick={() => handleGlobalGenderChange('wanita')}>
+					Wanita
+				</button>
+			</div>
+		{/if}
+
+		<!-- Global Search (hidden on map — map is territory-based, not text-based) -->
+		{#if activeTab !== 'map'}
+			<label class="input input-bordered input-sm flex items-center gap-2 w-40 sm:w-48">
+				<Search class="h-4 w-4 opacity-50" />
+				<input
+					type="text"
+					class="grow"
+					placeholder="Cari nama / alamat..."
+					value={globalSearch}
+					oninput={(e) => handleGlobalSearchInput(e.currentTarget.value)}
+				/>
+			</label>
+		{/if}
+
+		<div class="flex items-center gap-1 rounded-lg bg-base-200 p-1">
+			<button class="btn btn-sm btn-circle btn-ghost {activeTab === 'table' ? 'btn-active' : ''}" onclick={switchToTable} title="Daftar">
+				<List class="h-4 w-4" />
+			</button>
+			<button class="btn btn-sm btn-circle btn-ghost {activeTab === 'map' ? 'btn-active' : ''}" onclick={() => (activeTab = 'map')} title="Peta Sebaran">
+				<MapIcon class="h-4 w-4" />
+			</button>
+			<button class="btn btn-sm btn-circle btn-ghost {activeTab === 'mustarsyad' ? 'btn-active' : ''}" onclick={() => (activeTab = 'mustarsyad')} title="Mustarsyad">
+				<BookOpen class="h-4 w-4" />
+			</button>
+		</div>
+		{#if canWriteMurid}
+			<a href="/member/pendataan/new" class="btn btn-primary btn-sm btn-circle" title="Tambah Murid Baru">
+				<PlusCircle class="h-4 w-4" />
+			</a>
+		{/if}
 	</div>
 </div>
+
+<!-- Global Active Filter Chips (visible on ALL tabs so user knows what's active) -->
+{#if hasActiveGlobalFilters}
+	<div class="mb-4 flex flex-wrap items-center gap-2">
+		{#if globalGender !== 'all'}
+			<button class="badge badge-primary badge-lg gap-1 cursor-pointer" onclick={() => handleGlobalGenderChange('all')}>
+				{globalGender === 'pria' ? 'Pria' : 'Wanita'} &times;
+			</button>
+		{/if}
+		{#if globalSearch}
+			<button class="badge badge-secondary badge-lg gap-1 cursor-pointer" onclick={() => { globalSearch = ''; handleGlobalSearchInput(''); }}>
+				"{globalSearch}" &times;
+			</button>
+		{/if}
+		<button class="text-xs text-base-content/40 hover:text-error cursor-pointer" onclick={clearGlobalFilters}>
+			Hapus semua filter
+		</button>
+	</div>
+{/if}
 
 {#if activeTab === 'table'}
 	{#if currentFilters.columns.propinsiName}
@@ -426,7 +524,7 @@
 		{selectedMuridIds}
 		onselectionChange={handleSelectionChange}
 	/>
-{:else}
+{:else if activeTab === 'map'}
 	<div in:fade={{ duration: 200 }} class="space-y-4">
 		<div class="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
 			<div class="alert alert-info flex flex-1 items-center gap-2 py-2 px-4 shadow-sm">
@@ -595,6 +693,8 @@
 			</div>
 		{/if}
 	</div>
+{:else if activeTab === 'mustarsyad'}
+	<MustarsyadView genderFilter={globalGender} searchQuery={globalSearch} />
 {/if}
 
 {#if isNavigating}

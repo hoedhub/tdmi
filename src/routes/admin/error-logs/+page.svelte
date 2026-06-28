@@ -108,8 +108,8 @@
 
 	<div class="flex flex-wrap gap-2 items-end">
 		<div class="form-control">
-			<label class="label py-1"><span class="label-text text-xs">Level</span></label>
-			<select class="select select-bordered select-sm" bind:value={filterLevel} onchange={handleFilterChange}>
+			<label class="label py-1" for="filter-level"><span class="label-text text-xs">Level</span></label>
+			<select id="filter-level" class="select select-bordered select-sm" bind:value={filterLevel} onchange={handleFilterChange}>
 				<option value="">Semua Level</option>
 				<option value="error">Error</option>
 				<option value="warning">Warning</option>
@@ -117,25 +117,26 @@
 			</select>
 		</div>
 		<div class="form-control">
-			<label class="label py-1"><span class="label-text text-xs">Source</span></label>
-			<select class="select select-bordered select-sm" bind:value={filterSource} onchange={handleFilterChange}>
+			<label class="label py-1" for="filter-source"><span class="label-text text-xs">Source</span></label>
+			<select id="filter-source" class="select select-bordered select-sm" bind:value={filterSource} onchange={handleFilterChange}>
 				<option value="">Semua Source</option>
 				<option value="server">Server</option>
 				<option value="client">Client</option>
 			</select>
 		</div>
 		<div class="form-control">
-			<label class="label py-1"><span class="label-text text-xs">Status</span></label>
-			<select class="select select-bordered select-sm" bind:value={filterResolved} onchange={handleFilterChange}>
+			<label class="label py-1" for="filter-status"><span class="label-text text-xs">Status</span></label>
+			<select id="filter-status" class="select select-bordered select-sm" bind:value={filterResolved} onchange={handleFilterChange}>
 				<option value="">Semua Status</option>
 				<option value="false">Unresolved</option>
 				<option value="true">Resolved</option>
 			</select>
 		</div>
 		<div class="form-control">
-			<label class="label py-1"><span class="label-text text-xs">Cari</span></label>
+			<label class="label py-1" for="filter-search"><span class="label-text text-xs">Cari</span></label>
 			<div class="join">
 				<input
+					id="filter-search"
 					class="input input-bordered input-sm join-item"
 					placeholder="Cari pesan error..."
 					bind:value={searchQuery}
