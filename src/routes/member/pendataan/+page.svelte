@@ -70,6 +70,7 @@
 	// --- Global Filters (shared across tabs) ---
 	let globalGender = $state<'all' | 'pria' | 'wanita'>('all');
 	let globalSearch = $state('');
+	let globalSearchDebounced = $state(''); // actual value passed to children (debounced)
 	let globalSearchDebounce: ReturnType<typeof setTimeout> | null = null;
 
 	// --- Reactive Data from Props ---
@@ -206,7 +207,8 @@
 		globalSearch = value;
 		if (globalSearchDebounce) clearTimeout(globalSearchDebounce);
 		globalSearchDebounce = setTimeout(() => {
-			const newFilters = { ...currentFilters, global: globalSearch };
+			globalSearchDebounced = value;
+			const newFilters = { ...currentFilters, global: value };
 			currentFilters = newFilters;
 			if (activeTab === 'table') {
 				fetchTableData(currentSort, currentFilters, 1, pageSize);
@@ -217,6 +219,8 @@
 	function clearGlobalFilters() {
 		globalGender = 'all';
 		globalSearch = '';
+		globalSearchDebounced = '';
+		if (globalSearchDebounce) clearTimeout(globalSearchDebounce);
 		const newColumns = { ...currentFilters.columns };
 		delete newColumns.gender;
 		currentFilters = { columns: newColumns };
@@ -445,11 +449,12 @@
 			<label class="input input-bordered input-sm flex items-center gap-2 w-40 sm:w-48">
 				<Search class="h-4 w-4 opacity-50" />
 				<input
-					type="text"
+					type="search"
 					class="grow"
 					placeholder="Cari nama / alamat..."
 					value={globalSearch}
 					oninput={(e) => handleGlobalSearchInput(e.currentTarget.value)}
+					onsearch={(e) => { if (!e.currentTarget.value) { globalSearchDebounced = ''; if (globalSearchDebounce) clearTimeout(globalSearchDebounce); } }}
 				/>
 			</label>
 		{/if}
@@ -482,7 +487,7 @@
 			</button>
 		{/if}
 		{#if globalSearch}
-			<button class="badge badge-secondary badge-lg gap-1 cursor-pointer" onclick={() => { globalSearch = ''; handleGlobalSearchInput(''); }}>
+			<button class="badge badge-secondary badge-lg gap-1 cursor-pointer" onclick={() => { globalSearch = ''; globalSearchDebounced = ''; if (globalSearchDebounce) clearTimeout(globalSearchDebounce); }}>
 				"{globalSearch}" &times;
 			</button>
 		{/if}
@@ -694,7 +699,7 @@
 		{/if}
 	</div>
 {:else if activeTab === 'mustarsyad'}
-	<MustarsyadView genderFilter={globalGender} searchQuery={globalSearch} />
+	<MustarsyadView genderFilter={globalGender} searchQuery={globalSearchDebounced} />
 {/if}
 
 {#if isNavigating}

@@ -52,11 +52,9 @@
 
 	let mursyadGroups = $state<MursyadGroup[]>([]);
 	let outerPagination = $state<PaginationInfo>({ page: 1, pageSize: 10, totalItems: 0, totalPages: 0 });
-	let innerPages = $state<Record<number, number>>({});
-	let innerPageSize = $state(5);
 	let loading = $state(true);
 	let error_msg = $state<string | null>(null);
-	let expandedIds = $state<Set<number>>(new Set());
+	let expandedIds = $state<Record<number, boolean>>({});
 
 	onMount(() => fetchData(1));
 
@@ -66,8 +64,7 @@
 		if (genderFilter !== prevGender || searchQuery !== prevSearch) {
 			prevGender = genderFilter;
 			prevSearch = searchQuery;
-			expandedIds = new Set();
-			innerPages = {};
+			expandedIds = {};
 			fetchData(1);
 		}
 	});
@@ -88,10 +85,10 @@
 			mursyadGroups = result.data;
 			outerPagination = result.pagination;
 
-			const newExpanded = new Set<number>();
-			for (const m of mursyadGroups) newExpanded.add(m.id);
+			// Default: expand semua
+			const newExpanded: Record<number, boolean> = {};
+			for (const m of mursyadGroups) newExpanded[m.id] = true;
 			expandedIds = newExpanded;
-			innerPages = {};
 		} catch (e: any) {
 			error_msg = e.message || 'Terjadi kesalahan';
 		} finally {
@@ -99,37 +96,14 @@
 		}
 	}
 
-	async function fetchMustarsyadPage(mursyadId: number, page: number) {
-		try {
-			const params = new URLSearchParams();
-			if (genderFilter !== 'all') params.set('gender', genderFilter);
-			if (searchQuery) params.set('search', searchQuery);
-			params.set('page', String(outerPagination.page));
-			params.set('pageSize', String(outerPagination.pageSize));
-			params.set('mustarsyadPage', String(page));
-			params.set('mustarsyadPageSize', String(innerPageSize));
-
-			const res = await api(`/member/pendataan/mustarsyad?${params.toString()}`);
-			if (!res.ok) throw new Error('Gagal memuat data mustarsyad');
-			const result = await res.json();
-
-			const updatedGroup = result.data.find((g: MursyadGroup) => g.id === mursyadId);
-			if (updatedGroup) {
-				mursyadGroups = mursyadGroups.map(g =>
-					g.id === mursyadId ? { ...g, mustarsyad: updatedGroup.mustarsyad } : g
-				);
-			}
-			innerPages = { ...innerPages, [mursyadId]: page };
-		} catch (e: any) {
-			error_msg = e.message || 'Terjadi kesalahan';
-		}
-	}
-
 	function toggleExpand(id: number) {
-		const next = new Set(expandedIds);
-		if (next.has(id)) next.delete(id);
-		else next.add(id);
-		expandedIds = next;
+		if (expandedIds[id]) {
+			delete expandedIds[id];
+		} else {
+			expandedIds[id] = true;
+		}
+		// Trigger reactivity — Svelte 5 needs reassignment for object key changes
+		expandedIds = { ...expandedIds };
 	}
 
 	let totalMustarsyad = $derived(mursyadGroups.reduce((sum, m) => sum + m.mustarsyadCount, 0));
@@ -187,11 +161,8 @@
 			{#each mursyadGroups as mursyad (mursyad.id)}
 				<MursyadCard
 					{mursyad}
-					isExpanded={expandedIds.has(mursyad.id)}
-					currentInnerPage={innerPages[mursyad.id] ?? 1}
-					{innerPageSize}
+					isExpanded={!!expandedIds[mursyad.id]}
 					ontoggle={() => toggleExpand(mursyad.id)}
-					onpagechange={(page) => fetchMustarsyadPage(mursyad.id, page)}
 				/>
 			{/each}
 		</div>

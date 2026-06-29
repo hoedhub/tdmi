@@ -9,22 +9,20 @@ import {
 	propTable
 } from '$lib/drizzle/schema';
 import { requirePermission } from '$lib/server/accessControl';
-import { eq, sql, and, asc, desc, like, or } from 'drizzle-orm';
+import { eq, sql, and, asc, like, or } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/sqlite-core';
 
 /**
  * GET /member/pendataan/mustarsyad
  *
- * Mengembalikan data mursyad beserta mustarsyad-nya.
+ * Mengembalikan data mursyad beserta SELURUH mustarsyad-nya (client-side sort/paginate).
+ * Outer pagination tetap server-side.
  *
  * Query params:
  *   gender = 'pria' | 'wanita' | (kosong = semua)
  *   search = cari berdasarkan nama|alamat (propinsi, kokab, kec, deskel)
  *   page = halaman mursyad (default 1)
  *   pageSize = jumlah mursyad per halaman (default 10)
- *   mustarsyadPage = halaman mustarsyad per mursyad (default 1)
- *   mustarsyadPageSize = jumlah mustarsyad per mursyad (default 5)
- *   mustarsyadSort = kolom sort mustarsyad, format "column:dir" (e.g. "nama:asc")
  */
 export const GET: RequestHandler = async ({ url, locals }) => {
 	await requirePermission(locals, 'perm-pendataan-read');
@@ -33,15 +31,6 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 	const search = url.searchParams.get('search')?.trim() || '';
 	const page = Math.max(1, parseInt(url.searchParams.get('page') || '1'));
 	const pageSize = Math.min(100, Math.max(1, parseInt(url.searchParams.get('pageSize') || '10')));
-	const mustarsyadPage = Math.max(1, parseInt(url.searchParams.get('mustarsyadPage') || '1'));
-	const mustarsyadPageSize = Math.min(50, Math.max(1, parseInt(url.searchParams.get('mustarsyadPageSize') || '5')));
-	const mustarsyadSortRaw = url.searchParams.get('mustarsyadSort') || 'nama:asc';
-
-	// Parse mustarsyad sort
-	const [sortCol, sortDir] = mustarsyadSortRaw.split(':');
-	const allowedSortCols = ['nama', 'nomorTelepon', 'alamatLengkap', 'umur', 'qari', 'marhalah', 'hasMustarsyad', 'aktif', 'partisipasi'];
-	const safeSortCol = allowedSortCols.includes(sortCol) ? sortCol : 'nama';
-	const safeSortDir = sortDir === 'desc' ? 'desc' : 'asc';
 
 	// Build gender conditions for subqueries
 	const genderWhereSub = genderFilter === 'pria'
@@ -51,52 +40,53 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 			: sql``;
 
 	const genderWhereMursyid = genderFilter === 'pria'
-		? sql`${muridTable.gender} = 1`
+		? sql`AND ${muridTable.gender} = 1`
 		: genderFilter === 'wanita'
-			? sql`${muridTable.gender} = 0`
-			: undefined;
+			? sql`AND ${muridTable.gender} = 0`
+			: sql``;
 
-	// Build search condition
-	const searchCondition = search
-		? sql`AND (
-			${muridTable.nama} LIKE ${'%' + search + '%'}
-			OR ${muridTable.alamat} LIKE ${'%' + search + '%'}
-			OR EXISTS (
-				SELECT 1 FROM deskel AS sd
-				JOIN kecamatan AS sk ON sd.id_kecamatan = sk.id
-				JOIN kokab AS skk ON sk.id_kokab = skk.id
-				JOIN propinsi AS sp ON skk.id_prop = sp.id
-				WHERE sd.id = ${muridTable.deskelId}
-				AND (
-					sd.deskel LIKE ${'%' + search + '%'}
-					OR sk.kecamatan LIKE ${'%' + search + '%'}
-					OR skk.kokab LIKE ${'%' + search + '%'}
-					OR sp.propinsi LIKE ${'%' + search + '%'}
-				)
-			)
-		)`
-		: sql``;
+	// Build search condition — same pattern as SuperTable alamat filter (proven working)
+	const searchConditions: any[] = [];
+	if (search) {
+		const val = `%${search}%`;
+		searchConditions.push(
+			like(muridTable.nama, val),
+			like(muridTable.alamat, val),
+			like(deskelTable.deskel, val),
+			like(kecamatanTable.kecamatan, val),
+			like(kokabTable.kokab, val),
+			like(propTable.propinsi, val)
+		);
+	}
 
-	// Alias for self-join
+	// Combined WHERE: mursyad must have mustarsyad + optional gender + optional search
+	const baseCondition = sql`(
+		SELECT COUNT(*) FROM murid AS sub
+		WHERE sub.mursyid_id = ${muridTable.id}
+		${genderWhereSub}
+	) > 0 ${genderWhereMursyid}`;
+
+	// Alias for self-join (mursyid info)
 	const mursyidAlias = alias(muridTable, 'mursyid');
 	const mursyidDeskel = alias(deskelTable, 'mursyid_deskel');
 	const mursyidKec = alias(kecamatanTable, 'mursyid_kec');
 	const mursyidKokab = alias(kokabTable, 'mursyid_kokab');
 	const mursyidProp = alias(propTable, 'mursyid_prop');
 
+	// Build WHERE clause — same joins needed for search LIKE
+	const whereClause = searchConditions.length > 0
+		? and(baseCondition, or(...searchConditions))
+		: baseCondition;
+
 	// Count total mursyid groups
 	const countResult = await db
-		.select({ count: sql<number>`CAST(COUNT(*) AS INTEGER)` })
+		.select({ count: sql<number>`CAST(COUNT(DISTINCT ${muridTable.id}) AS INTEGER)` })
 		.from(muridTable)
-		.where(
-			sql`(
-				SELECT COUNT(*) FROM murid AS sub
-				WHERE sub.mursyid_id = ${muridTable.id}
-				${genderWhereSub}
-			) > 0
-			${genderWhereMursyid ? sql`AND ${genderWhereMursyid}` : sql``}
-			${searchCondition}`
-		)
+		.leftJoin(deskelTable, eq(muridTable.deskelId, deskelTable.id))
+		.leftJoin(kecamatanTable, eq(deskelTable.idKecamatan, kecamatanTable.id))
+		.leftJoin(kokabTable, eq(kecamatanTable.idKokab, kokabTable.id))
+		.leftJoin(propTable, eq(kokabTable.idProp, propTable.id))
+		.where(whereClause)
 		.get();
 
 	const totalItems = countResult?.count ?? 0;
@@ -127,45 +117,24 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 			)`.as('mustarsyad_count')
 		})
 		.from(muridTable)
+		.leftJoin(deskelTable, eq(muridTable.deskelId, deskelTable.id))
+		.leftJoin(kecamatanTable, eq(deskelTable.idKecamatan, kecamatanTable.id))
+		.leftJoin(kokabTable, eq(kecamatanTable.idKokab, kokabTable.id))
+		.leftJoin(propTable, eq(kokabTable.idProp, propTable.id))
 		.leftJoin(mursyidAlias, eq(muridTable.mursyidId, mursyidAlias.id))
 		.leftJoin(mursyidDeskel, eq(muridTable.deskelId, mursyidDeskel.id))
 		.leftJoin(mursyidKec, eq(mursyidDeskel.idKecamatan, mursyidKec.id))
 		.leftJoin(mursyidKokab, eq(mursyidKec.idKokab, mursyidKokab.id))
 		.leftJoin(mursyidProp, eq(mursyidKokab.idProp, mursyidProp.id))
-		.where(
-			sql`(
-				SELECT COUNT(*) FROM murid AS sub
-				WHERE sub.mursyid_id = ${muridTable.id}
-				${genderWhereSub}
-			) > 0
-			${genderWhereMursyid ? sql`AND ${genderWhereMursyid}` : sql``}
-			${searchCondition}`
-		)
+		.where(whereClause)
 		.orderBy(asc(muridTable.nama))
 		.limit(pageSize)
 		.offset(offset)
 		.all();
 
-	// For each mursyid, fetch mustarsyad list with pagination and sorting
+	// For each mursyid, fetch ALL mustarsyad (client-side sort/paginate)
 	const result = [];
 	for (const m of mursyids) {
-		const mustarsyadOffset = (mustarsyadPage - 1) * mustarsyadPageSize;
-
-		// Build sort for inner query
-		const sortColumnMap: Record<string, any> = {
-			nama: muridTable.nama,
-			nomorTelepon: muridTable.nomorTelepon,
-			umur: muridTable.tglLahir,
-			qari: muridTable.qari,
-			marhalah: muridTable.marhalah,
-			hasMustarsyad: muridTable.id, // approximate - will sort by id
-			aktif: muridTable.aktif,
-			partisipasi: muridTable.partisipasi,
-			alamatLengkap: muridTable.alamat
-		};
-		const sortExpr = sortColumnMap[safeSortCol] || muridTable.nama;
-		const orderByFn = safeSortDir === 'desc' ? desc : asc;
-
 		const mustarsyadList = await db
 			.select({
 				id: muridTable.id,
@@ -203,12 +172,9 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 							: undefined
 				)
 			)
-			.orderBy(orderByFn(sortExpr))
-			.limit(mustarsyadPageSize)
-			.offset(mustarsyadOffset)
+			.orderBy(asc(muridTable.nama))
 			.all();
 
-		// Format mursyid alamat
 		const mursyidAlamatLengkap = [m.alamat, m.mursyidDeskelName, m.mursyidKecName, m.mursyidKokabName, m.mursyidPropName]
 			.filter(Boolean)
 			.join(', ');
